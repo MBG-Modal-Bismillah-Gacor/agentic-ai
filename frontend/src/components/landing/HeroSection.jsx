@@ -220,10 +220,21 @@ export function HeroSection({ onNavigate }) {
                   e.preventDefault()
                   onNavigate?.('office')
                 }}
-                className="inline-flex items-center justify-center bg-[#FF5B00] hover:bg-[#E04F00] active:scale-[0.98] text-[#0A0E1A] font-mono font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 px-7 transition-all shadow-sm"
-                style={{ marginTop: '1.5rem' }}
+                className="button-primary hero-apply w-inline-block"
+                style={{ marginTop: '1.5rem', display: 'inline-block' }}
               >
-                APPLY FOR INCUBATION
+                <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
+                  <div
+                    className="button-primary-text font-bold text-[#F8F5EC]"
+                    style={{
+                      backgroundColor: '#192A56',
+                      color: '#F8F5EC',
+                      padding: '0.85rem 1.75rem',
+                    }}
+                  >
+                    APPLY FOR INCUBATION
+                  </div>
+                </div>
               </a>
             </div>
 

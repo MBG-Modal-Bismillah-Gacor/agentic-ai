@@ -232,24 +232,6 @@ export function ProgramsSection({ onNavigate }) {
               {/* Monolithic Glass Capsule Chamber */}
               <div className="relative w-full h-full min-h-[580px] max-h-[640px] flex items-center justify-center">
                 
-                {/* Gelembung-Gelembung Cairan / Udara Stasis di Dalam Tabung Kapsul */}
-                <div 
-                  className="absolute pointer-events-none overflow-hidden z-15"
-                  style={{
-                    width: '180px',
-                    height: '320px',
-                    top: '85px',
-                    borderRadius: '90px',
-                  }}
-                >
-                  <div className="capsule-bubble bubble-1">MBG</div>
-                  <div className="capsule-bubble bubble-2">MBG</div>
-                  <div className="capsule-bubble bubble-3">MBG</div>
-                  <div className="capsule-bubble bubble-4">MBG</div>
-                  <div className="capsule-bubble bubble-5">MBG</div>
-                  <div className="capsule-bubble bubble-6">MBG</div>
-                </div>
-
                 {/* 3D Robot Mascot (Turun bertahap saat di-scroll masuk ke Section 2) */}
                 <div 
                   ref={capsuleRobotRef}
@@ -263,7 +245,7 @@ export function ProgramsSection({ onNavigate }) {
 
                 {/* Single Monolithic Capsule Frame (Pristine transparent glass, complete flared & tapered base) */}
                 <img
-                  src="/assets/capsule_clean.png"
+                  src="/assets/capsule.png"
                   loading="lazy"
                   alt="MSI Cubi NUC Sovereign AI Capsule"
                   className="w-full h-full max-h-[620px] object-contain pointer-events-none select-none relative z-20"

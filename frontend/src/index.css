@@ -583,34 +583,7 @@ html, body {
   display: block !important;
 }
 
-/* ========================================================================= */
-/* 3. CAPSULE MBG STASIS BUBBLES                                             */
-/* ========================================================================= */
-.capsule-bubble {
-  position: absolute !important;
-  bottom: 0 !important;
-  border-radius: 9999px !important;
-  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), rgba(248, 245, 236, 0.85) 55%, rgba(25, 42, 86, 0.3) 95%) !important;
-  border: 1.5px solid rgba(25, 42, 86, 0.5) !important;
-  box-shadow: 0 0 10px rgba(25, 42, 86, 0.2), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
-  pointer-events: none !important;
-  animation: capsuleBubbleRise 4.5s infinite ease-in !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-family: monospace !important;
-  font-weight: 800 !important;
-  color: #192A56 !important;
-  letter-spacing: -0.05em !important;
-  user-select: none !important;
-}
 
-.capsule-bubble.bubble-1 { left: 18% !important; width: 28px !important; height: 28px !important; font-size: 8px !important; animation-duration: 4.2s !important; animation-delay: 0s !important; }
-.capsule-bubble.bubble-2 { left: 56% !important; width: 34px !important; height: 34px !important; font-size: 10px !important; animation-duration: 5.2s !important; animation-delay: 0.8s !important; }
-.capsule-bubble.bubble-3 { left: 34% !important; width: 26px !important; height: 26px !important; font-size: 8px !important; animation-duration: 3.8s !important; animation-delay: 1.6s !important; }
-.capsule-bubble.bubble-4 { left: 68% !important; width: 30px !important; height: 30px !important; font-size: 9px !important; animation-duration: 4.6s !important; animation-delay: 2.3s !important; }
-.capsule-bubble.bubble-5 { left: 12% !important; width: 32px !important; height: 32px !important; font-size: 9px !important; animation-duration: 5.5s !important; animation-delay: 1.1s !important; }
-.capsule-bubble.bubble-6 { left: 44% !important; width: 26px !important; height: 26px !important; font-size: 8px !important; animation-duration: 3.6s !important; animation-delay: 2.9s !important; }
 
 
 

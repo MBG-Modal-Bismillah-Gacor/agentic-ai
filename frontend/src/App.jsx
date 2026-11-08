@@ -118,10 +118,70 @@ const DEFAULT_AGENTS = {
   },
 }
 
+class RouteErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('RouteErrorBoundary caught an error:', error, errorInfo)
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.currentRoute !== this.props.currentRoute && this.state.hasError) {
+      this.setState({ hasError: false, error: null })
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-screen h-screen flex flex-col items-center justify-center bg-[#F8F5EC] text-[#192A56] p-6 font-mono select-none">
+          <div className="max-w-md w-full bg-white border-2 border-[#192A56] p-6 shadow-[6px_6px_0px_0px_#192A56] text-center space-y-4">
+            <div className="w-12 h-12 bg-[#192A56] text-[#F8F5EC] flex items-center justify-center font-bold text-xl mx-auto rounded-xs">
+              !
+            </div>
+            <h2 className="text-base font-bold uppercase tracking-wider text-[#192A56]">
+              Tampilan Sedang Di-refresh
+            </h2>
+            <p className="text-xs text-[#576574] leading-relaxed">
+              Terjadi penyesuaian grafis 3D / rute. Tekan tombol di bawah untuk memuat ulang tampilan secara otomatis.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="px-4 py-2 border-2 border-[#192A56] bg-[#192A56] text-[#F8F5EC] font-bold text-xs uppercase tracking-wider hover:bg-[#0E1A38] transition cursor-pointer"
+              >
+                Coba Lagi
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = '/'
+                }}
+                className="px-4 py-2 border-2 border-[#192A56] bg-white text-[#192A56] font-bold text-xs uppercase tracking-wider hover:bg-[#F0ECE1] transition cursor-pointer"
+              >
+                Kembali ke Beranda
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState(getInitialRoute)
   const [officeName, setOfficeName] = useState('MSI Cubi Sovereign AI HQ')
-  const [isOfficeSetupDone, setIsOfficeSetupDone] = useState(false)
+  const [isOfficeSetupDone, setIsOfficeSetupDone] = useState(true)
   const [bossConfig, setBossConfig] = useState(DEFAULT_BOSS)
   const [agents, setAgents] = useState(DEFAULT_AGENTS)
   const [selectedAgentId, setSelectedAgentId] = useState('boss')
@@ -173,16 +233,12 @@ export default function App() {
   const [isTeamSetupOpen, setIsTeamSetupOpen] = useState(false)
   const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false)
 
-  // Router Navigator
+  // Router Navigator: Membuka rute secara langsung tanpa modal yang memblokir
   const navigate = (route, params = {}) => {
     if (params?.agentId) {
       setSelectedAgentId(params.agentId)
     }
-    if (route === 'office') {
-      if (!isOfficeSetupDone) {
-        setIsEntranceOpen(true) // Buka setup kantor awal jika belum selesai
-      }
-    }
+    setIsEntranceOpen(false)
     setCurrentRoute(route)
     const path = route === 'landing' ? '/' : `/${route}`
     window.history.pushState({}, '', path)
@@ -202,22 +258,7 @@ export default function App() {
       }
     }
     window.addEventListener('popstate', handlePopState)
-    const handleEnterOffice = (setupData) => {
-    if (setupData) {
-      if (setupData.officeName) setOfficeName(setupData.officeName)
-      if (setupData.bossName) {
-        setBossConfig((prev) => ({
-          ...prev,
-          name: setupData.bossName,
-          role: setupData.bossRole || prev.role,
-        }))
-      }
-    }
-    setIsOfficeSetupDone(true)
-    setIsEntranceOpen(false)
-  }
-
-  return () => window.removeEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
   // Atur overflow body: scrollable untuk Landing Page & Dashboard, locked untuk 3D Office
@@ -326,22 +367,7 @@ export default function App() {
     const interval = setInterval(() => {
       fetchData()
     }, 3500)
-    const handleEnterOffice = (setupData) => {
-    if (setupData) {
-      if (setupData.officeName) setOfficeName(setupData.officeName)
-      if (setupData.bossName) {
-        setBossConfig((prev) => ({
-          ...prev,
-          name: setupData.bossName,
-          role: setupData.bossRole || prev.role,
-        }))
-      }
-    }
-    setIsOfficeSetupDone(true)
-    setIsEntranceOpen(false)
-  }
-
-  return () => clearInterval(interval)
+    return () => clearInterval(interval)
   }, [])
 
   // Simpan Konfigurasi Tim ke Backend & LocalStorage
@@ -473,9 +499,22 @@ export default function App() {
           isScanning: false,
           isWalking: true,
           targetPos: STATIONS.workstation_desk,
+          rotationY: Math.PI,
           statusText: `Analisis stok selesai. Unit siap ditawarkan!`,
         },
       }))
+
+      setTimeout(() => {
+        setAgents((prev) => ({
+          ...prev,
+          'blue-agent': {
+            ...prev['blue-agent'],
+            isWalking: false,
+            isTyping: true,
+            rotationY: Math.PI,
+          },
+        }))
+      }, 1200)
 
       // Panggil API Backend Generate Pitch
       try {
@@ -608,22 +647,29 @@ export default function App() {
           ...prev['green-agent'],
           isWalking: false,
           targetPos: STATIONS.security_gate,
+          rotationY: 0,
           statusText: 'Pesan terkirim ke WhatsApp Gateway!',
         },
         'orange-agent': {
           ...prev['orange-agent'],
           isWalking: false,
           targetPos: STATIONS.data_vault,
+          rotationY: -Math.PI * 0.75,
           statusText: 'Data prospek berhasil diperbarui di database.',
         },
         'purple-agent': {
           ...prev['purple-agent'],
+          isWalking: false,
           targetPos: STATIONS.kanban_board,
+          rotationY: Math.PI,
+          isTyping: false,
           statusText: 'Siap untuk prospek berikutnya',
         },
         'blue-agent': {
           ...prev['blue-agent'],
+          isWalking: false,
           targetPos: STATIONS.workstation_desk,
+          rotationY: Math.PI,
           isTyping: true,
           statusText: 'Monitoring Stock & Catalog',
         },
@@ -661,120 +707,122 @@ export default function App() {
 
   return (
     <>
-      {/* 1. RUTE: LANDING PAGE (SAMS-Style Showcase) */}
-      {currentRoute === 'landing' && (
-        <LandingPage
-          onNavigate={navigate}
-          isBackendConnected={isBackendConnected}
-          systemInfo={systemInfo}
-          bossConfig={bossConfig}
-          agents={agents}
-          leads={leads}
-        />
-      )}
-
-      {/* 2. RUTE: DASHBOARD SAAS (Full Analytics & Leads Management) */}
-      {currentRoute === 'dashboard' && (
-        <DashboardView
-          onNavigate={navigate}
-          isBackendConnected={isBackendConnected}
-          systemInfo={systemInfo}
-          bossConfig={bossConfig}
-          agents={agents}
-          leads={leads}
-          activities={activities}
-          onSelectLead={handleSelectLead}
-          onApprovePitch={handleApprovePitch}
-          onRefresh={fetchData}
-          onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
-          onOpenCreateLead={() => setIsCreateLeadOpen(true)}
-          onRunAutoPipeline={handleRunAutoPipeline}
-          isGenerating={isGenerating}
-          pitchResult={pitchResult}
-        />
-      )}
-
-      {/* 3. RUTE: VIRTUAL OFFICE 3D (Architectural Blueprint Canvas & Cyber HUD) */}
-      {currentRoute === 'office' && (
-        <main className="w-screen h-screen relative bg-[#F8F5EC] overflow-hidden select-none">
-          {/* Blueprint Canvas Grid Pattern */}
-          <div className={`fixed inset-0 pointer-events-none z-0 bg-grid-pattern ${isPure3DMode ? "opacity-0" : "opacity-70"}`} aria-hidden="true" />
-          {/* 3D Diorama Kantor Virtual Modern MSI Cubi NUC */}
-          <OfficeScene
-            agents={agents}
-            bossConfig={bossConfig}
-            selectedAgentId={selectedAgentId}
-            onSelectAgent={setSelectedAgentId}
-            leads={leads}
-            activeLead={activeLead}
-            pitchResult={pitchResult}
-            isEntranceOpen={isEntranceOpen}
-            activePOV={activePOV}
-            transitionTrigger={transitionTrigger}
-            controlsRef={officeControlsRef}
-            isPure3DMode={isPure3DMode}
-          />
-
-          {/* Tombol Keluar Mode Fullscreen 3D Immersive */}
-          {isPure3DMode && (
-            <div className="absolute top-4 right-4 z-50 pointer-events-auto">
-              <button
-                type="button"
-                onClick={handleExitPure3D}
-                style={{ backgroundColor: '#192A56', color: '#F8F5EC' }}
-                className="px-3.5 py-1.5 border border-[#192A56] font-bold text-xs uppercase shadow-[3px_3px_0px_0px_#192A56] flex items-center gap-2 cursor-pointer hover:bg-[#0E1A38] transition"
-                title="Keluar dari Fullscreen (Tekan ESC)"
-              >
-                <Minimize2 className="w-3.5 h-3.5 text-[#FF5B00]" />
-                <span style={{ color: '#F8F5EC' }}>Keluar Fullscreen (ESC)</span>
-              </button>
-            </div>
-          )}
-
-          {/* Glassmorphism Dashboard SaaS HUD (Disembunyikan Saat Mode Fullscreen Murni) */}
-          {!isPure3DMode && (
-            <DashboardOverlay
-              agents={agents}
-              bossConfig={bossConfig}
-              officeName={officeName}
-              selectedAgentId={selectedAgentId}
-              onSelectAgent={setSelectedAgentId}
-              leads={leads}
-              activities={activities}
-              systemInfo={systemInfo}
-              isBackendConnected={isBackendConnected}
-              activeLead={activeLead}
-              isGenerating={isGenerating}
-              pitchResult={pitchResult}
-              onSelectLead={handleSelectLead}
-              onApprovePitch={handleApprovePitch}
-              onRefresh={fetchData}
-              onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
-              onOpenOfficeSetup={() => setIsEntranceOpen(true)}
-              onOpenCreateLead={() => setIsCreateLeadOpen(true)}
-              onRunAutoPipeline={handleRunAutoPipeline}
-              onOpenEntrance={() => setIsEntranceOpen(true)}
-              onNavigate={navigate}
-              activePOV={activePOV}
-              onChangePOV={handleChangePOV}
-              onZoom={handleManualZoom}
-              onResetPOV={handleResetPOV}
-              onTogglePure3D={handleTogglePure3D}
-            />
-          )}
-
-          {/* Setup Kantor Otonom AI & Sambutan Gerbang (Office Setup Wizard) */}
-          <OfficeEntranceModal
-            isOpen={isEntranceOpen}
-            onEnterOffice={handleEnterOffice}
+      <RouteErrorBoundary currentRoute={currentRoute}>
+        {/* 1. RUTE: LANDING PAGE (SAMS-Style Showcase) */}
+        {currentRoute === 'landing' && (
+          <LandingPage
+            onNavigate={navigate}
             isBackendConnected={isBackendConnected}
             systemInfo={systemInfo}
             bossConfig={bossConfig}
-            currentOfficeName={officeName}
             agents={agents}
+            leads={leads}
           />
-        </main>
-      )}
+        )}
+
+        {/* 2. RUTE: DASHBOARD SAAS (Full Analytics & Leads Management) */}
+        {currentRoute === 'dashboard' && (
+          <DashboardView
+            onNavigate={navigate}
+            isBackendConnected={isBackendConnected}
+            systemInfo={systemInfo}
+            bossConfig={bossConfig}
+            agents={agents}
+            leads={leads}
+            activities={activities}
+            onSelectLead={handleSelectLead}
+            onApprovePitch={handleApprovePitch}
+            onRefresh={fetchData}
+            onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
+            onOpenCreateLead={() => setIsCreateLeadOpen(true)}
+            onRunAutoPipeline={handleRunAutoPipeline}
+            isGenerating={isGenerating}
+            pitchResult={pitchResult}
+          />
+        )}
+
+        {/* 3. RUTE: VIRTUAL OFFICE 3D (Architectural Blueprint Canvas & Cyber HUD) */}
+        {currentRoute === 'office' && (
+          <main className="w-screen h-screen relative bg-[#F8F5EC] overflow-hidden select-none">
+            {/* Blueprint Canvas Grid Pattern */}
+            <div className={`fixed inset-0 pointer-events-none z-0 bg-grid-pattern ${isPure3DMode ? "opacity-0" : "opacity-70"}`} aria-hidden="true" />
+            {/* 3D Diorama Kantor Virtual Modern MSI Cubi NUC */}
+            <OfficeScene
+              agents={agents}
+              bossConfig={bossConfig}
+              selectedAgentId={selectedAgentId}
+              onSelectAgent={setSelectedAgentId}
+              leads={leads}
+              activeLead={activeLead}
+              pitchResult={pitchResult}
+              isEntranceOpen={isEntranceOpen}
+              activePOV={activePOV}
+              transitionTrigger={transitionTrigger}
+              controlsRef={officeControlsRef}
+              isPure3DMode={isPure3DMode}
+            />
+
+            {/* Tombol Keluar Mode Fullscreen 3D Immersive */}
+            {isPure3DMode && (
+              <div className="absolute top-4 right-4 z-50 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={handleExitPure3D}
+                  style={{ backgroundColor: '#192A56', color: '#F8F5EC' }}
+                  className="px-3.5 py-1.5 border border-[#192A56] font-bold text-xs uppercase shadow-[3px_3px_0px_0px_#192A56] flex items-center gap-2 cursor-pointer hover:bg-[#0E1A38] transition"
+                  title="Keluar dari Fullscreen (Tekan ESC)"
+                >
+                  <Minimize2 className="w-3.5 h-3.5 text-[#FF5B00]" />
+                  <span style={{ color: '#F8F5EC' }}>Keluar Fullscreen (ESC)</span>
+                </button>
+              </div>
+            )}
+
+            {/* Glassmorphism Dashboard SaaS HUD (Disembunyikan Saat Mode Fullscreen Murni) */}
+            {!isPure3DMode && (
+              <DashboardOverlay
+                agents={agents}
+                bossConfig={bossConfig}
+                officeName={officeName}
+                selectedAgentId={selectedAgentId}
+                onSelectAgent={setSelectedAgentId}
+                leads={leads}
+                activities={activities}
+                systemInfo={systemInfo}
+                isBackendConnected={isBackendConnected}
+                activeLead={activeLead}
+                isGenerating={isGenerating}
+                pitchResult={pitchResult}
+                onSelectLead={handleSelectLead}
+                onApprovePitch={handleApprovePitch}
+                onRefresh={fetchData}
+                onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
+                onOpenOfficeSetup={() => setIsEntranceOpen(true)}
+                onOpenCreateLead={() => setIsCreateLeadOpen(true)}
+                onRunAutoPipeline={handleRunAutoPipeline}
+                onOpenEntrance={() => setIsEntranceOpen(true)}
+                onNavigate={navigate}
+                activePOV={activePOV}
+                onChangePOV={handleChangePOV}
+                onZoom={handleManualZoom}
+                onResetPOV={handleResetPOV}
+                onTogglePure3D={handleTogglePure3D}
+              />
+            )}
+
+            {/* Setup Kantor Otonom AI & Sambutan Gerbang (Office Setup Wizard) */}
+            <OfficeEntranceModal
+              isOpen={isEntranceOpen}
+              onEnterOffice={handleEnterOffice}
+              isBackendConnected={isBackendConnected}
+              systemInfo={systemInfo}
+              bossConfig={bossConfig}
+              currentOfficeName={officeName}
+              agents={agents}
+            />
+          </main>
+        )}
+      </RouteErrorBoundary>
 
       {/* Modal Personalisasi Nama Bos & Tim Cubi */}
       <TeamSetupModal

@@ -81,7 +81,9 @@ export function CubiCharacter({
       groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, destPos.current.z, 0.15)
       
       // Rotasi tenang menghadap sudut stasiun kerja tanpa putaran acak
-      let diff = (rotationY - groupRef.current.rotation.y) % (Math.PI * 2)
+      // Jika agen sedang mengetik/bekerja di meja, selalu pastikan menghadap meja (Math.PI) dan tidak pernah menghadap belakang kursi
+      const finalTargetRot = isTyping ? Math.PI : rotationY
+      let diff = (finalTargetRot - groupRef.current.rotation.y) % (Math.PI * 2)
       if (diff < -Math.PI) diff += Math.PI * 2
       if (diff > Math.PI) diff -= Math.PI * 2
       groupRef.current.rotation.y += diff * 0.08
