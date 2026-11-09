@@ -115,6 +115,9 @@ export function ProgramsSection({ onNavigate }) {
     setIncubationSlideIndex((prev) => (prev > 0 ? prev - 1 : incubationSlides.length - 1))
   }
 
+  const handleNext = handleNextIncubation
+  const handlePrev = handlePrevIncubation
+
   return (
     <div id="Capital-Incubation-Section" className="relative w-full bg-white">
       {/* Target Anchor Links untuk Navigasi */}
@@ -446,7 +449,7 @@ export function ProgramsSection({ onNavigate }) {
                     </svg>
                   </button>
                   <button
-                    onClick={handleNext}
+                    onClick={handleNextIncubation}
                     className="group w-10 h-10 border border-[#192A56] bg-white hover:bg-[#192A56] active:bg-[#192A56] text-[#192A56] hover:text-white active:text-white flex items-center justify-center transition-all cursor-pointer"
                     title="Langkah Berikutnya"
                   >
