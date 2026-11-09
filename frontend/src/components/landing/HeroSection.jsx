@@ -120,17 +120,24 @@ export function HeroSection({ onNavigate }) {
       <div id="hero-section-container" className="w-layout-blockcontainer container hero-container w-container flex-1 flex flex-col justify-between" style={{ paddingTop: '0px' }}>
         
         {/* HERO WRAPPER (Exact Webflow Grid Layout) */}
-        <div className="hero-wrapper relative border-l border-r border-[#192A56]/20 bg-[#F8F5EC] flex-1 flex flex-col justify-between">
+        <div className="hero-wrapper relative border-l border-r border-[#192A56]/20 bg-white flex-1 flex flex-col justify-between">
           
+          {/* Architectural 4-Column Grid Guidelines (Lurus & Presisi dengan Garis Bawah: 25%, 50%, 75%) */}
+          <div className="absolute inset-0 pointer-events-none z-0">
+            <div className="absolute top-0 bottom-0 left-[25%] w-px bg-[#192A56]/15" />
+            <div className="absolute top-0 bottom-0 left-[50%] w-px bg-[#192A56]/15" />
+            <div className="absolute top-0 bottom-0 left-[75%] w-px bg-[#192A56]/15" />
+          </div>
+
           {/* Top Architectural Corner Embellishments (Matching rfhero.png) */}
-          <div className="absolute top-0 left-0 z-20 w-11 h-11 border-r border-b border-[#192A56]/20 flex items-center justify-center bg-[#F8F5EC]">
+          <div className="absolute top-0 left-0 z-20 w-11 h-11 border-r border-b border-[#192A56]/20 flex items-center justify-center bg-white">
             <img
               src="/assets/webflow/664753c2515af09bef5b9826/665640330d1b87aa18aa9882_cross.svg"
               alt=""
               className="w-4 h-4 opacity-75"
             />
           </div>
-          <div className="absolute top-0 right-0 z-20 w-11 h-11 border-l border-b border-[#192A56]/20 flex items-center justify-center bg-[#F8F5EC]">
+          <div className="absolute top-0 right-0 z-20 w-11 h-11 border-l border-b border-[#192A56]/20 flex items-center justify-center bg-white">
             <span className="w-4 h-4 rounded-full border-2 border-[#192A56]/60 flex items-center justify-center">
               <span className="w-1.5 h-1.5 rounded-full bg-[#192A56]" />
             </span>
@@ -140,8 +147,8 @@ export function HeroSection({ onNavigate }) {
           <div className="hero-top" style={{ paddingTop: '0rem', paddingBottom: '0rem', marginTop: '0rem' }}>
             <div className="hero-backing hero-backing-top" style={{ display: 'none' }} />
 
-            {/* High-Contrast Bold Cyber Typography "AI AGENTIC" (Matching rfhero.png) */}
-            <div className="hero-marquee-wrapper overflow-hidden select-none pointer-events-none" style={{ marginTop: '0px' }}>
+            {/* High-Contrast Bold Cyber Typography "AI AGENTIC" Berada tepat di belakang robot (Sesuai rf hero.png) */}
+            <div className="hero-marquee-wrapper overflow-hidden select-none pointer-events-none relative z-0" style={{ paddingTop: '2.5rem', marginBottom: '-4.5rem' }}>
               <div className="hero-marquee animate-marquee flex items-center">
                 <span className="marquee-heading mr-12 text-[#192A56] font-display tracking-tight" style={{ fontFamily: "'LabsAmiga', sans-serif" }}>
                   AI AGENTIC
@@ -176,13 +183,12 @@ export function HeroSection({ onNavigate }) {
               <div className="hero-square hero-square-top-left hero-square-mobile" style={{ backgroundColor: '#FF5B00' }} />
 
               <div className="hero-backing" style={{ paddingLeft: '2.25rem', marginBottom: '0.5rem' }}>
-                <div className="w-2.5 h-2.5 bg-[#FF5B00]" />
                 <div id="w-node-_30e76485-ae6c-05d7-60f5-023e5c311de5-ef5b982d" className="w-layout-hflex hero-backing-text">
                   <div className="hero-backing-item font-mono font-bold text-xs uppercase tracking-widest text-[#192A56]">
                     AI AGENTIC :: AICREW
                   </div>
                 </div>
-                <div id="w-node-bf49c4bc-c533-46a4-5e65-738d863c031d-ef5b982d" className="w-2.5 h-2.5 bg-[#FF5B00]" />
+                <div id="w-node-bf49c4bc-c533-46a4-5e65-738d863c031d-ef5b982d" className="w-2.5 h-2.5 bg-[#192A56]" />
               </div>
 
               {/* Central Mascot: Greeting 3D Robot Mascot (Ditarik ke atas proporsional, tanpa magnet/clamp penggantung) */}
@@ -211,8 +217,8 @@ export function HeroSection({ onNavigate }) {
           {/* HERO MAIN */}
           <div className="hero-main" style={{ paddingTop: '0.25rem' }}>
             <div className="hero-info" style={{ padding: '2.25rem 2rem 2rem 2.25rem' }}>
-              <div className="hero-description font-mono text-xs sm:text-sm leading-relaxed text-[#1B1B1B]" style={{ maxWidth: '17rem' }}>
-                Backing the very best web3 &amp; enterprise builders — transforming on-premise AI agents into real-world autonomous deal closing.
+              <div className="hero-description font-mono text-xs sm:text-sm leading-relaxed text-[#192A56]" style={{ maxWidth: '18rem' }}>
+                Mendukung pimpinan dealer &amp; enterprise terbaik — mentransformasi armada agen AI on-premise menjadi pipeline penjualan motor &amp; deal closing otonom tanpa risiko kebocoran cloud.
               </div>
               <a
                 href="/office"
@@ -225,14 +231,14 @@ export function HeroSection({ onNavigate }) {
               >
                 <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
                   <div
-                    className="button-primary-text font-bold text-[#F8F5EC]"
+                    className="button-primary-text font-bold text-white"
                     style={{
                       backgroundColor: '#192A56',
-                      color: '#F8F5EC',
+                      color: '#FFFFFF',
                       padding: '0.85rem 1.75rem',
                     }}
                   >
-                    APPLY FOR INCUBATION
+                    MASUK KE KANTOR AI
                   </div>
                 </div>
               </a>
@@ -240,29 +246,36 @@ export function HeroSection({ onNavigate }) {
 
             <div className="hero-bottom-space" style={{ padding: '1rem' }} />
 
-            {/* Right 3D Rotating Star Graphic Block (Black background with white corner brackets, matching rfhero.png) */}
+            {/* Right Graphic Block: Illustrasi 3D Geometric Connector Star (Identik rf hero.png) */}
             <div
               className="graphic-block hero-graphic-block"
               style={{
-                backgroundColor: '#000000',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid rgba(25, 42, 86, 0.25)',
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                padding: '1.25rem',
               }}
             >
-              <div className="graphic-block-decor graphic-block-decor-top-left" style={{ borderColor: '#FFFFFF' }} />
-              <div className="graphic-block-decor graphic-block-decor-top-right" style={{ borderColor: '#FFFFFF' }} />
-              <div className="graphic-block-decor graphic-block-decor-bottom-right" style={{ borderColor: '#FFFFFF' }} />
-              <div className="graphic-block-decor graphic-block-decor-bottom-left" style={{ borderColor: '#FFFFFF' }} />
-              <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-                <RobotMascotCanvas mode="connector" cameraDistance={3.2} />
-              </div>
+              <div className="graphic-block-decor graphic-block-decor-top-left" style={{ borderColor: '#192A56' }} />
+              <div className="graphic-block-decor graphic-block-decor-top-right" style={{ borderColor: '#192A56' }} />
+              <div className="graphic-block-decor graphic-block-decor-bottom-right" style={{ borderColor: '#192A56' }} />
+              <div className="graphic-block-decor graphic-block-decor-bottom-left" style={{ borderColor: '#192A56' }} />
+
+              <img
+                src="/assets/webflow/664753c2515af09bef5b9826/6654a5c3113a6f95af59c707_star.webp"
+                alt="3D Ecosystem Connector Star"
+                loading="lazy"
+                className="w-24 h-24 sm:w-28 sm:h-28 object-contain select-none pointer-events-none hover:scale-105 transition-transform"
+                style={{ filter: 'drop-shadow(0 12px 24px rgba(25, 42, 86, 0.12))' }}
+              />
             </div>
 
             {/* Partners Header & Nav Controls */}
             <div id="w-node-_3ed4ddf5-96e2-2d95-cc00-99d4d88a966e-ef5b982d" className="hero-partners">
-              <div className="hero-partners-title">OUR PARTNERS:</div>
+              <div className="hero-partners-title">PARTNER TEKNOLOGI:</div>
               <div className="hero-partners-nav-col">
                 <div className="hero-partners-nav">
                   <div
@@ -273,7 +286,7 @@ export function HeroSection({ onNavigate }) {
                   >
                     <div className="hero-partners-button-image partners-arrow w-embed">
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14.3212 2.91429C14.3212 2.40934 13.9118 2 13.4069 2H11.5783C11.0734 2 10.664 2.40934 10.664 2.91429V4.28571C10.664 4.79066 10.2547 5.2 9.74975 5.2H8.37832C7.87337 5.2 7.46404 5.60934 7.46404 6.11429V7.48571C7.46404 7.99066 7.0547 8.4 6.54975 8.4H5.17832C4.67338 8.4 4.26404 8.80934 4.26404 9.31429V11.1429C4.26404 11.6478 4.67338 12.0571 5.17832 12.0571H7.00689C7.51184 12.0571 7.92118 12.4665 7.92118 12.9714V13.8857C7.92118 14.3907 8.33052 14.8 8.83546 14.8H10.2069C10.7118 14.8 11.1212 15.2093 11.1212 15.7143V17.0857C11.1212 17.5907 11.5305 18 12.0355 18H13.864C14.369 18 14.7783 17.5907 14.7783 17.0857V15.2571C14.7783 14.7522 14.369 14.3429 13.864 14.3429H12.4926C11.9877 14.3429 11.5783 13.9335 11.5783 13.4286V12.0571C11.5783 11.5522 11.169 11.1429 10.664 11.1429H8.83546C8.33052 11.1429 7.92118 10.7335 7.92118 10.2286V9.77143C7.92118 9.26648 8.33052 8.85714 8.83546 8.85714H10.2069C10.7118 8.85714 11.1212 8.4478 11.1212 7.94286V6.57143C11.1212 6.06648 11.5305 5.65714 12.0355 5.65714H13.4069C13.9118 5.65714 14.3212 5.2478 14.3212 4.74286V2.91429Z" fill="currentColor" className="text-[#192A56] group-hover:fill-[#F8F5EC] group-active:fill-[#F8F5EC] transition-colors" />
+                        <path d="M14.3212 2.91429C14.3212 2.40934 13.9118 2 13.4069 2H11.5783C11.0734 2 10.664 2.40934 10.664 2.91429V4.28571C10.664 4.79066 10.2547 5.2 9.74975 5.2H8.37832C7.87337 5.2 7.46404 5.60934 7.46404 6.11429V7.48571C7.46404 7.99066 7.0547 8.4 6.54975 8.4H5.17832C4.67338 8.4 4.26404 8.80934 4.26404 9.31429V11.1429C4.26404 11.6478 4.67338 12.0571 5.17832 12.0571H7.00689C7.51184 12.0571 7.92118 12.4665 7.92118 12.9714V13.8857C7.92118 14.3907 8.33052 14.8 8.83546 14.8H10.2069C10.7118 14.8 11.1212 15.2093 11.1212 15.7143V17.0857C11.1212 17.5907 11.5305 18 12.0355 18H13.864C14.369 18 14.7783 17.5907 14.7783 17.0857V15.2571C14.7783 14.7522 14.369 14.3429 13.864 14.3429H12.4926C11.9877 14.3429 11.5783 13.9335 11.5783 13.4286V12.0571C11.5783 11.5522 11.169 11.1429 10.664 11.1429H8.83546C8.33052 11.1429 7.92118 10.7335 7.92118 10.2286V9.77143C7.92118 9.26648 8.33052 8.85714 8.83546 8.85714H10.2069C10.7118 8.85714 11.1212 8.4478 11.1212 7.94286V6.57143C11.1212 6.06648 11.5305 5.65714 12.0355 5.65714H13.4069C13.9118 5.65714 14.3212 5.2478 14.3212 4.74286V2.91429Z" fill="currentColor" className="text-[#192A56] group-hover:fill-white group-active:fill-white transition-colors" />
                       </svg>
                     </div>
                   </div>
@@ -335,7 +348,7 @@ export function HeroSection({ onNavigate }) {
         </div>
 
         {/* Partner Slider Strip - Enlarged & Prominently Styled (Matching rfhero.png) */}
-        <div className="hero-slider border-t border-b border-[#192A56]/20 bg-[#F8F5EC]">
+        <div className="hero-slider border-t border-b border-[#192A56]/20 bg-white">
           <div className="swiper overflow-visible w-dyn-list">
             <div
               role="list"
@@ -347,7 +360,7 @@ export function HeroSection({ onNavigate }) {
             >
               {partners.map((partner, idx) => (
                 <div key={idx} role="listitem" className="swiper-slide w-dyn-item" style={{ width: '25%' }}>
-                  <div className="hero-partner border-r border-[#192A56]/20 min-h-[112px] sm:min-h-[128px] flex items-center justify-center p-4 sm:p-6 relative bg-[#F8F5EC] hover:bg-white transition-colors">
+                  <div className="hero-partner border-r border-[#192A56]/20 min-h-[112px] sm:min-h-[128px] flex items-center justify-center p-4 sm:p-6 relative bg-white hover:bg-slate-50 transition-colors">
                     <a
                       href={partner.link}
                       target="_blank"
@@ -392,15 +405,15 @@ export function HeroSection({ onNavigate }) {
         </div>
 
         {/* Conduit Pipe Mechanical Collar & Segment Connecting Hero to Section 2 (Sesuai fsrefrensi.png) */}
-        <div className="relative w-full h-20 sm:h-24 bg-[#F8F5EC] border-l border-r border-[#192A56]/20 flex flex-col items-center justify-center overflow-visible z-20">
+        <div className="relative w-full h-20 sm:h-24 bg-white border-l border-r border-[#192A56]/20 flex flex-col items-center justify-center overflow-visible z-20">
           {/* Mechanical Upper Collar Clamp */}
-          <div className="w-56 sm:w-64 h-3 bg-[#EBE7DC] border-t border-b border-[#192A56]/30 flex items-center justify-between px-3 shadow-xs">
-            <span className="w-1.5 h-1.5 bg-[#FF5B00] rounded-full" />
+          <div className="w-56 sm:w-64 h-3 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 flex items-center justify-between px-3 shadow-xs">
+            <span className="w-1.5 h-1.5 bg-[#192A56] rounded-full" />
             <div className="flex gap-2">
               <span className="w-8 h-1 bg-[#192A56]/25 block" />
               <span className="w-8 h-1 bg-[#192A56]/25 block" />
             </div>
-            <span className="w-1.5 h-1.5 bg-[#FF5B00] rounded-full" />
+            <span className="w-1.5 h-1.5 bg-[#192A56] rounded-full" />
           </div>
 
           {/* Central Conduit Pipe Segment with Seams */}

@@ -45,7 +45,7 @@ export function Navbar({ onNavigate }) {
       <div className="w-full relative pointer-events-auto">
         {/* Inner Cream Canvas Navbar with 28px Inset Chamfers */}
         <div
-          className="w-full bg-[#F8F5EC] flex items-center justify-between px-6 sm:px-10 md:px-14 h-16 sm:h-20 relative"
+          className="w-full bg-white flex items-center justify-between px-6 sm:px-10 md:px-14 h-16 sm:h-20 relative"
           style={{
             clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 28px 100%, 0 calc(100% - 28px))',
           }}
@@ -223,7 +223,7 @@ export function Navbar({ onNavigate }) {
 
               {/* Dropdown Menu Items */}
               {ecosystemOpen && (
-                <nav id="product-menu-list" className="product-menu-list w-dropdown-list w--open bg-[#F8F5EC] border border-[#192A56]/20 shadow-xl" style={{ display: 'block' }}>
+                <nav id="product-menu-list" className="product-menu-list w-dropdown-list w--open bg-white border border-[#192A56]/20 shadow-xl" style={{ display: 'block' }}>
                   <div className="div-block-23">
                     <div className="product-menu-item">
                       <a
@@ -301,7 +301,7 @@ export function Navbar({ onNavigate }) {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#F8F5EC] border-b border-[#192A56]/20 px-4 py-3 font-mono pointer-events-auto">
+        <div className="lg:hidden bg-white border-b border-[#192A56]/20 px-4 py-3 font-mono pointer-events-auto">
           <ul className="flex flex-col gap-2">
             <li>
               <a

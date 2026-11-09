@@ -128,23 +128,23 @@ export function OfficeEntranceModal({
         {/* Header Badge Gerbang Setup Kantor */}
         <div className="flex items-center justify-between pb-3.5 border-b border-[#192A56]/20 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#192A56] border border-[#192A56] text-[#F8F5EC] flex items-center justify-center shadow-xs">
-              <Building2 className="w-5 h-5 text-[#F8F5EC]" />
+            <div className="w-10 h-10 bg-[#192A56] border border-[#192A56] text-white rounded-xl flex items-center justify-center shadow-xs">
+              <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="text-[10px] font-bold tracking-wider text-[#192A56] uppercase block">
-                AICREW // VIRTUAL OFFICE SETUP WIZARD
+              <span className="text-[10px] font-bold tracking-wider text-[#192A56]/70 uppercase block font-mono">
+                AICREW // VIRTUAL OFFICE
               </span>
-              <h2 className="text-sm sm:text-base font-extrabold text-[#192A56] leading-tight uppercase">
-                SETUP KANTOR OTONOM AI
+              <h2 className="text-sm sm:text-base font-extrabold text-[#192A56] leading-tight uppercase font-mono">
+                KONFIGURASI KANTOR AI
               </h2>
             </div>
           </div>
 
           {/* Indikator Status Koneksi Riil */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold border ${
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border font-mono ${
             isBackendConnected
-              ? 'bg-[#F8F5EC] border-[#192A56] text-emerald-700'
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
               : 'bg-rose-50 border-rose-300 text-rose-700'
           }`}>
             {isBackendConnected ? (
@@ -216,10 +216,10 @@ export function OfficeEntranceModal({
                   <div
                     key={ag.id}
                     onClick={() => toggleAgent(ag.id)}
-                    className={`p-2.5 border transition-all cursor-pointer select-none flex items-start gap-2.5 ${
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-2.5 ${
                       isSelected
                         ? 'border-[#192A56] bg-white shadow-xs'
-                        : 'border-[#192A56]/20 bg-[#F0ECE1] opacity-60'
+                        : 'border-slate-200 bg-slate-50 opacity-60'
                     }`}
                   >
                     <input
@@ -242,8 +242,8 @@ export function OfficeEntranceModal({
           </div>
 
           {/* 3. Panel Telemetri & Status Koneksi DB / BE */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-            <div className="p-2.5 bg-[#F0ECE1] border border-[#192A56]/20">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
               <div className="flex items-center gap-1 text-[#576574] text-[9px] uppercase font-bold mb-0.5">
                 <Database className="w-3 h-3 text-[#192A56]" />
                 <span>DATABASE</span>
@@ -254,7 +254,7 @@ export function OfficeEntranceModal({
               <span className="text-[9px] text-[#576574] block truncate">deal_swarm.db</span>
             </div>
 
-            <div className="p-2.5 bg-[#F0ECE1] border border-[#192A56]/20">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
               <div className="flex items-center gap-1 text-[#576574] text-[9px] uppercase font-bold mb-0.5">
                 <Terminal className="w-3 h-3 text-[#192A56]" />
                 <span>LOCAL LLM</span>
@@ -265,7 +265,7 @@ export function OfficeEntranceModal({
               <span className="text-[9px] text-[#576574] block truncate">Ollama On-Premise</span>
             </div>
 
-            <div className="p-2.5 bg-[#F0ECE1] border border-[#192A56]/20">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
               <div className="flex items-center gap-1 text-[#576574] text-[9px] uppercase font-bold mb-0.5">
                 <Cpu className="w-3 h-3 text-[#192A56]" />
                 <span>APPLIANCE</span>
@@ -276,7 +276,7 @@ export function OfficeEntranceModal({
               <span className="text-[9px] text-[#576574] block truncate">48 TOPS NPU</span>
             </div>
 
-            <div className="p-2.5 bg-[#F0ECE1] border border-[#192A56]/20">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
               <div className="flex items-center gap-1 text-[#576574] text-[9px] uppercase font-bold mb-0.5">
                 <ShieldCheck className="w-3 h-3 text-[#192A56]" />
                 <span>SECURITY</span>
@@ -288,20 +288,20 @@ export function OfficeEntranceModal({
             </div>
           </div>
 
-          {/* Tombol Aksi Utama: Luncurkan Kantor AI */}
+          {/* Tombol Aksi Utama: Masuk ke Kantor */}
           <div className="pt-3 border-t border-[#192A56]/20 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5 text-[11px] text-[#576574]">
+            <div className="flex items-center gap-1.5 text-[11px] text-[#576574] font-mono">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Sistem Siap Diluncurkan</span>
+              <span>Kantor Siap Dimasuki</span>
             </div>
 
             <button
               type="submit"
               disabled={isOpening}
-              className="px-6 py-2.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-mono font-bold text-xs flex items-center gap-2 shadow-md shadow-[#192A56]/20 transition cursor-pointer disabled:opacity-50"
             >
               <DoorOpen className="w-4 h-4 text-white" />
-              <span>Luncurkan Kantor AI &amp; Buka Pintu</span>
+              <span>Masuk ke Kantor</span>
               <ArrowRight className="w-3.5 h-3.5 text-white" />
             </button>
           </div>

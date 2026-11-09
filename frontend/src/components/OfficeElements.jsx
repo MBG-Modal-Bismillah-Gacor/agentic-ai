@@ -74,7 +74,7 @@ export function DioramaRoom() {
         <meshStandardMaterial color="#192A56" roughness={0.35} />
       </RoundedBox>
 
-      {/* Slab Lantai Utama Keramik Terrazzo Cream Hangat (Identik Landing Page #F8F5EC / #F5F1E8) */}
+      {/* Slab Lantai Utama Keramik Putih Bersih Modern (#FFFFFF) */}
       <RoundedBox
         receiveShadow
         args={[19.2, 0.46, 15.2]}
@@ -82,14 +82,14 @@ export function DioramaRoom() {
         smoothness={4}
         position={[0, -0.05, 0]}
       >
-        <meshStandardMaterial color="#F5F1E8" roughness={0.24} metalness={0.02} />
+        <meshStandardMaterial color="#FFFFFF" roughness={0.24} metalness={0.02} />
       </RoundedBox>
 
-      {/* Dinding Belakang: Solid Architectural Drywall Warna Cream Hangat (#F8F5EC) */}
+      {/* Dinding Belakang: Solid Architectural Drywall Warna Putih Bersih (#FFFFFF) */}
       <group position={[0, 3.2, -7.3]}>
         <RoundedBox receiveShadow castShadow args={[19, 6.0, 0.22]} radius={0.04} smoothness={3}>
           <meshStandardMaterial
-            color="#F8F5EC"
+            color="#FFFFFF"
             roughness={0.82}
             metalness={0.03}
           />
@@ -105,16 +105,16 @@ export function DioramaRoom() {
         {[-7.2, -4.8, -2.4, 0, 2.4, 4.8, 7.2].map((x, i) => (
           <mesh key={i} position={[x, 0, 0.115]}>
             <boxGeometry args={[0.025, 5.7, 0.01]} />
-            <meshStandardMaterial color="#E2DCD0" roughness={0.9} />
+            <meshStandardMaterial color="#E2E8F0" roughness={0.9} />
           </mesh>
         ))}
       </group>
 
-      {/* Dinding Kiri: Warna Cream (#F8F5EC) dengan Jendela Arsitektural Natural */}
+      {/* Dinding Kiri: Warna Putih (#FFFFFF) dengan Jendela Arsitektural Natural */}
       <group position={[-9.3, 3.2, 0]}>
         <RoundedBox receiveShadow castShadow args={[0.22, 6.0, 15]} radius={0.04} smoothness={3}>
           <meshStandardMaterial
-            color="#F8F5EC"
+            color="#FFFFFF"
             roughness={0.82}
             metalness={0.03}
           />

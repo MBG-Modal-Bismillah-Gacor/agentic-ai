@@ -7,36 +7,19 @@ gsap.registerPlugin(ScrollTrigger)
 
 export function ProgramsSection({ onNavigate }) {
   const [incubationSlideIndex, setIncubationSlideIndex] = useState(0)
-  const spinePipeRef = useRef(null)
-  const coinTokenRef = useRef(null)
-  const capsuleRobotRef = useRef(null)
 
-  // GSAP ScrollTrigger untuk rotasi halus koin dan pergeseran vertikal terkoneksi (spine)
+  // Refs for scroll-triggered mascot entry & morph transitions
+  const robotStageRef = useRef(null)
+  const morphRobotRef = useRef(null)
+  const morphCoinRef = useRef(null)
+
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Parallax pergeseran vertikal halus pada pipa penghubung
-      if (spinePipeRef.current) {
-        gsap.to(spinePipeRef.current, {
-          y: 40,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '#Capital-Incubation-Section',
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 0.6,
-          }
-        })
-      }
-
-      // Robot di dalam kapsul turun perlahan dari pipa atas saat scroll masuk ke section 2 (smooth conduit entry)
-      if (capsuleRobotRef.current) {
+      // 1. Smooth Entry: Robot mascot descends and glides gracefully into Section 2 from Hero
+      if (robotStageRef.current) {
         gsap.fromTo(
-          capsuleRobotRef.current,
-          {
-            y: -180,
-            opacity: 0.2,
-            scale: 0.88,
-          },
+          robotStageRef.current,
+          { y: -100, opacity: 0.2, scale: 0.88 },
           {
             y: 0,
             opacity: 1,
@@ -46,26 +29,41 @@ export function ProgramsSection({ onNavigate }) {
               trigger: '#beyond-capital',
               start: 'top 95%',
               end: 'top 35%',
-              scrub: 0.8,
-              invalidateOnRefresh: true,
+              scrub: 0.6,
             }
           }
         )
       }
 
-      // Rotasi sumbu koin saat scroll (sesuai spesifikasi refrensi)
-      if (coinTokenRef.current) {
-        gsap.to(coinTokenRef.current, {
-          rotationY: 360,
-          rotationZ: 15,
-          ease: 'none',
+      // 2. Smooth Morph: Robot smoothly condenses and morphs into the 3D MBG Token as user scrolls into Section 3
+      if (morphRobotRef.current && morphCoinRef.current) {
+        gsap.set(morphRobotRef.current, { scale: 1, opacity: 1, rotationY: 0 })
+        gsap.set(morphCoinRef.current, { scale: 0.1, opacity: 0, rotationY: -180 })
+
+        const morphTl = gsap.timeline({
           scrollTrigger: {
             trigger: '#incubation-section',
-            start: 'top 80%',
-            end: 'bottom 20%',
+            start: 'top 85%',
+            end: 'top 25%',
             scrub: 0.8,
           }
         })
+
+        morphTl
+          // Robot shrinks and dissolves into the conduit energy beam
+          .to(morphRobotRef.current, {
+            scale: 0.1,
+            opacity: 0,
+            rotationY: 180,
+            ease: 'power2.inOut',
+          }, 0)
+          // 3D MBG Token expands and materializes with cyber rotation
+          .to(morphCoinRef.current, {
+            scale: 1,
+            opacity: 1,
+            rotationY: 0,
+            ease: 'power2.inOut',
+          }, 0)
       }
     })
 
@@ -118,16 +116,19 @@ export function ProgramsSection({ onNavigate }) {
   }
 
   return (
-    <section id="Capital-Incubation-Section" className="capital-incubation-section relative bg-[#F8F5EC] border-b border-[#192A56]/20">
-      <div className="w-layout-blockcontainer container w-container relative z-10">
-        
-        {/* ========================================================= */}
-        {/* PART 1: AICOSYSTEM (BEYOND CAPITAL)                       */}
-        {/* ========================================================= */}
-        <section id="beyond-capital" className="capital-section support-slider-section border-b border-[#192A56]/20 relative">
-          
-          {/* Capital Top Heading (AICOSYSTEM Powered by MSI Cubi NUC) */}
-          <div className="capital-top border-t border-b border-[#192A56]/20 bg-[#F8F5EC]">
+    <div id="Capital-Incubation-Section" className="relative w-full bg-white">
+      {/* Target Anchor Links untuk Navigasi */}
+      <div id="beyond-capital" className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
+      <div id="programs" className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
+
+      {/* ========================================================================= */}
+      {/* STAGE 1: AICOSYSTEM (Beyond Capital) - Clean White & Floating 3D Mascot   */}
+      {/* ========================================================================= */}
+      <section className="capital-section relative bg-white border-b border-[#192A56]/20 pt-6 sm:pt-8 pb-0">
+        <div className="w-layout-blockcontainer container w-container relative z-10">
+
+          {/* Header Section 1 */}
+          <div className="capital-top border-t border-b border-[#192A56]/20 bg-white">
             <div id="w-node-_3b476a89-29e0-a676-f444-cab94e4d329d-ef5b982d" className="capital-title flex flex-col justify-center">
               <span className="font-mono text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#192A56]/60 mb-1 block">
                 powered by MSI Cubi NUC AI &amp; Autonomous Agent Mesh
@@ -146,7 +147,7 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
 
-            <div className="graphic-block capital-graphic-big">
+            <div className="graphic-block capital-graphic-big bg-white">
               <div className="graphic-block-decor graphic-block-decor-top-left" />
               <div className="graphic-block-decor graphic-block-decor-top-right" />
               <div className="graphic-block-decor graphic-block-decor-bottom-right" />
@@ -160,9 +161,8 @@ export function ProgramsSection({ onNavigate }) {
             </div>
           </div>
 
-          {/* Capital Content Header Bar (Hardware / Software) */}
+          {/* Subheader Section 1 */}
           <div className="capital-info border-b border-[#192A56]/20">
-            {/* Left Column: Hardware */}
             <div className="capital-info-item">
               <div className="section-heading-descr-inner">
                 <div className="section-descr-info">
@@ -177,7 +177,6 @@ export function ProgramsSection({ onNavigate }) {
             
             <div className="capital-empty hidden lg:block" />
             
-            {/* Right Column: Software */}
             <div className="capital-info-item">
               <div className="section-heading-descr-inner">
                 <div className="section-descr-info">
@@ -191,13 +190,13 @@ export function ProgramsSection({ onNavigate }) {
             </div>
           </div>
 
-          {/* Capital Main Body (Symmetric 3 Columns Layout with Central Spine) */}
+          {/* 3-Column Body Section 1: Specs | Free Floating 3D Robot Mascot (Tanpa Kapsul) | Hardware Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-stretch relative min-h-[560px]">
-            {/* Left Column: Checklist & CTA */}
-            <div className="p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#192A56]/20">
+            {/* Kolom Kiri: Hardware Specs Checklist */}
+            <div className="border-b lg:border-b-0 lg:border-r border-[#192A56]/20 p-6 sm:p-8 flex flex-col justify-between">
               <ul role="list" className="w-full space-y-3 list-none p-0 m-0">
                 {capitalItems.map((item, idx) => (
-                  <li key={idx} className="aico-spec-item flex items-center gap-3.5 p-3.5 bg-white border border-[#192A56]/20 rounded-none shadow-xs hover:border-[#192A56]/50 transition-colors w-full">
+                  <li key={idx} className="aico-spec-item flex items-center gap-3.5 p-3.5 bg-white border border-[#192A56]/20 rounded-none shadow-xs hover:border-[#192A56] hover:shadow-md transition-all w-full">
                     <svg width="20" height="16" viewBox="0 0 23 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
                       <path d="M1.1657 7.65653C0.75024 7.65653 0.453205 8.0173 0.575087 8.37386L2.56277 14.1889C3.22999 16.1456 4.83132 17.2238 7.14434 17.2238H11.2366C12.838 17.2238 13.0159 17.064 13.0159 15.6264V14.0291C13.0159 12.5916 13.1938 12.4318 14.7951 12.4318H17.0192C18.6205 12.4318 18.8429 12.2721 19.3322 10.9144L22.5207 1.43876C22.6405 1.08269 22.3436 0.723755 21.9293 0.723755H17.4375C17.1651 0.723755 16.9248 0.883907 16.8461 1.11799L13.5497 10.9144C13.0604 12.2721 12.838 12.4318 11.2366 12.4318H9.45737C7.85604 12.4318 7.63364 12.2721 7.14434 10.9144L6.18077 8.05077C6.102 7.81669 5.86175 7.65653 5.58937 7.65653H1.1657Z" fill="#192A56"/>
                     </svg>
@@ -218,8 +217,8 @@ export function ProgramsSection({ onNavigate }) {
                   }}
                   className="button-primary w-inline-block"
                 >
-                  <div className="button-primary-border">
-                    <div className="button-primary-text font-bold text-[#F8F5EC]">
+                  <div className="button-primary-border bg-[#192A56]">
+                    <div className="button-primary-text font-bold text-white">
                       MASUK KE AICREW
                     </div>
                   </div>
@@ -227,38 +226,67 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
 
-            {/* Center Corridor: Glass Capsule with 3D Mascot Robot (Sesuai capsuleee.png & pas awal banget) */}
-            <div className="w-full lg:w-[380px] xl:w-[420px] flex items-center justify-center relative py-0 overflow-visible min-h-[580px] lg:sticky lg:top-24 z-20 self-start">
-              {/* Monolithic Glass Capsule Chamber */}
-              <div className="relative w-full h-full min-h-[580px] max-h-[640px] flex items-center justify-center">
-                
-                {/* 3D Robot Mascot (Turun bertahap saat di-scroll masuk ke Section 2) */}
+            {/* Kolom Tengah: Cyber Stage Terbuka (Kapsul Dihapus Sesuai Permintaan) dengan Transisi Halus dari Hero */}
+            <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col items-center justify-between relative overflow-visible pointer-events-none">
+              
+              {/* Pipa Sambungan Atas: Menyambung sempurna dari dasar HeroSection */}
+              <div className="w-44 sm:w-52 h-14 sm:h-16 relative flex flex-col items-center justify-start shrink-0">
+                <div
+                  className="w-full h-full"
+                  style={{
+                    backgroundImage: 'url(/assets/webflow/664753c2515af09bef5b9826/6653b82c498773bed25d76ff_pipe_segment.webp)',
+                    backgroundRepeat: 'repeat-y',
+                    backgroundPosition: 'center',
+                    backgroundSize: 'contain',
+                    borderLeft: '1px solid rgba(25, 42, 86, 0.25)',
+                    borderRight: '1px solid rgba(25, 42, 86, 0.25)',
+                  }}
+                />
+                {/* Flange Collar Cincin Atas */}
+                <div className="w-52 sm:w-60 h-2.5 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 absolute bottom-0 shadow-xs" />
+              </div>
+
+              {/* Free-Floating 3D Mascot Stage: Bersih Tanpa Kapsul, Meluncur Halus dari Atas */}
+              <div 
+                ref={robotStageRef}
+                className="relative w-full max-w-[340px] sm:max-w-[380px] h-[480px] sm:h-[540px] flex flex-col items-center justify-center my-auto shrink-0"
+              >
+                {/* Holographic Concentric Ring Accents di Belakang Maskot */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                  <div className="w-64 h-64 rounded-full border border-[#192A56]/15 animate-pulse" />
+                  <div className="w-80 h-80 rounded-full border border-dashed border-[#192A56]/10 absolute" />
+                </div>
+
+                {/* 3D Robot Mascot (Melayang Bebas & Hidup Tanpa Kotak Kapsul) */}
                 <div 
-                  ref={capsuleRobotRef}
-                  className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
-                  style={{ paddingTop: '20px', paddingBottom: '110px', willChange: 'transform, opacity' }}
+                  ref={morphRobotRef}
+                  className="w-full h-full relative flex items-center justify-center z-10 pointer-events-none"
+                  style={{ willChange: 'transform, opacity' }}
                 >
-                  <div style={{ width: '100%', height: '100%', maxWidth: '300px', maxHeight: '340px', position: 'relative' }}>
-                    <RobotMascotCanvas mode="robot" inCapsule={true} cameraDistance={3.5} />
+                  <div style={{ width: '100%', height: '100%', maxWidth: '320px', maxHeight: '380px', position: 'relative' }}>
+                    <RobotMascotCanvas mode="robot" inCapsule={false} cameraDistance={2.8} />
                   </div>
                 </div>
 
-                {/* Single Monolithic Capsule Frame (Pristine transparent glass, complete flared & tapered base) */}
-                <img
-                  src="/assets/capsule.png"
-                  loading="lazy"
-                  alt="MSI Cubi NUC Sovereign AI Capsule"
-                  className="w-full h-full max-h-[620px] object-contain pointer-events-none select-none relative z-20"
-                  style={{ filter: 'drop-shadow(0 20px 35px rgba(25, 42, 86, 0.16))' }}
-                />
+                {/* Badge Status Cyber di Bawah Maskot */}
+                <div className="absolute bottom-4 bg-[#192A56] text-white border border-[#192A56] font-mono text-[10px] font-bold px-3 py-1 rounded-full shadow-md tracking-widest z-20 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span>AICREW AUTONOMOUS MESH</span>
+                </div>
               </div>
+
+              {/* Bagian Bawah Stage: Kerah Penghubung ke Section 2 */}
+              <div className="w-44 sm:w-52 h-4 relative flex items-center justify-center shrink-0">
+                <div className="w-52 sm:w-60 h-2 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 absolute bottom-0 shadow-xs" />
+              </div>
+
             </div>
 
-            {/* Right Column: Hardware Cards */}
-            <div className="p-6 sm:p-8 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-[#192A56]/20">
+            {/* Kolom Kanan: Hardware Cards */}
+            <div className="border-t lg:border-t-0 lg:border-l border-[#192A56]/20 p-6 sm:p-8 flex flex-col justify-between">
               <div className="space-y-4">
                 {capitalSlides.map((s, idx) => (
-                  <div key={idx} className="aico-hw-card border border-[#192A56]/20 bg-white p-5 shadow-xs relative flex flex-col justify-between w-full hover:border-[#192A56]/50 transition-colors">
+                  <div key={idx} className="aico-hw-card border border-[#192A56]/20 bg-white p-5 shadow-xs relative flex flex-col justify-between w-full hover:border-[#192A56] hover:shadow-md transition-all">
                     <div className="flex items-center justify-between mb-3 w-full">
                       <div className="w-2 h-2 bg-[#192A56]" />
                       <div className="font-mono text-xs font-bold text-[#192A56]">{s.number}</div>
@@ -291,17 +319,20 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
           </div>
-        </section>
 
-        {/* ========================================================= */}
-        {/* PART 2: INCUBATION (CARA KERJA & CONTINUOUS SPINE)        */}
-        {/* ========================================================= */}
-        <section id="incubation-section" className="incubation-section support-slider-section border-b border-[#192A56]/20 relative">
-          
-          {/* Incubation Top Heading */}
-          <div className="incubation-top border-t border-b border-[#192A56]/20 bg-[#F8F5EC]">
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* STAGE 2: CARA KERJA (Incubation) - Transisi Morph Robot -> MBG Token      */}
+      {/* ========================================================================= */}
+      <section id="incubation-section" className="incubation-section relative bg-white border-b border-[#192A56]/20 pt-6 sm:pt-8 pb-8 sm:pb-12">
+        <div className="w-layout-blockcontainer container w-container relative z-10">
+
+          {/* Header Section 2 */}
+          <div className="incubation-top border-t border-b border-[#192A56]/20 bg-white">
             <div className="incubation-left">
-              <div className="graphic-block incubation-graphic-big">
+              <div className="graphic-block incubation-graphic-big bg-white">
                 <div className="graphic-block-decor graphic-block-decor-top-left" />
                 <div className="graphic-block-decor graphic-block-decor-top-right" />
                 <div className="graphic-block-decor graphic-block-decor-bottom-right" />
@@ -311,7 +342,7 @@ export function ProgramsSection({ onNavigate }) {
                   loading="lazy"
                   alt=""
                   className="graphic-block-image"
-                  style={{ filter: 'grayscale(0.8)' }}
+                  style={{ filter: 'grayscale(0.6)' }}
                 />
               </div>
               <div className="graphic-image incubation-graphic-image">
@@ -325,7 +356,7 @@ export function ProgramsSection({ onNavigate }) {
             </div>
 
             <div className="incubation-title">
-              <h2 anim-trigger="" className="h2 h2-mobile uppercase">
+              <h2 className="h2 h2-mobile uppercase">
                 CARA KERJA
               </h2>
             </div>
@@ -338,7 +369,7 @@ export function ProgramsSection({ onNavigate }) {
             </div>
           </div>
 
-          {/* Incubation Info Header Bar */}
+          {/* Subheader Section 2 */}
           <div className="incubation-info border-b border-[#192A56]/20">
             <div className="incubation-info-item">
               <div className="section-heading-descr-inner">
@@ -365,70 +396,62 @@ export function ProgramsSection({ onNavigate }) {
             </div>
           </div>
 
-          {/* Incubation Main Body (Symmetric 3 Columns Layout with Continuous Spine Tube & Token) */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-stretch relative min-h-[520px]">
-            
-            {/* Left Column: Single Interactive Cara Kerja Step Card */}
-            <div className="p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#192A56]/20">
-              <div className="w-full max-w-[340px] mx-auto lg:mx-0">
-                {/* 1 Kotak Saja, saat diklik maju ke langkah selanjutnya */}
+          {/* 3-Column Body Section 2: 11 Langkah Swarm | Pipa Diam & 3D MBG Token Morph | Unique Approach */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-stretch relative min-h-[540px]">
+            {/* Kolom Kiri: 11 Langkah Eksekusi Swarm (Flat 2D Card Bersih) */}
+            <div className="border-b lg:border-b-0 lg:border-r border-[#192A56]/20 p-6 sm:p-8 flex flex-col justify-between">
+              <div className="w-full max-w-[340px] mx-auto lg:mx-0 my-auto">
                 <div
                   onClick={handleNextIncubation}
-                  className="aico-step-card cursor-pointer select-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 border-[#192A56] bg-white p-6 shadow-[4px_4px_0px_0px_#192A56] relative group flex flex-col justify-between min-h-[270px] w-full"
+                  className="aico-step-card cursor-pointer select-none transition-all duration-200 border border-[#192A56]/25 bg-white p-6 shadow-xs relative group flex flex-col justify-between min-h-[260px] w-full hover:border-[#192A56] hover:shadow-md"
                   title="Klik kotak untuk lanjut ke langkah berikutnya"
                 >
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center justify-between w-full pb-3 border-b border-[#192A56]/15">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 bg-[#192A56]" />
-                      <div className="font-mono text-xs font-bold text-[#192A56] tracking-wider">
+                      <span className="w-2 h-2 bg-[#192A56]" />
+                      <span className="font-mono text-xs font-bold text-[#192A56] tracking-wider">
                         LANGKAH {incubationSlides[incubationSlideIndex].num} / {incubationSlides.length}
-                      </div>
+                      </span>
                     </div>
-                    <span className="font-mono text-[11px] font-bold uppercase text-[#192A56] tracking-wider group-hover:translate-x-1 transition-transform">
-                      Klik ➔
+                    <span className="font-mono text-[11px] font-bold text-[#192A56] tracking-wider group-hover:translate-x-1 transition-transform">
+                      Berikutnya ➔
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-center my-4 relative">
-                    <img
-                      src="/assets/webflow/664753c2515af09bef5b9826/666aa5b019fc170dd5ab9fa9_ico-container.svg"
-                      loading="lazy"
-                      width="120"
-                      height="110"
-                      alt=""
-                      className="opacity-40 group-hover:opacity-75 transition-opacity"
-                    />
-                    <img
-                      src={incubationSlides[incubationSlideIndex].icon}
-                      loading="lazy"
-                      alt={incubationSlides[incubationSlideIndex].name}
-                      className="absolute inset-0 m-auto w-12 h-12 object-contain"
-                    />
+                  {/* Flat 2D Clean Icon Container */}
+                  <div className="flex items-center justify-center my-6">
+                    <div className="w-16 h-16 border border-[#192A56]/20 bg-slate-50 flex items-center justify-center p-3 group-hover:border-[#192A56] transition-colors">
+                      <img
+                        src={incubationSlides[incubationSlideIndex].icon}
+                        loading="lazy"
+                        alt={incubationSlides[incubationSlideIndex].name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                   </div>
 
-                  <div className="font-mono font-bold text-sm sm:text-base text-[#192A56] text-center leading-snug">
+                  <div className="font-mono font-bold text-sm sm:text-base text-[#192A56] text-center leading-snug pt-2">
                     {incubationSlides[incubationSlideIndex].name}
                   </div>
                 </div>
 
-                {/* Arrow Nav Buttons (Strictly Navy & Cream) */}
                 <div className="flex items-center gap-2 mt-4">
                   <button
                     onClick={handlePrevIncubation}
-                    className="group w-10 h-10 border border-[#192A56] bg-white hover:bg-[#192A56] active:bg-[#192A56] text-[#192A56] hover:text-[#F8F5EC] active:text-[#F8F5EC] flex items-center justify-center transition-all cursor-pointer"
+                    className="group w-10 h-10 border border-[#192A56] bg-white hover:bg-[#192A56] active:bg-[#192A56] text-[#192A56] hover:text-white active:text-white flex items-center justify-center transition-all cursor-pointer"
                     title="Langkah Sebelumnya"
                   >
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M14.3212 2.91429C14.3212 2.40934 13.9118 2 13.4069 2H11.5783C11.0734 2 10.664 2.40934 10.664 2.91429V4.28571C10.664 4.79066 10.2547 5.2 9.74975 5.2H8.37832C7.87337 5.2 7.46404 5.60934 7.46404 6.11429V7.48571C7.46404 7.99066 7.0547 8.4 6.54975 8.4H5.17832C4.67338 8.4 4.26404 8.80934 4.26404 9.31429V11.1429C4.26404 11.6478 4.67338 12.0571 5.17832 12.0571H7.00689C7.51184 12.0571 7.92118 12.4665 7.92118 12.9714V13.8857C7.92118 14.3907 8.33052 14.8 8.83546 14.8H10.2069C10.7118 14.8 11.1212 15.2093 11.1212 15.7143V17.0857C11.1212 17.5907 11.5305 18 12.0355 18H13.864C14.369 18 14.7783 17.5907 14.7783 17.0857V15.2571C14.7783 14.7522 14.369 14.3429 13.864 14.3429H12.4926C11.9877 14.3429 11.5783 13.9335 11.5783 13.4286V12.0571C11.5783 11.5522 11.169 11.1429 10.664 11.1429H8.83546C8.33052 11.1429 7.92118 10.7335 7.92118 10.2286V9.77143C7.92118 9.26648 8.33052 8.85714 8.83546 8.85714H10.2069C10.7118 8.85714 11.1212 8.4478 11.1212 7.94286V6.57143C11.1212 6.06648 11.5305 5.65714 12.0355 5.65714H13.4069C13.9118 5.65714 14.3212 5.2478 14.3212 4.74286V2.91429Z" fill="currentColor" className="transition-colors group-hover:fill-[#F8F5EC] group-active:fill-[#F8F5EC]"/>
+                      <path d="M14.3212 2.91429C14.3212 2.40934 13.9118 2 13.4069 2H11.5783C11.0734 2 10.664 2.40934 10.664 2.91429V4.28571C10.664 4.79066 10.2547 5.2 9.74975 5.2H8.37832C7.87337 5.2 7.46404 5.60934 7.46404 6.11429V7.48571C7.46404 7.99066 7.0547 8.4 6.54975 8.4H5.17832C4.67338 8.4 4.26404 8.80934 4.26404 9.31429V11.1429C4.26404 11.6478 4.67338 12.0571 5.17832 12.0571H7.00689C7.51184 12.0571 7.92118 12.4665 7.92118 12.9714V13.8857C7.92118 14.3907 8.33052 14.8 8.83546 14.8H10.2069C10.7118 14.8 11.1212 15.2093 11.1212 15.7143V17.0857C11.1212 17.5907 11.5305 18 12.0355 18H13.864C14.369 18 14.7783 17.5907 14.7783 17.0857V15.2571C14.7783 14.7522 14.369 14.3429 13.864 14.3429H12.4926C11.9877 14.3429 11.5783 13.9335 11.5783 13.4286V12.0571C11.5783 11.5522 11.169 11.1429 10.664 11.1429H8.83546C8.33052 11.1429 7.92118 10.7335 7.92118 10.2286V9.77143C7.92118 9.26648 8.33052 8.85714 8.83546 8.85714H10.2069C10.7118 8.85714 11.1212 8.4478 11.1212 7.94286V6.57143C11.1212 6.06648 11.5305 5.65714 12.0355 5.65714H13.4069C13.9118 5.65714 14.3212 5.2478 14.3212 4.74286V2.91429Z" fill="currentColor" className="transition-colors group-hover:fill-white group-active:fill-white"/>
                     </svg>
                   </button>
                   <button
-                    onClick={handleNextIncubation}
-                    className="group w-10 h-10 border border-[#192A56] bg-white hover:bg-[#192A56] active:bg-[#192A56] text-[#192A56] hover:text-[#F8F5EC] active:text-[#F8F5EC] flex items-center justify-center transition-all cursor-pointer"
+                    onClick={handleNext}
+                    className="group w-10 h-10 border border-[#192A56] bg-white hover:bg-[#192A56] active:bg-[#192A56] text-[#192A56] hover:text-white active:text-white flex items-center justify-center transition-all cursor-pointer"
                     title="Langkah Berikutnya"
                   >
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M5.67882 2.91429C5.67882 2.40934 6.08816 2 6.59311 2H8.42168C8.92663 2 9.33597 2.40934 9.33597 2.91429V4.28571C9.33597 4.79066 9.7453 5.2 10.2503 5.2H11.6217C12.1266 5.2 12.536 5.60934 12.536 6.11429V7.48571C12.536 7.99066 12.9453 8.4 13.4503 8.4H14.8217C15.3266 8.4 15.736 8.80934 15.736 9.31429V11.1429C15.736 11.6478 15.3266 12.0571 14.8217 12.0571H12.9931C12.4882 12.0571 12.0788 12.4665 12.0788 12.9714V13.8857C12.0788 14.3907 11.6695 14.8 11.1645 14.8H9.79311C9.28816 14.8 8.87882 15.2093 8.87882 15.7143V17.0857C8.87882 17.5907 8.46948 18 7.96454 18H6.13597C5.63102 18 5.22168 17.5907 5.22168 17.0857V15.2571C5.22168 14.7522 5.63102 14.3429 6.13597 14.3429H7.50739C8.01234 14.3429 8.42168 13.9335 8.42168 13.4286V12.0571C8.42168 11.5522 8.83102 11.1429 9.33597 11.1429H11.1645C11.6695 11.1429 12.0788 10.7335 12.0788 10.2286V9.77143C12.0788 9.26648 11.6695 8.85714 11.1645 8.85714H9.79311C9.28816 8.85714 8.87882 8.4478 8.87882 7.94286V6.57143C8.87882 6.06648 8.46948 5.65714 7.96454 5.65714H6.59311C6.08816 5.65714 5.67882 5.2478 5.67882 4.74286V2.91429Z" fill="currentColor" className="transition-colors group-hover:fill-[#F8F5EC] group-active:fill-[#F8F5EC]"/>
+                      <path d="M5.67882 2.91429C5.67882 2.40934 6.08816 2 6.59311 2H8.42168C8.92663 2 9.33597 2.40934 9.33597 2.91429V4.28571C9.33597 4.79066 9.7453 5.2 10.2503 5.2H11.6217C12.1266 5.2 12.536 5.60934 12.536 6.11429V7.48571C12.536 7.99066 12.9453 8.4 13.4503 8.4H14.8217C15.3266 8.4 15.736 8.80934 15.736 9.31429V11.1429C15.736 11.6478 15.3266 12.0571 14.8217 12.0571H12.9931C12.4882 12.0571 12.0788 12.4665 12.0788 12.9714V13.8857C12.0788 14.3907 11.6695 14.8 11.1645 14.8H9.79311C9.28816 14.8 8.87882 15.2093 8.87882 15.7143V17.0857C17.1212 17.5907 8.46948 18 7.96454 18H6.13597C5.63102 18 5.22168 17.5907 5.22168 17.0857V15.2571C5.22168 14.7522 5.63102 14.3429 6.13597 14.3429H7.50739C8.01234 14.3429 8.42168 13.9335 8.42168 13.4286V12.0571C8.42168 11.5522 8.83102 11.1429 9.33597 11.1429H11.1645C11.6695 11.1429 12.0788 10.7335 12.0788 10.2286V9.77143C12.0788 9.26648 11.6695 8.85714 11.1645 8.85714H9.79311C9.28816 8.85714 8.87882 8.4478 8.87882 7.94286V6.57143C8.87882 6.06648 8.46948 5.65714 7.96454 5.65714H6.59311C6.08816 5.65714 5.67882 5.2478 5.67882 4.74286V2.91429Z" fill="currentColor" className="transition-colors group-hover:fill-white group-active:fill-white"/>
                     </svg>
                   </button>
                   <span className="font-mono text-xs text-[#576574] ml-2">
@@ -438,60 +461,56 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
 
-            {/* Center Corridor: Continuous Solid Cylindrical Conduit Pipe & Rotating 3D Cyber Token */}
-            <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col items-center justify-between relative py-2 overflow-visible">
+            {/* Kolom Tengah: Pipa Silinder Kaca Statis + 3D Rotating MBG Token (Hasil Morph Halus) */}
+            <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col items-center justify-between relative py-0 overflow-visible">
               
-              {/* Continuous Pipe Body running straight down (Phase 2 of Spine) */}
+              {/* Continuous Pipe Body running straight down (100% Stationary, NO Jitter) */}
               <div
-                ref={spinePipeRef}
-                className="w-48 sm:w-56 h-full min-h-[480px] pointer-events-none relative flex flex-col items-center justify-between"
+                className="w-44 sm:w-52 h-full min-h-[500px] pointer-events-none relative flex flex-col items-center justify-between"
                 style={{
                   backgroundImage: 'url(/assets/webflow/664753c2515af09bef5b9826/6653b82c498773bed25d76ff_pipe_segment.webp)',
                   backgroundRepeat: 'repeat-y',
                   backgroundPosition: 'center',
                   backgroundSize: 'contain',
-                  opacity: 0.95
+                  borderLeft: '1px solid rgba(25, 42, 86, 0.25)',
+                  borderRight: '1px solid rgba(25, 42, 86, 0.25)',
                 }}
               >
-                {/* Upper Seam Ring */}
-                <div className="w-56 h-3 bg-[#EBE7DC] border-t border-b border-[#192A56]/30 shadow-xs mt-2" />
+                {/* Upper Seam Ring Collar */}
+                <div className="w-52 sm:w-60 h-3 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 shadow-xs mt-0" />
 
-                {/* Mounted Rotating 3D Cyber Token / Medallion (Centerpiece of Incubation pipe) */}
+                {/* Mounted Rotating 3D Cyber Token (Hasil Transisi Morph Halus dari Robot di Section 2) */}
                 <div
-                  ref={coinTokenRef}
-                  className="w-40 h-40 sm:w-48 sm:h-48 relative flex items-center justify-center my-auto pointer-events-none"
-                  style={{ willChange: 'transform' }}
+                  ref={morphCoinRef}
+                  className="w-44 h-44 sm:w-52 sm:h-52 relative flex flex-col items-center justify-center my-auto pointer-events-none"
+                  style={{ willChange: 'transform, opacity' }}
                 >
-                  <div className="absolute inset-0 rounded-full border-2 border-[#192A56] bg-[#F8F5EC]/90 backdrop-blur-xs flex items-center justify-center shadow-lg">
-                    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-                      <RobotMascotCanvas mode="coin" cameraDistance={2.5} />
-                    </div>
+                  <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                    <RobotMascotCanvas mode="coin" cameraDistance={2.4} />
                   </div>
-                  {/* Badge MBG Pill Tegas di Kanan Langkah 1 */}
-                  <div className="absolute -bottom-2 bg-[#192A56] text-[#F8F5EC] border border-[#192A56] font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-[2px_2px_0px_0px_rgba(25,42,86,0.3)] tracking-wider z-20">
+                  {/* Badge MBG Pill */}
+                  <div className="mt-2 bg-[#192A56] text-white border border-[#192A56] font-mono text-[10px] font-bold px-3.5 py-0.5 rounded-full shadow-md tracking-widest z-20">
                     MBG TOKEN
                   </div>
                 </div>
 
-                {/* Lower Terminal Conduit Seam Collar (Consistent, symmetrical, seamlessly flows to bottom boundary) */}
-                <div className="w-full shrink-0 flex flex-col items-center z-30 mb-0">
-                  <div className="w-56 h-3 bg-[#EBE7DC] border-t border-b border-[#192A56]/30 shadow-xs flex items-center justify-between px-3">
-                    <span className="w-1.5 h-1.5 bg-[#FF5B00] rounded-full" />
-                    <span className="w-10 h-0.5 bg-[#192A56]/30 block" />
-                    <span className="w-1.5 h-1.5 bg-[#FF5B00] rounded-full" />
-                  </div>
+                {/* Lower Terminal Seam Collar */}
+                <div className="w-52 sm:w-60 h-3 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 shadow-xs mb-0 flex items-center justify-between px-3">
+                  <span className="w-1.5 h-1.5 bg-[#192A56] rounded-full" />
+                  <span className="w-10 h-0.5 bg-[#192A56]/30 block" />
+                  <span className="w-1.5 h-1.5 bg-[#192A56] rounded-full" />
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Unique Approach Description & CTA (Strictly Navy & Cream) */}
-            <div className="p-6 sm:p-8 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-[#192A56]/20">
-              <div className="space-y-4">
-                <div className="font-mono text-xs sm:text-sm leading-relaxed text-[#1B1B1B] bg-white/70 p-5 border border-[#192A56]/15">
+            {/* Kolom Kanan: Unique Approach Description & CTA */}
+            <div className="border-t lg:border-t-0 lg:border-l border-[#192A56]/20 p-6 sm:p-8 flex flex-col justify-between">
+              <div className="space-y-4 my-auto">
+                <div className="font-mono text-xs sm:text-sm leading-relaxed text-[#1B1B1B] bg-slate-50 p-5 border border-[#192A56]/15">
                   Kami mewujudkan yang mustahil. Dalam ekosistem agentic AI, infrastruktur on-premise yang berdaulat adalah kunci mengubah otomatisasi kerja menjadi keunggulan kompetitif mutlak. Tanpa risiko kebocoran data ke cloud (zero cloud egress) dan turnstile keamanan enterprise — kami membangun fondasi ekspansi bisnis yang tangguh dan terpercaya.
                 </div>
                 
-                <div className="p-3 bg-[#F0ECE1] border border-[#192A56]/20 text-[11px] font-mono text-[#192A56]">
+                <div className="p-3 bg-slate-100 border border-[#192A56]/20 text-[11px] font-mono text-[#192A56]">
                   • 100% On-Premise Sovereign Hardware Node<br />
                   • Local NPU AI Accelerated Execution<br />
                   • Turnstile Gate &amp; Human Approval Flow
@@ -507,8 +526,8 @@ export function ProgramsSection({ onNavigate }) {
                   }}
                   className="button-primary w-inline-block"
                 >
-                  <div className="button-primary-border">
-                    <div className="button-primary-text font-bold text-[#F8F5EC]">
+                  <div className="button-primary-border bg-[#192A56]">
+                    <div className="button-primary-text font-bold text-white">
                       MASUK KE AICREW
                     </div>
                   </div>
@@ -517,9 +536,10 @@ export function ProgramsSection({ onNavigate }) {
             </div>
 
           </div>
-        </section>
 
-      </div>
-    </section>
+        </div>
+      </section>
+
+    </div>
   )
 }

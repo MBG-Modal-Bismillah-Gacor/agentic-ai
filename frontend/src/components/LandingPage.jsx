@@ -79,9 +79,6 @@ export function LandingPage({
         '.portfolio-item',
         '.media-item',
         '.accordion',
-        '.aico-spec-item',
-        '.aico-hw-card',
-        '.aico-step-card',
       ]
 
       revealTargets.forEach((targetSelector) => {
@@ -120,7 +117,7 @@ export function LandingPage({
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#F8F5EC] text-[#192A56] font-mono selection:bg-[#192A56] selection:text-[#F8F5EC] relative overflow-x-clip">
+    <div className="min-h-screen bg-white text-[#192A56] font-mono selection:bg-[#192A56] selection:text-white relative overflow-x-clip">
       
       {/* 0. Fixed Vertical Architectural Guide Lines (Navy Hairline - 4 Consistent Columns) */}
       <div className="body-lines-wrap" style={{ opacity: 0.65 }}>
@@ -152,7 +149,7 @@ export function LandingPage({
         <TestimonialsSection />
 
         {/* 7. The Founders Section (Grayscale Sharp Frames & Expandable Bio) */}
-        <FoundersSection />
+        <FoundersSection onNavigate={onNavigate} />
 
         {/* 8. FAQ Section (Accordion with [+] Expand Buttons) */}
         <FaqSection />

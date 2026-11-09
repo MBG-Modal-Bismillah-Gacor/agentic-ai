@@ -2611,7 +2611,7 @@ ul {
 }
 
 .button-primary {
-  color: #F8F5EC !important;
+  color: #FFFFFF !important;
   font-size: var(--14px-size);
   text-align: center;
   cursor: pointer;
@@ -2652,7 +2652,7 @@ ul {
 .button-primary-text {
   z-index: 2;
   background-color: #192A56 !important;
-  color: #F8F5EC !important;
+  color: #FFFFFF !important;
   font-size: var(--12px-size);
   text-transform: uppercase;
   white-space: nowrap;
@@ -2670,7 +2670,7 @@ ul {
 
 .button-primary-text:hover {
   background-color: #0E1A38 !important;
-  color: #F8F5EC !important;
+  color: #FFFFFF !important;
 }
 
 .button-primary-text.button-with-icon {
@@ -5292,7 +5292,7 @@ ul {
 .media-nav-button:active svg path,
 .hero-partners-button:hover svg path,
 .hero-partners-button:active svg path {
-  fill: #F8F5EC !important;
+  fill: #FFFFFF !important;
 }
 
 .team-nav-image {

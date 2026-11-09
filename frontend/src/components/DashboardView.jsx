@@ -161,7 +161,7 @@ export function DashboardView({
   const allLogs = [...customLogs, ...activities]
 
   return (
-    <div className="min-h-screen bg-[#F8F5EC] text-[#192A56] font-['Plus_Jakarta_Sans',sans-serif] selection:bg-[#192A56] selection:text-[#F8F5EC] pb-20 relative">
+    <div className="min-h-screen bg-white text-[#192A56] font-['Plus_Jakarta_Sans',sans-serif] selection:bg-[#192A56] selection:text-white pb-20 relative">
       {/* Background Architectural Blueprint Grid */}
       <div className="fixed inset-0 pointer-events-none z-0 bg-grid-pattern opacity-60" aria-hidden="true" />
       
@@ -170,9 +170,9 @@ export function DashboardView({
       {/* ========================================================================= */}
       <header className="sticky top-0 z-50 w-full px-0 pt-0">
         <div className="w-full relative">
-          {/* Inner Cream Canvas Navbar with 28px Inset Chamfers */}
+          {/* Inner Canvas Navbar with 28px Inset Chamfers */}
           <div
-            className="w-full bg-[#F8F5EC] flex items-center justify-between px-6 sm:px-10 md:px-14 h-16 sm:h-20 relative"
+            className="w-full bg-white flex items-center justify-between px-6 sm:px-10 md:px-14 h-16 sm:h-20 relative"
             style={{
               clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 28px 100%, 0 calc(100% - 28px))',
             }}
@@ -302,9 +302,9 @@ export function DashboardView({
 
               <button
                 onClick={onOpenCreateLead}
-                className="group px-3 py-1.5 bg-white hover:bg-[#192A56] hover:text-[#F8F5EC] border border-[#192A56] text-[#192A56] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                className="group px-3 py-1.5 bg-white hover:bg-[#192A56] hover:text-white border border-[#192A56] text-[#192A56] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs rounded-xl"
               >
-                <PlusCircle className="w-3.5 h-3.5 text-[#192A56] group-hover:text-[#F8F5EC] transition-colors" />
+                <PlusCircle className="w-3.5 h-3.5 text-[#192A56] group-hover:text-white transition-colors" />
                 <span className="hidden sm:inline">Tambah Prospek</span>
               </button>
 
@@ -317,7 +317,7 @@ export function DashboardView({
                 className="button-primary w-inline-block shrink-0"
               >
                 <div className="button-primary-border">
-                  <div className="button-primary-text font-bold text-[#F8F5EC]" style={{ padding: '0.65rem 1.25rem' }}>
+                  <div className="button-primary-text font-bold text-white" style={{ padding: '0.65rem 1.25rem' }}>
                     KANTOR 3D ➔
                   </div>
                 </div>
@@ -336,15 +336,15 @@ export function DashboardView({
         {/* Banner Status Komando */}
         <div className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-2xl shadow-sm relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-[#192A56] text-[#F8F5EC] flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-              <Activity className="w-6 h-6 text-[#F8F5EC]" />
+            <div className="w-11 h-11 bg-[#192A56] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 rounded-xl">
+              <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base sm:text-lg font-bold text-[#192A56] tracking-tight">
                   PUSAT KOMANDO // OPERASIONAL KANTOR AI
                 </h1>
-                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-md">
                   AKTIF
                 </span>
               </div>
@@ -358,20 +358,20 @@ export function DashboardView({
             <button
               onClick={onRunAutoPipeline}
               disabled={isGenerating || pendingLeads === 0}
-              style={{ backgroundColor: '#FF5B00', color: '#0A0E1A' }}
-              className="flex-1 md:flex-initial px-5 py-2.5 hover:bg-[#E04F00] disabled:opacity-50 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer rounded-xl shadow-xs"
+              style={{ backgroundColor: '#2563EB', color: '#FFFFFF' }}
+              className="flex-1 md:flex-initial px-5 py-2.5 hover:bg-[#1D4ED8] disabled:opacity-50 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer rounded-xl shadow-xs"
             >
-              <Play className="w-3.5 h-3.5 shrink-0" style={{ fill: '#0A0E1A', stroke: '#0A0E1A' }} />
-              <span style={{ color: '#0A0E1A' }} className="font-extrabold tracking-wide">
+              <Play className="w-3.5 h-3.5 shrink-0" style={{ fill: '#FFFFFF', stroke: '#FFFFFF' }} />
+              <span className="font-extrabold tracking-wide text-white">
                 Jalankan Auto Pipeline
               </span>
             </button>
             <button
               onClick={onRefresh}
-              className="group p-2.5 bg-white border border-[#192A56] hover:bg-[#192A56] hover:text-[#F8F5EC] text-[#192A56] transition cursor-pointer shadow-xs"
+              className="group p-2.5 bg-white border border-slate-200 hover:bg-[#192A56] hover:text-white text-[#192A56] transition cursor-pointer shadow-xs rounded-xl"
               title="Perbarui Data"
             >
-              <RefreshCw className="w-4 h-4 text-[#192A56] group-hover:text-[#F8F5EC] transition-colors" />
+              <RefreshCw className="w-4 h-4 text-[#192A56] group-hover:text-white transition-colors" />
             </button>
           </div>
         </div>
@@ -428,18 +428,18 @@ export function DashboardView({
         {/* ========================================================================= */}
         {/* 2.5 TELEMETRI PENGGUNAAN TOKEN REALTIME // INFERENSI HARDWARE LOKAL       */}
         {/* ========================================================================= */}
-        <section className="p-5 sm:p-6 bg-[#F8F5EC] border border-slate-200/90 rounded-2xl shadow-sm relative">
+        <section className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-2xl shadow-sm relative">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#192A56]/20 mb-4 gap-2">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#192A56] text-[#F8F5EC] flex items-center justify-center font-bold text-xs shadow-xs">
-                <Gauge className="w-4 h-4 text-[#F8F5EC]" />
+              <div className="w-8 h-8 bg-[#192A56] text-white flex items-center justify-center font-bold text-xs shadow-xs rounded-lg">
+                <Gauge className="w-4 h-4 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56]">
                     TELEMETRI PENGGUNAAN TOKEN // INFERENSI NPU REALTIME
                   </h2>
-                  <span className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
+                  <span className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-md">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
                     <span>STREAMING</span>
                   </span>
@@ -451,10 +451,10 @@ export function DashboardView({
             </div>
 
             <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="text-[11px] px-2.5 py-1 bg-white border border-[#192A56]/20 text-[#192A56] font-bold shadow-xs">
+              <span className="text-[11px] px-2.5 py-1 bg-white border border-[#192A56]/20 text-[#192A56] font-bold shadow-xs rounded-lg">
                 Unified VRAM: 3.2 / 16.0 GB
               </span>
-              <span className="text-[11px] px-2.5 py-1 bg-[#192A56] text-[#F8F5EC] font-bold shadow-xs">
+              <span className="text-[11px] px-2.5 py-1 bg-[#192A56] text-white font-bold shadow-xs rounded-lg">
                 Bandwidth: 28.4 GB/s
               </span>
             </div>
@@ -599,7 +599,7 @@ export function DashboardView({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs font-mono">
             
             {/* Station 00: Boss */}
-            <div className="p-3.5 bg-[#F8F5EC] border border-[#192A56]/30 hover:border-[#192A56] transition-all flex flex-col justify-between">
+            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_00</span>
@@ -636,7 +636,7 @@ export function DashboardView({
             </div>
 
             {/* Station 01: Scout */}
-            <div className="p-3.5 bg-[#F8F5EC] border border-[#192A56]/30 hover:border-[#192A56] transition-all flex flex-col justify-between">
+            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_01</span>
@@ -673,7 +673,7 @@ export function DashboardView({
             </div>
 
             {/* Station 02: Scribe */}
-            <div className="p-3.5 bg-[#F8F5EC] border border-[#192A56]/30 hover:border-[#192A56] transition-all flex flex-col justify-between">
+            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_02</span>
@@ -714,7 +714,7 @@ export function DashboardView({
             </div>
 
             {/* Station 03: Gate */}
-            <div className="p-3.5 bg-[#F8F5EC] border border-[#192A56]/30 hover:border-[#192A56] transition-all flex flex-col justify-between">
+            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_03</span>
@@ -751,7 +751,7 @@ export function DashboardView({
             </div>
 
             {/* Station 04: Vault */}
-            <div className="p-3.5 bg-[#F8F5EC] border border-[#192A56]/30 hover:border-[#192A56] transition-all flex flex-col justify-between">
+            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_04</span>
@@ -818,7 +818,7 @@ export function DashboardView({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Cari prospek..."
-                      className="w-full bg-[#F8F5EC] border border-[#192A56]/30 pl-8 pr-3 py-1.5 text-xs text-[#192A56] placeholder-[#576574] focus:outline-none focus:border-[#192A56]"
+                      className="w-full bg-slate-50 border border-slate-200 pl-8 pr-3 py-1.5 text-xs text-[#192A56] placeholder-[#576574] focus:outline-none focus:border-[#192A56] rounded-xl"
                     />
                   </div>
 
@@ -826,7 +826,7 @@ export function DashboardView({
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="bg-[#F8F5EC] border border-[#192A56]/30 px-2.5 py-1.5 text-xs font-mono text-[#192A56] focus:outline-none"
+                    className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 text-xs font-mono text-[#192A56] focus:outline-none rounded-xl"
                   >
                     <option value="all">Semua ({leads.length})</option>
                     <option value="pending">Menunggu ({pendingLeads})</option>
@@ -848,7 +848,7 @@ export function DashboardView({
                       <th className="pb-2 text-right">AKSI EKSEKUSI</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#192A56]/10">
+                  <tbody className="divide-y border-t border-slate-100">
                     {filteredLeads.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-[#576574] text-xs">
@@ -862,7 +862,7 @@ export function DashboardView({
                         const isHot = lead.score_priority === 'Hot'
 
                         return (
-                          <tr key={lead.id_lead} className="hover:bg-[#F8F5EC] transition-colors">
+                          <tr key={lead.id_lead} className="hover:bg-slate-50 transition-colors">
                             <td className="py-3 pr-2">
                               <div className="font-bold text-[#192A56]">{lead.nama}</div>
                               <div className="text-[10px] text-[#576574]">{lead.id_lead} • {lead.domisili}</div>
@@ -875,7 +875,7 @@ export function DashboardView({
                             </td>
                             <td className="py-3 pr-2">
                               <span
-                                className={`px-2 py-0.5 text-[10px] font-bold border ${
+                                className={`px-2 py-0.5 text-[10px] font-bold border rounded-md ${
                                   isHot
                                     ? 'bg-rose-50 text-rose-700 border-rose-300'
                                     : 'bg-amber-50 text-amber-800 border-amber-300'
@@ -900,13 +900,16 @@ export function DashboardView({
                               <button
                                 onClick={() => onSelectLead(lead)}
                                 disabled={isGenerating}
-                                className={`px-3 py-1.5 text-[11px] font-bold transition cursor-pointer ${
+                                style={!isDispatched ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
+                                className={`px-3 py-1.5 text-[11px] font-bold transition cursor-pointer rounded-xl ${
                                   isDispatched
-                                    ? 'bg-[#F8F5EC] hover:bg-[#EBE7DC] border border-[#192A56] text-[#192A56]'
-                                    : 'bg-[#192A56] hover:bg-[#0E1A38] text-[#F8F5EC] shadow-xs'
+                                    ? 'bg-white hover:bg-slate-100 border border-slate-200 text-[#192A56]'
+                                    : 'bg-[#192A56] hover:bg-[#0E1A38] text-white shadow-xs'
                                 }`}
                               >
-                                {isDispatched ? 'Lihat Draf' : 'Proses AI'}
+                                <span style={{ color: isDispatched ? '#192A56' : '#FFFFFF' }}>
+                                  {isDispatched ? 'Lihat Draf' : 'Proses AI'}
+                                </span>
                               </button>
                             </td>
                           </tr>
@@ -925,12 +928,12 @@ export function DashboardView({
           </div>
 
           {/* Kolom Kanan: Realtime Terminal Log Stream (4 Kolom) */}
-          <div className="lg:col-span-4 p-5 sm:p-6 bg-[#192A56] text-[#F8F5EC] font-mono text-xs rounded-2xl shadow-md flex flex-col justify-between border border-[#192A56]">
+          <div className="lg:col-span-4 p-5 sm:p-6 bg-[#192A56] text-white font-mono text-xs rounded-2xl shadow-md flex flex-col justify-between border border-[#192A56]">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/20 mb-4">
                 <div className="flex items-center gap-2">
                   <Terminal className="w-4 h-4 text-emerald-400" />
-                  <span className="font-bold text-[#F8F5EC] text-xs">STREAM LOG REALTIME</span>
+                  <span className="font-bold text-white text-xs">STREAM LOG REALTIME</span>
                 </div>
                 <span className="text-[10px] text-emerald-400 font-bold">● AKTIF</span>
               </div>
@@ -990,42 +993,50 @@ export function DashboardView({
               <span className="text-[#576574] font-bold mr-1">Target Penugasan:</span>
               
               {/* AI Agents */}
-              {['@scout', '@scribe', '@gate', '@vault'].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setCommandTarget(t)}
-                  className={`px-2.5 py-1 border transition cursor-pointer font-bold ${
-                    commandTarget === t
-                      ? 'bg-[#192A56] text-[#F8F5EC] border-[#192A56]'
-                      : 'bg-white text-[#192A56] border-[#192A56]/20 hover:bg-[#192A56] hover:text-[#F8F5EC] hover:border-[#192A56]'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+              {['@scout', '@scribe', '@gate', '@vault'].map((t) => {
+                const isSelected = commandTarget === t
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setCommandTarget(t)}
+                    style={isSelected ? { backgroundColor: '#192A56', color: '#FFFFFF', borderColor: '#192A56' } : {}}
+                    className={`px-2.5 py-1 rounded-lg border transition cursor-pointer font-bold ${
+                      isSelected
+                        ? 'bg-[#192A56] text-white border-[#192A56]'
+                        : 'bg-white text-[#192A56] border-slate-200 hover:bg-[#192A56] hover:text-white hover:border-[#192A56]'
+                    }`}
+                  >
+                    <span style={{ color: isSelected ? '#FFFFFF' : 'inherit' }}>{t}</span>
+                  </button>
+                )
+              })}
 
               <span className="text-[#192A56]/30 mx-1">|</span>
 
               {/* Founders */}
-              {['@Alfa', '@Amirul', '@Idham', '@Jullystian', '@Hasbi'].map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setCommandTarget(f)}
-                  className={`px-2.5 py-1 border transition cursor-pointer font-bold ${
-                    commandTarget === f
-                      ? 'bg-[#192A56] text-[#F8F5EC] border-[#192A56]'
-                      : 'bg-white text-[#192A56] border-[#192A56]/20 hover:bg-[#192A56] hover:text-[#F8F5EC] hover:border-[#192A56]'
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
+              {['@Alfa', '@Amirul', '@Idham', '@Jullystian', '@Hasbi'].map((f) => {
+                const isSelected = commandTarget === f
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setCommandTarget(f)}
+                    style={isSelected ? { backgroundColor: '#192A56', color: '#FFFFFF', borderColor: '#192A56' } : {}}
+                    className={`px-2.5 py-1 rounded-lg border transition cursor-pointer font-bold ${
+                      isSelected
+                        ? 'bg-[#192A56] text-white border-[#192A56]'
+                        : 'bg-white text-[#192A56] border-slate-200 hover:bg-[#192A56] hover:text-white hover:border-[#192A56]'
+                    }`}
+                  >
+                    <span style={{ color: isSelected ? '#FFFFFF' : 'inherit' }}>{f}</span>
+                  </button>
+                )
+              })}
             </div>
 
             {/* Input Bar */}
-            <div className="flex items-center gap-2 bg-[#F8F5EC] border border-slate-200 rounded-xl p-2 focus-within:bg-white transition-all shadow-xs">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 focus-within:bg-white transition-all shadow-xs">
               <span className="text-[#192A56] font-bold pl-2 shrink-0">{commandTarget} &gt;</span>
               <input
                 type="text"
@@ -1036,10 +1047,11 @@ export function DashboardView({
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-[#F8F5EC] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer shadow-xs shrink-0"
+                style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
+                className="px-4 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer shadow-xs shrink-0 rounded-xl"
               >
-                <span>KIRIM PERINTAH</span>
-                <CornerDownLeft className="w-3.5 h-3.5" />
+                <span className="text-white">KIRIM PERINTAH</span>
+                <CornerDownLeft className="w-3.5 h-3.5 text-white" />
               </button>
             </div>
           </form>

@@ -21,8 +21,8 @@ function getInitialRoute() {
 
 // Titik Koordinat Stasiun Kerja di Diorama Kantor Sesuai Referensi
 const STATIONS = {
-  boss_desk: [-5.8, 0.18, 2.25],
-  workstation_desk: [-3.2, 0.18, 1.70],
+  boss_desk: [-5.8, 0.18, 2.35],
+  workstation_desk: [-3.2, 0.18, 1.85],
   workstation_desk_02: [3.2, 0.18, -0.70],
   kanban_board: [3.2, 0.18, -2.6],
   whiteboard: [-1.2, 0.18, -2.5],
@@ -121,7 +121,7 @@ const DEFAULT_AGENTS = {
 class RouteErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, showDetails: false }
   }
 
   static getDerivedStateFromError(error) {
@@ -138,38 +138,81 @@ class RouteErrorBoundary extends React.Component {
     }
   }
 
+  handleNavigate(route) {
+    this.setState({ hasError: false, error: null }, () => {
+      if (this.props.onNavigate) {
+        this.props.onNavigate(route)
+      } else {
+        const path = route === 'landing' ? '/' : `/${route}`
+        window.history.pushState({}, '', path)
+        window.location.reload()
+      }
+    })
+  }
+
   render() {
     if (this.state.hasError) {
       return (
-        <div className="w-screen h-screen flex flex-col items-center justify-center bg-[#F8F5EC] text-[#192A56] p-6 font-mono select-none">
-          <div className="max-w-md w-full bg-white border-2 border-[#192A56] p-6 shadow-[6px_6px_0px_0px_#192A56] text-center space-y-4">
-            <div className="w-12 h-12 bg-[#192A56] text-[#F8F5EC] flex items-center justify-center font-bold text-xl mx-auto rounded-xs">
+        <div className="w-screen h-screen flex flex-col items-center justify-center bg-white text-[#192A56] p-6 font-mono select-none">
+          <div className="max-w-lg w-full bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl text-center space-y-4">
+            <div className="w-12 h-12 bg-[#192A56] text-white flex items-center justify-center font-bold text-xl mx-auto rounded-xl shadow-sm">
               !
             </div>
             <h2 className="text-base font-bold uppercase tracking-wider text-[#192A56]">
-              Tampilan Sedang Di-refresh
+              Pemulihan Tampilan Aplikasi
             </h2>
             <p className="text-xs text-[#576574] leading-relaxed">
-              Terjadi penyesuaian grafis 3D / rute. Tekan tombol di bawah untuk memuat ulang tampilan secara otomatis.
+              Terjadi penyesuaian grafis atau kendala render pada rute ini. Pilih salah satu menu navigasi di bawah untuk melanjutkan:
             </p>
-            <div className="flex items-center justify-center gap-3 pt-2">
+
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => this.setState({ hasError: false, error: null })}
-                className="px-4 py-2 border-2 border-[#192A56] bg-[#192A56] text-[#F8F5EC] font-bold text-xs uppercase tracking-wider hover:bg-[#0E1A38] transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#192A56] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#0E1A38] transition cursor-pointer shadow-sm"
               >
                 Coba Lagi
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  window.location.href = '/'
-                }}
-                className="px-4 py-2 border-2 border-[#192A56] bg-white text-[#192A56] font-bold text-xs uppercase tracking-wider hover:bg-[#F0ECE1] transition cursor-pointer"
+                onClick={() => this.handleNavigate('landing')}
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-[#192A56] font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition cursor-pointer shadow-xs"
               >
-                Kembali ke Beranda
+                Beranda
+              </button>
+              <button
+                type="button"
+                onClick={() => this.handleNavigate('office')}
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-[#192A56] font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition cursor-pointer shadow-xs"
+              >
+                Kantor 3D
+              </button>
+              <button
+                type="button"
+                onClick={() => this.handleNavigate('dashboard')}
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-[#192A56] font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition cursor-pointer shadow-xs"
+              >
+                Dashboard
               </button>
             </div>
+
+            {/* Error Detail Toggle */}
+            {this.state.error && (
+              <div className="pt-4 border-t border-slate-100 text-left">
+                <button
+                  type="button"
+                  onClick={() => this.setState((prev) => ({ showDetails: !prev.showDetails }))}
+                  className="text-[11px] text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                >
+                  {this.state.showDetails ? 'Sembunyikan Detail Teknis' : 'Lihat Detail Teknis'}
+                </button>
+                {this.state.showDetails && (
+                  <pre className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-[10px] text-rose-600 overflow-x-auto max-h-36 select-text whitespace-pre-wrap">
+                    {this.state.error.toString()}
+                  </pre>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )
@@ -181,7 +224,7 @@ class RouteErrorBoundary extends React.Component {
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState(getInitialRoute)
   const [officeName, setOfficeName] = useState('MSI Cubi Sovereign AI HQ')
-  const [isOfficeSetupDone, setIsOfficeSetupDone] = useState(true)
+  const [isOfficeSetupDone, setIsOfficeSetupDone] = useState(false)
   const [bossConfig, setBossConfig] = useState(DEFAULT_BOSS)
   const [agents, setAgents] = useState(DEFAULT_AGENTS)
   const [selectedAgentId, setSelectedAgentId] = useState('boss')
@@ -228,17 +271,31 @@ export default function App() {
     setTransitionTrigger(Date.now())
   }
 
-  // Modals state
-  const [isEntranceOpen, setIsEntranceOpen] = useState(false)
+  const handleTogglePure3D = () => {
+    setIsPure3DMode((prev) => !prev)
+  }
+
+  const handleExitPure3D = () => {
+    setIsPure3DMode(false)
+  }
+
+  // Modals state: Buka Sambutan Gerbang Office Setup jika belum selesai
+  const [isEntranceOpen, setIsEntranceOpen] = useState(() => getInitialRoute() === 'office')
   const [isTeamSetupOpen, setIsTeamSetupOpen] = useState(false)
   const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false)
 
-  // Router Navigator: Membuka rute secara langsung tanpa modal yang memblokir
+  // Router Navigator: Mengarahkan rute dan membuka modul gerbang masuk kantor
   const navigate = (route, params = {}) => {
     if (params?.agentId) {
       setSelectedAgentId(params.agentId)
     }
-    setIsEntranceOpen(false)
+    if (route === 'office') {
+      if (!isOfficeSetupDone) {
+        setIsEntranceOpen(true)
+      }
+    } else {
+      setIsEntranceOpen(false)
+    }
     setCurrentRoute(route)
     const path = route === 'landing' ? '/' : `/${route}`
     window.history.pushState({}, '', path)
@@ -250,7 +307,9 @@ export default function App() {
       const path = window.location.pathname.toLowerCase()
       if (path === '/office' || path === '/kantor') {
         setCurrentRoute('office')
-        setIsEntranceOpen(false)
+        if (!isOfficeSetupDone) {
+          setIsEntranceOpen(true)
+        }
       } else if (path === '/dashboard') {
         setCurrentRoute('dashboard')
       } else {
@@ -259,7 +318,7 @@ export default function App() {
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
+  }, [isOfficeSetupDone])
 
   // Atur overflow body: scrollable untuk Landing Page & Dashboard, locked untuk 3D Office
   useEffect(() => {
@@ -269,6 +328,136 @@ export default function App() {
       document.body.style.overflow = 'auto'
     }
   }, [currentRoute])
+
+  // Patroli Otonom Agen (Simulasi Kehidupan Kantor 3D yang Dinamis & Alami)
+  useEffect(() => {
+    if (currentRoute !== 'office' || isEntranceOpen || isGenerating || pitchResult) return
+
+    const PATROL_ACTIONS = [
+      {
+        agentId: 'purple-agent',
+        destination: [5.2, 0.18, -2.5],
+        rotationY: -Math.PI * 0.5,
+        status: 'Mengambil espresso di Coffee Bar ☕',
+        stayMs: 6000,
+        homePos: STATIONS.kanban_board,
+        homeRot: Math.PI,
+        homeStatus: 'Sprint Task Ready',
+      },
+      {
+        agentId: 'green-agent',
+        destination: STATIONS.center_hall,
+        rotationY: Math.PI * 0.25,
+        status: 'Inspeksi telemetri di Center Holo Hub 🌐',
+        stayMs: 6500,
+        homePos: STATIONS.security_gate,
+        homeRot: 0,
+        homeStatus: 'WhatsApp Gateway Standby',
+      },
+      {
+        agentId: 'orange-agent',
+        destination: STATIONS.whiteboard,
+        rotationY: Math.PI,
+        status: 'Menganalisis strategi di Whiteboard 📊',
+        stayMs: 6000,
+        homePos: STATIONS.data_vault,
+        homeRot: -Math.PI * 0.75,
+        homeStatus: 'Database & Inventory Synced',
+      },
+      {
+        agentId: 'purple-agent',
+        destination: STATIONS.workstation_desk_02,
+        rotationY: Math.PI,
+        status: 'Reviewing draf di Workstation 02 ✍️',
+        stayMs: 6000,
+        homePos: STATIONS.kanban_board,
+        homeRot: Math.PI,
+        homeStatus: 'Sprint Task Ready',
+      },
+      {
+        agentId: 'blue-agent',
+        destination: [-1.4, 0.18, 0.5],
+        rotationY: -Math.PI * 0.25,
+        status: 'Sinkronisasi NPU lokal ke Center Holo Hub 💻',
+        stayMs: 5500,
+        homePos: STATIONS.workstation_desk,
+        homeRot: Math.PI,
+        homeStatus: 'Monitoring Stock & Catalog',
+        resumeTyping: true,
+      },
+    ]
+
+    const interval = setInterval(() => {
+      setAgents((currentAgents) => {
+        // Pilih agen yang sedang standby di stasiunnya dan tidak sedang dipilih user
+        const eligible = PATROL_ACTIONS.filter(
+          (act) => act.agentId !== selectedAgentId && !currentAgents[act.agentId]?.isWalking
+        )
+        if (eligible.length === 0) return currentAgents
+
+        const chosen = eligible[Math.floor(Math.random() * eligible.length)]
+
+        // Mulai berjalan ke titik tujuan
+        setTimeout(() => {
+          setAgents((prev) => ({
+            ...prev,
+            [chosen.agentId]: {
+              ...prev[chosen.agentId],
+              isWalking: true,
+              isTyping: false,
+              targetPos: chosen.destination,
+              rotationY: chosen.rotationY,
+              statusText: chosen.status,
+            },
+          }))
+
+          // Tiba di tujuan: berhenti berjalan dan mengamati/bekerja
+          setTimeout(() => {
+            setAgents((prev) => ({
+              ...prev,
+              [chosen.agentId]: {
+                ...prev[chosen.agentId],
+                isWalking: false,
+              },
+            }))
+
+            // Selesai di tujuan: kembali ke stasiun kerja
+            setTimeout(() => {
+              setAgents((prev) => ({
+                ...prev,
+                [chosen.agentId]: {
+                  ...prev[chosen.agentId],
+                  isWalking: true,
+                  targetPos: chosen.homePos,
+                  rotationY: chosen.homeRot,
+                  statusText: 'Kembali ke stasiun kerja...',
+                },
+              }))
+
+              // Tiba kembali di stasiun kerja
+              setTimeout(() => {
+                setAgents((prev) => ({
+                  ...prev,
+                  [chosen.agentId]: {
+                    ...prev[chosen.agentId],
+                    isWalking: false,
+                    isTyping: !!chosen.resumeTyping,
+                    targetPos: chosen.homePos,
+                    rotationY: chosen.homeRot,
+                    statusText: chosen.homeStatus,
+                  },
+                }))
+              }, 3800)
+            }, chosen.stayMs)
+          }, 3800)
+        }, 0)
+
+        return currentAgents
+      })
+    }, 13000)
+
+    return () => clearInterval(interval)
+  }, [currentRoute, isEntranceOpen, isGenerating, pitchResult, selectedAgentId])
 
   // Fetch data dari FastAPI Backend secara Riil
   const fetchData = async () => {
@@ -435,86 +624,58 @@ export default function App() {
     setSelectedAgentId('boss')
     setBossConfig((prev) => ({
       ...prev,
-      statusText: `Menugaskan prospek ${lead.nama} ke ${scoutName}`,
+      statusText: `Menugaskan prospek ${lead.nama} ke tim AICREW`,
     }))
 
-    // LANGKAH 2: Cubi Scout berjalan dari meja kerja ke Server Rack & Vault untuk riset katalog & stok
+    // LANGKAH 2: Cubi Scout (Sales Engineer) memproses komputasi spesifikasi & stok dari Meja Kerja 01
     setTimeout(() => {
       setSelectedAgentId('blue-agent')
       setAgents((prev) => ({
         ...prev,
         'blue-agent': {
           ...prev['blue-agent'],
-          isTyping: false,
-          isWalking: true,
-          targetPos: STATIONS.data_vault,
-          rotationY: -Math.PI * 0.75,
-          statusText: `Berjalan ke Vault untuk riset ${lead.minat}...`,
+          isTyping: true,
+          isScanning: true,
+          statusText: `Menganalisis stok cabang & unit rekomendasi untuk ${lead.nama}...`,
         },
       }))
-    }, 600)
+    }, 800)
 
-    // LANGKAH 3: Cubi Scout tiba di Vault, melakukan scanning
+    // LANGKAH 3: Cubi Vault memvalidasi histori prospek & aturan bundling di Server Vault
     setTimeout(() => {
+      setSelectedAgentId('orange-agent')
       setAgents((prev) => ({
         ...prev,
-        'blue-agent': {
-          ...prev['blue-agent'],
-          isWalking: false,
+        'orange-agent': {
+          ...prev['orange-agent'],
           isScanning: true,
-          rotationY: -Math.PI * 0.75,
-          statusText: `Mengecek ketersediaan unit & bundling di cabang ${lead.domisili}`,
+          statusText: `Memvalidasi database & aturan bundling untuk ${lead.minat}...`,
         },
       }))
-    }, 2000)
+    }, 2200)
 
-    // LANGKAH 4: Cubi Scribe berjalan dari Kanban ke meja kerja Desk 02 untuk mengetik draf via Qwen LLM
-    setTimeout(() => {
+    // LANGKAH 4: Cubi Scribe (AI Drafter) menyusun draf penawaran via Qwen 2.5 di Kanban Wall
+    setTimeout(async () => {
       setSelectedAgentId('purple-agent')
       setAgents((prev) => ({
         ...prev,
         'purple-agent': {
           ...prev['purple-agent'],
-          isWalking: true,
-          targetPos: STATIONS.workstation_desk_02,
-          rotationY: Math.PI,
-          statusText: `Berjalan ke Workstation 02 untuk menyusun draf pitch...`,
-        },
-      }))
-    }, 3200)
-
-    // LANGKAH 5: Cubi Scribe duduk mengetik di meja, dan Cubi Scout kembali ke stasiun
-    setTimeout(async () => {
-      setAgents((prev) => ({
-        ...prev,
-        'purple-agent': {
-          ...prev['purple-agent'],
-          isWalking: false,
           isTyping: true,
-          rotationY: Math.PI,
-          statusText: `Menyusun draf WhatsApp dengan Qwen 2.5...`,
+          statusText: `Menyusun draf WhatsApp personal via model Qwen 2.5...`,
         },
         'blue-agent': {
           ...prev['blue-agent'],
           isScanning: false,
-          isWalking: true,
-          targetPos: STATIONS.workstation_desk,
-          rotationY: Math.PI,
-          statusText: `Analisis stok selesai. Unit siap ditawarkan!`,
+          isTyping: true,
+          statusText: `Analisis spesifikasi & stok selesai. Unit siap!`,
+        },
+        'orange-agent': {
+          ...prev['orange-agent'],
+          isScanning: false,
+          statusText: `Histori & bundling siap dipakai.`,
         },
       }))
-
-      setTimeout(() => {
-        setAgents((prev) => ({
-          ...prev,
-          'blue-agent': {
-            ...prev['blue-agent'],
-            isWalking: false,
-            isTyping: true,
-            rotationY: Math.PI,
-          },
-        }))
-      }, 1200)
 
       // Panggil API Backend Generate Pitch
       try {
@@ -543,20 +704,18 @@ export default function App() {
         setIsGenerating(false)
         setSelectedAgentId('green-agent')
 
-        // LANGKAH 6: Cubi Gate menuju Security Turnstile bersiap minta persetujuan Bos
+        // LANGKAH 5: Cubi Gate siap di gerbang turnstile menunggu persetujuan Direktur
         setAgents((prev) => ({
           ...prev,
           'purple-agent': {
             ...prev['purple-agent'],
             isTyping: false,
-            targetPos: STATIONS.kanban_board,
-            statusText: `Draf pitch selesai untuk ${lead.nama}`,
+            statusText: `Draf pitch selesai disusun untuk ${lead.nama}`,
           },
           'green-agent': {
             ...prev['green-agent'],
-            isWalking: true,
-            targetPos: STATIONS.security_gate,
-            statusText: `Menunggu Approval Bos untuk WhatsApp Dispatch`,
+            isScanning: true,
+            statusText: `Draf siap! Menunggu otorisasi Direktur untuk WhatsApp Dispatch`,
           },
         }))
         fetchData()
@@ -583,11 +742,12 @@ export default function App() {
           },
           'green-agent': {
             ...prev['green-agent'],
-            statusText: `Menunggu Approval Bos untuk WhatsApp Dispatch`,
+            isScanning: true,
+            statusText: `Draf siap! Menunggu otorisasi Direktur untuk WhatsApp Dispatch`,
           },
         }))
       }
-    }, 4500)
+    }, 3800)
   }
 
   // Aksi: Setujui & Dispatch WhatsApp ke Calon Konsumen
@@ -611,13 +771,13 @@ export default function App() {
       ...prev,
       'green-agent': {
         ...prev['green-agent'],
-        statusText: `Mengirim pesan ke ${payload.nomor_wa}...`,
+        isScanning: true,
+        statusText: `Mengirim pesan via WhatsApp Gateway ke ${payload.nomor_wa}...`,
       },
       'orange-agent': {
         ...prev['orange-agent'],
-        isWalking: true,
-        targetPos: [-5.0, 0.18, -3.8],
-        statusText: `Mengarsipkan data deal prospek ${payload.id_lead} ke CSV...`,
+        isScanning: true,
+        statusText: `Mengarsipkan data deal prospek ${payload.id_lead} ke CSV Data Vault...`,
       },
     }))
 
@@ -646,6 +806,7 @@ export default function App() {
         'green-agent': {
           ...prev['green-agent'],
           isWalking: false,
+          isScanning: false,
           targetPos: STATIONS.security_gate,
           rotationY: 0,
           statusText: 'Pesan terkirim ke WhatsApp Gateway!',
@@ -653,6 +814,7 @@ export default function App() {
         'orange-agent': {
           ...prev['orange-agent'],
           isWalking: false,
+          isScanning: false,
           targetPos: STATIONS.data_vault,
           rotationY: -Math.PI * 0.75,
           statusText: 'Data prospek berhasil diperbarui di database.',
@@ -660,17 +822,17 @@ export default function App() {
         'purple-agent': {
           ...prev['purple-agent'],
           isWalking: false,
+          isTyping: false,
           targetPos: STATIONS.kanban_board,
           rotationY: Math.PI,
-          isTyping: false,
           statusText: 'Siap untuk prospek berikutnya',
         },
         'blue-agent': {
           ...prev['blue-agent'],
           isWalking: false,
+          isTyping: true,
           targetPos: STATIONS.workstation_desk,
           rotationY: Math.PI,
-          isTyping: true,
           statusText: 'Monitoring Stock & Catalog',
         },
       }))
@@ -707,7 +869,7 @@ export default function App() {
 
   return (
     <>
-      <RouteErrorBoundary currentRoute={currentRoute}>
+      <RouteErrorBoundary currentRoute={currentRoute} onNavigate={navigate}>
         {/* 1. RUTE: LANDING PAGE (SAMS-Style Showcase) */}
         {currentRoute === 'landing' && (
           <LandingPage
@@ -743,7 +905,7 @@ export default function App() {
 
         {/* 3. RUTE: VIRTUAL OFFICE 3D (Architectural Blueprint Canvas & Cyber HUD) */}
         {currentRoute === 'office' && (
-          <main className="w-screen h-screen relative bg-[#F8F5EC] overflow-hidden select-none">
+          <main className="w-screen h-screen relative bg-white overflow-hidden select-none">
             {/* Blueprint Canvas Grid Pattern */}
             <div className={`fixed inset-0 pointer-events-none z-0 bg-grid-pattern ${isPure3DMode ? "opacity-0" : "opacity-70"}`} aria-hidden="true" />
             {/* 3D Diorama Kantor Virtual Modern MSI Cubi NUC */}
@@ -768,12 +930,12 @@ export default function App() {
                 <button
                   type="button"
                   onClick={handleExitPure3D}
-                  style={{ backgroundColor: '#192A56', color: '#F8F5EC' }}
-                  className="px-3.5 py-1.5 border border-[#192A56] font-bold text-xs uppercase shadow-[3px_3px_0px_0px_#192A56] flex items-center gap-2 cursor-pointer hover:bg-[#0E1A38] transition"
+                  style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
+                  className="px-4 py-2 rounded-xl bg-[#192A56] font-bold text-xs uppercase shadow-md flex items-center gap-2 cursor-pointer hover:bg-[#0E1A38] text-white transition"
                   title="Keluar dari Fullscreen (Tekan ESC)"
                 >
-                  <Minimize2 className="w-3.5 h-3.5 text-[#FF5B00]" />
-                  <span style={{ color: '#F8F5EC' }}>Keluar Fullscreen (ESC)</span>
+                  <Minimize2 className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <span className="text-white">Keluar Fullscreen (ESC)</span>
                 </button>
               </div>
             )}

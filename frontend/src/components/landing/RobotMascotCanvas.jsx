@@ -17,54 +17,54 @@ function CuteCapsuleRobot({ inCapsule = false, accentColor = '#192A56', eyeColor
     const mouseX = Math.max(-0.4, Math.min(0.4, state.pointer.x * 0.5))
     const mouseY = Math.max(-0.35, Math.min(0.35, state.pointer.y * 0.4))
 
-    // Fluid organic bobbing, gentle roll & breathing
+    // Fluid organic bobbing, gentle roll & breathing (Calm, weighted, realistic pace)
     if (robotGroupRef.current) {
-      robotGroupRef.current.position.y = Math.sin(t * 1.8) * 0.12
-      robotGroupRef.current.position.x = Math.sin(t * 0.9) * 0.03
-      robotGroupRef.current.rotation.z = Math.sin(t * 1.2) * 0.03 + mouseX * 0.12
+      robotGroupRef.current.position.y = Math.sin(t * 1.1) * 0.07
+      robotGroupRef.current.position.x = Math.sin(t * 0.6) * 0.02
+      robotGroupRef.current.rotation.z = Math.sin(t * 0.8) * 0.02 + mouseX * 0.08
       robotGroupRef.current.rotation.y = THREE.MathUtils.lerp(
         robotGroupRef.current.rotation.y,
-        (inCapsule ? Math.sin(t * 0.8) * 0.12 : 0) + mouseX * 0.55,
-        0.06
+        (inCapsule ? Math.sin(t * 0.6) * 0.08 : 0) + mouseX * 0.45,
+        0.04
       )
       robotGroupRef.current.rotation.x = THREE.MathUtils.lerp(
         robotGroupRef.current.rotation.x,
-        -mouseY * 0.25,
-        0.06
+        -mouseY * 0.18,
+        0.04
       )
     }
 
-    // Dynamic responsive head with subtle tilt
+    // Dynamic responsive head with subtle tilt (Smooth & realistic)
     if (headRef.current) {
       headRef.current.rotation.y = THREE.MathUtils.lerp(
         headRef.current.rotation.y,
-        mouseX * 0.55,
-        0.08
+        mouseX * 0.45,
+        0.05
       )
       headRef.current.rotation.x = THREE.MathUtils.lerp(
         headRef.current.rotation.x,
-        -mouseY * 0.38,
-        0.08
+        -mouseY * 0.25,
+        0.05
       )
-      headRef.current.rotation.z = Math.sin(t * 2.2) * 0.03
+      headRef.current.rotation.z = Math.sin(t * 1.2) * 0.018
     }
 
     // Left arm counterbalances with organic swing
     if (leftArmRef.current) {
-      leftArmRef.current.rotation.z = 0.28 + Math.sin(t * 1.8) * 0.08
-      leftArmRef.current.rotation.x = Math.cos(t * 1.4) * 0.12 - mouseY * 0.2
+      leftArmRef.current.rotation.z = 0.25 + Math.sin(t * 1.1) * 0.04
+      leftArmRef.current.rotation.x = Math.cos(t * 0.9) * 0.06 - mouseY * 0.12
     }
 
-    // Right arm: friendly organic wave (free of clipping, lively motion)
+    // Right arm: friendly organic wave (Calm, graceful, realistic)
     if (rightArmRef.current) {
       if (inCapsule) {
         rightArmRef.current.position.y = -0.28
-        rightArmRef.current.rotation.z = -0.28 - Math.sin(t * 1.8) * 0.08
-        rightArmRef.current.rotation.x = Math.cos(t * 1.4) * 0.12
+        rightArmRef.current.rotation.z = -0.25 - Math.sin(t * 1.1) * 0.04
+        rightArmRef.current.rotation.x = Math.cos(t * 0.9) * 0.06
       } else {
-        rightArmRef.current.position.y = -0.20 + Math.sin(t * 2.0) * 0.03
-        rightArmRef.current.rotation.z = -1.15 + Math.sin(t * 2.6) * 0.22
-        rightArmRef.current.rotation.x = Math.sin(t * 1.8) * 0.15
+        rightArmRef.current.position.y = -0.22 + Math.sin(t * 1.2) * 0.015
+        rightArmRef.current.rotation.z = -1.05 + Math.sin(t * 1.35) * 0.12
+        rightArmRef.current.rotation.x = Math.sin(t * 1.1) * 0.08
       }
     }
 
@@ -211,60 +211,33 @@ function FloatingCoin() {
   useFrame((state) => {
     const t = state.clock.getElapsedTime()
     if (coinRef.current) {
-      // Hanya mengayun/muter kiri dan kanan sedikit (subtle oscillation +/- 22 derajat)
-      coinRef.current.rotation.y = Math.sin(t * 1.6) * 0.38
-      coinRef.current.rotation.x = Math.sin(t * 1.2) * 0.12
-      coinRef.current.rotation.z = Math.cos(t * 1.4) * 0.05
-      coinRef.current.position.y = Math.sin(t * 2.0) * 0.06
+      // Selalu menghadap langsung ke depan (tanpa rotasi samping / ring miring), mengapung lembut secara vertikal
+      coinRef.current.position.y = Math.sin(t * 1.8) * 0.05
+      coinRef.current.rotation.x = 0
+      coinRef.current.rotation.y = 0
+      coinRef.current.rotation.z = 0
     }
   })
 
   return (
     <group ref={coinRef} position={[0, 0, 0]}>
-      {/* Koin Silinder Utama Navy Bertekstur Logam Halus */}
+      {/* Koin Silinder Utama Navy Bertekstur Logam - 1 Bulet Bersih Sempurna, Ukuran Proporsional */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.78, 0.78, 0.15, 36]} />
+        <cylinderGeometry args={[0.55, 0.55, 0.10, 48]} />
         <meshStandardMaterial
           color="#192A56"
-          roughness={0.25}
-          metalness={0.7}
-          emissive="#0d1b3e"
-          emissiveIntensity={0.4}
+          roughness={0.2}
+          metalness={0.8}
+          emissive="#0e1a38"
+          emissiveIntensity={0.5}
         />
       </mesh>
 
-      {/* Cincin Lis Luar Emas/Krem */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.76, 0.035, 16, 36]} />
-        <meshStandardMaterial color="#F8F5EC" metalness={0.9} roughness={0.15} />
-      </mesh>
-
-      {/* Cincin Bezel Dalam Beraksen Oranye */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.58, 0.015, 16, 36]} />
-        <meshStandardMaterial color="#FF5B00" metalness={0.8} roughness={0.2} emissive="#FF5B00" emissiveIntensity={0.6} />
-      </mesh>
-
-      {/* Teks MBG di Muka Depan Koin */}
+      {/* Teks MBG di Muka Depan Koin - Jelas, Menghadap Penuh ke Depan */}
       <Text
-        position={[0, 0, 0.082]}
-        fontSize={0.29}
-        color="#F8F5EC"
-        anchorX="center"
-        anchorY="middle"
-        characters="MBG"
-        letterSpacing={0.08}
-        fontWeight="bold"
-      >
-        MBG
-      </Text>
-
-      {/* Teks MBG di Muka Belakang Koin */}
-      <Text
-        position={[0, 0, -0.082]}
-        rotation={[0, Math.PI, 0]}
-        fontSize={0.29}
-        color="#F8F5EC"
+        position={[0, 0, 0.06]}
+        fontSize={0.22}
+        color="#FFFFFF"
         anchorX="center"
         anchorY="middle"
         characters="MBG"
@@ -369,9 +342,10 @@ export function RobotMascotCanvas({
     <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'visible' }}>
       <Canvas
         shadows
+        dpr={[1, 1.5]}
         camera={{ position: [0, 0, cameraDistance], fov: 38 }}
         style={{ width: '100%', height: '100%', pointerEvents: 'auto', overflow: 'visible' }}
-        gl={{ alpha: true, antialias: true }}
+        gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
       >
         <ambientLight intensity={1.5} color="#FFFFFF" />
         <directionalLight position={[6, 10, 8]} intensity={1.9} color="#FFFFFF" />

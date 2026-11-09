@@ -106,8 +106,8 @@ export function FaqSection() {
                           <div
                             className={`w-9 h-9 sm:w-10 sm:h-10 border border-[#192A56] flex items-center justify-center transition-all duration-200 ${
                               isOpen
-                                ? 'bg-[#192A56] text-[#F8F5EC]'
-                                : 'bg-white hover:bg-[#192A56] text-[#192A56] hover:text-[#F8F5EC]'
+                                ? 'bg-[#192A56] text-white'
+                                : 'bg-white hover:bg-[#192A56] text-[#192A56] hover:text-white'
                             }`}
                           >
                             <svg

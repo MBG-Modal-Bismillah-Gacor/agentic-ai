@@ -16,7 +16,13 @@ import {
   ChevronRight,
   Flame,
   Info,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Users,
+  ShieldCheck,
+  TrendingUp,
+  Cpu,
+  Terminal,
+  Database
 } from 'lucide-react'
 import { AGENCY_AGENTS, DIVISIONS, CURATED_OFFICE_PRESETS } from '../data/agencyAgents'
 
@@ -72,8 +78,6 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
   const [targetSlot, setTargetSlot] = useState(null) // 'boss' | 'blue-agent' | 'purple-agent' | 'green-agent' | 'orange-agent'
   const [selectedDivision, setSelectedDivision] = useState('sales')
   const [searchQuery, setSearchQuery] = useState('')
-
-  if (!isOpen) return null
 
   // Terapkan Preset Terkurasi
   const applyPreset = (presetId) => {
@@ -196,9 +200,11 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
     'orange-agent': 'Cubi Vault (Server Brankas)',
   }[targetSlot] || 'Karakter'
 
+  if (!isOpen) return null
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#192A56]/40 backdrop-blur-xs pointer-events-auto select-none overflow-y-auto font-mono">
-      <div className="bg-[#F8F5EC] border-2 border-[#192A56] max-w-2xl w-full p-5 sm:p-6 shadow-[8px_8px_0px_0px_#192A56] relative animate-in fade-in zoom-in-95 duration-200 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#192A56]/40 backdrop-blur-md pointer-events-auto select-none overflow-y-auto font-mono">
+      <div className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 my-auto">
         
         {/* Header Modal */}
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-200/70">
@@ -209,7 +215,7 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
             <div>
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <span>Personalisasi Karakter &amp; Agency-Agents</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#192A56] text-[#F8F5EC] border border-[#192A56] font-semibold">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#192A56] text-white border border-[#192A56] font-semibold">
                   268+ Personas
                 </span>
               </h2>
@@ -478,9 +484,9 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-[#F8F5EC] font-bold flex items-center gap-1.5 shadow-sm shadow-[#192A56]/25 transition cursor-pointer text-xs font-mono uppercase"
+                className="px-5 py-2 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-bold flex items-center gap-1.5 shadow-sm shadow-[#192A56]/25 transition cursor-pointer text-xs font-mono uppercase"
               >
-                <Check className="w-4 h-4 text-[#F8F5EC]" />
+                <Check className="w-4 h-4 text-white" />
                 <span>Simpan & Terapkan ke Kantor 3D</span>
               </button>
             </div>
@@ -535,7 +541,7 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
                   onClick={() => setSelectedDivision('all')}
                   className={`px-2.5 py-1 rounded-xl font-medium transition cursor-pointer whitespace-nowrap ${
                     selectedDivision === 'all'
-                      ? 'bg-[#192A56] text-[#F8F5EC]'
+                      ? 'bg-[#192A56] text-white'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
@@ -552,7 +558,7 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
                       onClick={() => setSelectedDivision(key)}
                       className={`px-2.5 py-1 rounded-xl font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1 ${
                         isSel
-                          ? 'bg-[#192A56] text-[#F8F5EC] shadow-xs'
+                          ? 'bg-[#192A56] text-white shadow-xs'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
@@ -574,7 +580,7 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
                 filteredAgencyAgents.map((agent) => (
                   <div
                     key={agent.id}
-                    className="p-2.5 rounded-2xl border border-slate-200/80 hover:border-[#192A56] bg-white hover:bg-[#F8F5EC] transition-all flex items-start justify-between gap-3 shadow-2xs"
+                    className="p-2.5 rounded-2xl border border-slate-200/80 hover:border-[#192A56] bg-white hover:bg-slate-50 transition-all flex items-start justify-between gap-3 shadow-2xs"
                   >
                     <div className="flex items-start gap-2.5">
                       <div
@@ -604,10 +610,10 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
                     <button
                       type="button"
                       onClick={() => handleSelectPersona(agent)}
-                      className="px-3 py-1.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-[#F8F5EC] font-semibold text-[11px] shrink-0 transition cursor-pointer shadow-xs flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-semibold text-[11px] shrink-0 transition cursor-pointer shadow-xs flex items-center gap-1"
                     >
                       <span>Pilih</span>
-                      <ArrowRight className="w-3 h-3 text-[#F8F5EC]" />
+                      <ArrowRight className="w-3 h-3 text-white" />
                     </button>
                   </div>
                 ))

@@ -338,7 +338,7 @@ export function OfficeScene({
 
         {/* 10. KARAKTER CUBI BOT MINI (Tenang & Rapi) */}
 
-        {/* Karakter 1: BOS CUBI (Pak Alfa / Deal Strategist) di Meja Eksekutif */}
+        {/* Karakter 1: BOS CUBI (Pak Alfa / Deal Strategist) Duduk Santai di Kursi Meja Eksekutif */}
         <CubiCharacter
           id="boss"
           name={boss.name || 'Pak Alfa'}
@@ -347,18 +347,19 @@ export function OfficeScene({
           emoji={boss.emoji || '👑'}
           vibe={boss.vibe}
           personaId={boss.personaId}
-          position={boss.pos || [-5.8, 0.18, 2.3]}
-          targetPosition={boss.targetPos || [-5.8, 0.18, 2.3]}
+          position={boss.pos || [-5.8, 0.18, 2.35]}
+          targetPosition={boss.targetPos || [-5.8, 0.18, 2.35]}
           rotationY={boss.rotationY ?? Math.PI}
           hideBadge={isPure3DMode}
           isBoss={true}
+          isSitting={!boss.isWalking}
           isWalking={boss.isWalking}
           isTyping={boss.isTyping}
           isSelected={selectedAgentId === 'boss'}
           onClick={onSelectAgent}
         />
 
-        {/* Karakter 2: CUBI SCOUT / SALES ENGINEER (Biru - Compute) Duduk Tenang di Kursi Desk 01 */}
+        {/* Karakter 2: CUBI SCOUT / SALES ENGINEER (Biru - Compute) Duduk di Kursi Kerja Desk 01 */}
         <CubiCharacter
           id="blue-agent"
           name={blueAgent.name || 'Cubi Scout'}
@@ -371,14 +372,15 @@ export function OfficeScene({
           targetPosition={blueAgent.targetPos || [-3.2, 0.18, 1.85]}
           rotationY={blueAgent.rotationY ?? Math.PI}
           hideBadge={isPure3DMode}
+          isSitting={!blueAgent.isWalking}
           isWalking={blueAgent.isWalking}
-          isTyping={blueAgent.isTyping}
+          isTyping={blueAgent.isTyping ?? true}
           isScanning={blueAgent.isScanning}
           isSelected={selectedAgentId === 'blue-agent'}
           onClick={onSelectAgent}
         />
 
-        {/* Karakter 3: CUBI SCRIBE / OUTBOUND STRATEGIST (Ungu - AI Drafter) di Depan Kanban Wall */}
+        {/* Karakter 3: CUBI SCRIBE / OUTBOUND STRATEGIST (Ungu - AI Drafter) Berdiri Aktif di Depan Kanban Wall */}
         <CubiCharacter
           id="purple-agent"
           name={purpleAgent.name || 'Cubi Scribe'}
@@ -389,15 +391,16 @@ export function OfficeScene({
           personaId={purpleAgent.personaId}
           position={purpleAgent.pos || [3.2, 0.18, -2.6]}
           targetPosition={purpleAgent.targetPos || [3.2, 0.18, -2.6]}
-          rotationY={purpleAgent.rotationY ?? Math.PI}
+          rotationY={purpleAgent.rotationY ?? (Math.PI * 0.82)}
           hideBadge={isPure3DMode}
+          isSitting={false}
           isWalking={purpleAgent.isWalking}
           isTyping={purpleAgent.isTyping}
           isSelected={selectedAgentId === 'purple-agent'}
           onClick={onSelectAgent}
         />
 
-        {/* Karakter 4: CUBI GATE / PIPELINE ANALYST (Hijau - Gatekeeper) di Samping Security Gate */}
+        {/* Karakter 4: CUBI GATE / PIPELINE ANALYST (Hijau - Gatekeeper) Berdiri Siaga di Security Gate */}
         <CubiCharacter
           id="green-agent"
           name={greenAgent.name || 'Cubi Gate'}
@@ -408,14 +411,15 @@ export function OfficeScene({
           personaId={greenAgent.personaId}
           position={greenAgent.pos || [2.2, 0.18, 0.8]}
           targetPosition={greenAgent.targetPos || [2.2, 0.18, 0.8]}
-          rotationY={greenAgent.rotationY ?? 0}
+          rotationY={greenAgent.rotationY ?? 0.12}
           hideBadge={isPure3DMode}
+          isSitting={false}
           isWalking={greenAgent.isWalking}
           isSelected={selectedAgentId === 'green-agent'}
           onClick={onSelectAgent}
         />
 
-        {/* Karakter 5: CUBI VAULT / ACCOUNT STRATEGIST (Slate - Archivist) di Depan Server Vault */}
+        {/* Karakter 5: CUBI VAULT / ACCOUNT STRATEGIST (Slate - Archivist) Berdiri Aktif di Depan Server Vault */}
         <CubiCharacter
           id="orange-agent"
           name={orangeAgent.name || 'Cubi Vault'}
@@ -426,8 +430,9 @@ export function OfficeScene({
           personaId={orangeAgent.personaId}
           position={orangeAgent.pos || [-4.5, 0.18, -2.6]}
           targetPosition={orangeAgent.targetPos || [-4.5, 0.18, -2.6]}
-          rotationY={orangeAgent.rotationY ?? -Math.PI * 0.75}
+          rotationY={orangeAgent.rotationY ?? (-Math.PI * 0.65)}
           hideBadge={isPure3DMode}
+          isSitting={false}
           isWalking={orangeAgent.isWalking}
           isSelected={selectedAgentId === 'orange-agent'}
           onClick={onSelectAgent}

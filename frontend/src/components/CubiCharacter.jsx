@@ -23,6 +23,7 @@ export function CubiCharacter({
   isScanning = false,
   isWalking = false,
   isBoss = false,
+  isSitting = false,
   isSelected = false,
   hideBadge = false,
   onClick,
@@ -58,154 +59,392 @@ export function CubiCharacter({
     }
 
     const distToTarget = groupRef.current.position.distanceTo(destPos.current)
-    const isMovingToTarget = distToTarget > 0.12
-    const moving = isMovingToTarget
+    const isMovingToTarget = distToTarget > 0.10
+    const moving = isMovingToTarget || isWalking
 
-    // 2. Perpindahan Halus & Rotasi (Menggunakan interpolasi sudut terpendek untuk mencegah glitch 360 derajat)
+    // 2. Perpindahan Halus, Stabil & Rotasi Presisi
     if (isMovingToTarget) {
-      groupRef.current.position.lerp(destPos.current, 0.065)
-
-      // Menghadap arah jalan saat bergerak
       const dirX = destPos.current.x - groupRef.current.position.x
       const dirZ = destPos.current.z - groupRef.current.position.z
-      if (Math.hypot(dirX, dirZ) > 0.08) {
+      const dist = Math.hypot(dirX, dirZ)
+
+      if (dist > 0.04) {
+        const speed = 0.032
+        const step = Math.min(speed, dist)
+        groupRef.current.position.x += (dirX / dist) * step
+        groupRef.current.position.z += (dirZ / dist) * step
+        groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, destPos.current.y, 0.08)
+
+        // Menghadap arah jalan secara mantap & halus
         const moveAngle = Math.atan2(dirX, dirZ)
         let diff = (moveAngle - groupRef.current.rotation.y) % (Math.PI * 2)
         if (diff < -Math.PI) diff += Math.PI * 2
         if (diff > Math.PI) diff -= Math.PI * 2
-        groupRef.current.rotation.y += diff * 0.12
+        groupRef.current.rotation.y += diff * 0.08
       }
     } else {
-      // Tiba di tujuan: Kunci koordinat X & Z secara halus
-      groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, destPos.current.x, 0.15)
-      groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, destPos.current.z, 0.15)
+      // Tiba di tujuan: Kunci koordinat X & Z secara halus tanpa snapping
+      groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, destPos.current.x, 0.08)
+      groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, destPos.current.z, 0.08)
       
-      // Rotasi tenang menghadap sudut stasiun kerja tanpa putaran acak
-      // Jika agen sedang mengetik/bekerja di meja, selalu pastikan menghadap meja (Math.PI) dan tidak pernah menghadap belakang kursi
-      const finalTargetRot = isTyping ? Math.PI : rotationY
+      // Menghadap ke stasiun kerja dengan mantap, atau menghadap ke user saat dipilih
+      let finalTargetRot = rotationY
+      if (isSelected) {
+        // Saat diklik/terpilih: Menoleh ramah menghadap sudut pandang kamera (Isometric [26, 22, 26])
+        finalTargetRot = Math.atan2(26 - groupRef.current.position.x, 26 - groupRef.current.position.z)
+      } else if (isTyping) {
+        finalTargetRot = Math.PI
+      }
+
       let diff = (finalTargetRot - groupRef.current.rotation.y) % (Math.PI * 2)
       if (diff < -Math.PI) diff += Math.PI * 2
       if (diff > Math.PI) diff -= Math.PI * 2
       groupRef.current.rotation.y += diff * 0.08
     }
 
-    // 3. Animasi Bodi, Kepala, Tangan, dan Kaki (Organik & Hidup)
+    // 3. Animasi Bodi, Kepala, Tangan, dan Kaki (Gerakan Tenang, Berbobot, Alami & Realistis)
     if (bodyRef.current) {
       if (moving) {
-        // Gerakan Melangkah Halus & Mantap (Kecepatan natural)
-        const walkSpeed = 7.5
+        // Mode Berjalan: Langkah mantap & santai, bobbing berbobot
+        const walkSpeed = 3.8
         const step = Math.sin(t * walkSpeed)
-        bodyRef.current.position.y = 0.52 + Math.abs(step) * 0.025
-        bodyRef.current.rotation.z = Math.sin(t * (walkSpeed / 2)) * 0.035
-        bodyRef.current.rotation.x = 0.045
+        bodyRef.current.position.y = 0.52 + Math.abs(step) * 0.035
+        bodyRef.current.position.z = 0
+        bodyRef.current.rotation.z = Math.sin(t * (walkSpeed / 2)) * 0.025
+        bodyRef.current.rotation.x = 0.04
 
-        // Tangan mengayun seirama langkah
         if (leftArmRef.current && rightArmRef.current) {
           leftArmRef.current.position.set(-0.25, 0.04, 0)
           rightArmRef.current.position.set(0.25, 0.04, 0)
-          leftArmRef.current.rotation.x = -Math.sin(t * walkSpeed) * 0.4
-          rightArmRef.current.rotation.x = Math.sin(t * walkSpeed) * 0.4
-          leftArmRef.current.rotation.z = 0.14
-          rightArmRef.current.rotation.z = -0.14
-        }
-
-        // Kaki melangkah bergantian
-        if (leftLegRef.current && rightLegRef.current) {
-          leftLegRef.current.rotation.x = Math.sin(t * walkSpeed) * 0.42
-          rightLegRef.current.rotation.x = -Math.sin(t * walkSpeed) * 0.42
-        }
-
-        if (headRef.current) {
-          headRef.current.rotation.x = 0.03
-          headRef.current.rotation.y = Math.sin(t * (walkSpeed / 2)) * 0.05
-        }
-      } else if (isTyping) {
-        // Mengetik Cerdas Berirama: 3.5s mengetik, 1.2s membaca monitor
-        const typingCycle = (t * 1.5) % 5
-        const isTypingActive = typingCycle < 3.8
-
-        bodyRef.current.position.y = 0.47 + Math.sin(t * 2.0) * 0.005
-        bodyRef.current.rotation.z = 0
-        bodyRef.current.rotation.x = 0.06
-
-        if (leftArmRef.current && rightArmRef.current) {
-          leftArmRef.current.position.set(-0.16, 0.02, 0.22)
-          rightArmRef.current.position.set(0.16, 0.02, 0.22)
-
-          if (isTypingActive) {
-            leftArmRef.current.rotation.x = -0.72 + Math.sin(t * 13) * 0.12
-            rightArmRef.current.rotation.x = -0.72 + Math.cos(t * 13) * 0.12
-          } else {
-            // Tangan istirahat sejenak di atas meja
-            leftArmRef.current.rotation.x = THREE.MathUtils.lerp(leftArmRef.current.rotation.x, -0.65, 0.1)
-            rightArmRef.current.rotation.x = THREE.MathUtils.lerp(rightArmRef.current.rotation.x, -0.65, 0.1)
-          }
+          leftArmRef.current.rotation.x = -Math.sin(t * walkSpeed) * 0.38
+          rightArmRef.current.rotation.x = Math.sin(t * walkSpeed) * 0.38
           leftArmRef.current.rotation.z = 0.12
           rightArmRef.current.rotation.z = -0.12
         }
 
         if (leftLegRef.current && rightLegRef.current) {
-          leftLegRef.current.rotation.x = 0
-          rightLegRef.current.rotation.x = 0
+          leftLegRef.current.position.set(-0.12, -0.24, 0)
+          rightLegRef.current.position.set(0.12, -0.24, 0)
+          leftLegRef.current.rotation.x = Math.sin(t * walkSpeed) * 0.38
+          rightLegRef.current.rotation.x = -Math.sin(t * walkSpeed) * 0.38
+          leftLegRef.current.rotation.z = 0
+          rightLegRef.current.rotation.z = 0
         }
 
         if (headRef.current) {
-          if (isTypingActive) {
-            headRef.current.rotation.x = 0.12 + Math.sin(t * 2.5) * 0.02
-            headRef.current.rotation.y = Math.sin(t * 1.2) * 0.03
-          } else {
-            // Menatap layar lebih tinggi membaca kode/penawaran
-            headRef.current.rotation.x = 0.05
-            headRef.current.rotation.y = Math.sin(t * 0.8) * 0.06
+          headRef.current.rotation.x = 0.04
+          headRef.current.rotation.y = Math.sin(t * (walkSpeed / 2)) * 0.06
+          headRef.current.rotation.z = 0
+        }
+      } else if (isSitting) {
+        // =========================================================
+        // MODE DUDUK DI KURSI (Duduk Santai di Atas Dudukan Kursi)
+        // Kaki menekuk 90 derajat mendatar ke depan, bodi bersandar di sandaran kursi
+        // =========================================================
+        const baseSittingY = isBoss ? 0.38 : 0.42
+
+        if (isSelected) {
+          // Duduk sambil melambai ramah ke user (Tempo lambat, realistis)
+          const cheerSpeed = 3.2
+          bodyRef.current.position.y = baseSittingY + Math.abs(Math.sin(t * cheerSpeed)) * 0.035
+          bodyRef.current.position.z = -0.06
+          bodyRef.current.rotation.x = -0.04
+          bodyRef.current.rotation.z = Math.sin(t * (cheerSpeed * 0.5)) * 0.02
+
+          if (rightArmRef.current) {
+            rightArmRef.current.position.set(0.24, 0.18, 0.12)
+            rightArmRef.current.rotation.x = -1.25 + Math.sin(t * cheerSpeed) * 0.18
+            rightArmRef.current.rotation.z = -0.35 + Math.cos(t * cheerSpeed) * 0.12
+          }
+
+          if (leftArmRef.current) {
+            leftArmRef.current.position.set(-0.25, 0.06, 0.06)
+            leftArmRef.current.rotation.x = 0.1
+            leftArmRef.current.rotation.z = 0.18
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.position.set(-0.12, -0.16, 0.08)
+            rightLegRef.current.position.set(0.12, -0.16, 0.08)
+            leftLegRef.current.rotation.x = -1.45 + Math.sin(t * cheerSpeed) * 0.08
+            rightLegRef.current.rotation.x = -1.45 - Math.sin(t * cheerSpeed) * 0.08
+            leftLegRef.current.rotation.z = 0.04
+            rightLegRef.current.rotation.z = -0.04
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.x = -0.08 + Math.sin(t * cheerSpeed * 0.5) * 0.03
+            headRef.current.rotation.y = Math.sin(t * 1.5) * 0.15
+            headRef.current.rotation.z = Math.sin(t * cheerSpeed * 0.5) * 0.04
+          }
+        } else if (isTyping) {
+          // Duduk Mengetik di Workstation Desk 01 (Cubi Scout): Ritme mengetik alami
+          const typingSpeed = 3.8
+          bodyRef.current.position.y = baseSittingY + Math.sin(t * 1.5) * 0.015
+          bodyRef.current.position.z = -0.05
+          bodyRef.current.rotation.x = 0.04
+          bodyRef.current.rotation.z = Math.sin(t * 1.0) * 0.012
+
+          if (leftArmRef.current && rightArmRef.current) {
+            leftArmRef.current.position.set(-0.16, 0.03 + Math.sin(t * typingSpeed) * 0.015, 0.24)
+            rightArmRef.current.position.set(0.16, 0.03 + Math.cos(t * typingSpeed) * 0.015, 0.24)
+            leftArmRef.current.rotation.x = -0.85 + Math.sin(t * typingSpeed) * 0.14
+            rightArmRef.current.rotation.x = -0.85 + Math.cos(t * typingSpeed) * 0.14
+            leftArmRef.current.rotation.z = 0.10
+            rightArmRef.current.rotation.z = -0.10
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.position.set(-0.12, -0.16, 0.08)
+            rightLegRef.current.position.set(0.12, -0.16, 0.08)
+            leftLegRef.current.rotation.x = -1.45
+            rightLegRef.current.rotation.x = -1.45
+            leftLegRef.current.rotation.z = 0.04
+            rightLegRef.current.rotation.z = -0.04
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.x = 0.10 + Math.sin(t * 1.5) * 0.04
+            headRef.current.rotation.y = Math.sin(t * 0.8) * 0.18
+            headRef.current.rotation.z = Math.sin(t * 1.0) * 0.02
+          }
+        } else if (isBoss || id === 'boss') {
+          // Duduk di Kursi Kulit Direktur (Pak Alfa): Postur berwibawa, menatap santai mengawasi ruangan
+          bodyRef.current.position.y = baseSittingY + Math.sin(t * 2.0) * 0.03
+          bodyRef.current.position.z = -0.07
+          bodyRef.current.rotation.x = -0.06
+          bodyRef.current.rotation.z = Math.sin(t * 1.4) * 0.025
+
+          if (leftArmRef.current && rightArmRef.current) {
+            leftArmRef.current.position.set(-0.26, 0.06, 0.08)
+            leftArmRef.current.rotation.x = -0.32 + Math.cos(t * 1.4) * 0.08
+            leftArmRef.current.rotation.z = 0.22
+
+            rightArmRef.current.position.set(0.24, 0.08, 0.12)
+            rightArmRef.current.rotation.x = -0.58 + Math.sin(t * 1.6) * 0.28
+            rightArmRef.current.rotation.z = -0.18
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.position.set(-0.12, -0.16, 0.08)
+            rightLegRef.current.position.set(0.12, -0.16, 0.08)
+            leftLegRef.current.rotation.x = -1.45 + Math.sin(t * 2.0) * 0.04
+            rightLegRef.current.rotation.x = -1.45 + Math.cos(t * 2.0) * 0.04
+            leftLegRef.current.rotation.z = 0.06
+            rightLegRef.current.rotation.z = -0.06
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.y = Math.sin(t * 0.9) * 0.45
+            headRef.current.rotation.x = 0.05 + Math.sin(t * 1.5) * 0.08
+            headRef.current.rotation.z = Math.sin(t * 1.1) * 0.03
+          }
+        } else {
+          // Duduk Tenang Santai Lainnya
+          bodyRef.current.position.y = baseSittingY + Math.sin(t * 2.2) * 0.035
+          bodyRef.current.position.z = -0.06
+          bodyRef.current.rotation.x = -0.06
+          bodyRef.current.rotation.z = Math.sin(t * 1.6) * 0.025
+
+          if (leftArmRef.current && rightArmRef.current) {
+            leftArmRef.current.position.set(-0.25, 0.05, 0.06)
+            rightArmRef.current.position.set(0.25, 0.05, 0.06)
+            leftArmRef.current.rotation.x = -0.35 + Math.sin(t * 2.2) * 0.15
+            rightArmRef.current.rotation.x = -0.35 + Math.cos(t * 2.2) * 0.15
+            leftArmRef.current.rotation.z = 0.20
+            rightArmRef.current.rotation.z = -0.20
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.position.set(-0.12, -0.16, 0.08)
+            rightLegRef.current.position.set(0.12, -0.16, 0.08)
+            leftLegRef.current.rotation.x = -1.45 + Math.sin(t * 2.2) * 0.05
+            rightLegRef.current.rotation.x = -1.45 + Math.cos(t * 2.2) * 0.05
+            leftLegRef.current.rotation.z = 0.06
+            rightLegRef.current.rotation.z = -0.06
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.y = Math.sin(t * 1.0) * 0.38 + Math.cos(t * 0.4) * 0.15
+            headRef.current.rotation.x = 0.06 + Math.sin(t * 1.8) * 0.08
+            headRef.current.rotation.z = Math.sin(t * 0.9) * 0.06
           }
         }
-      } else if (isScanning) {
-        // Mode Scanner Keamanan: Berdiri tegak, kepala menoleh teliti
-        bodyRef.current.position.y = 0.52 + Math.sin(t * 1.5) * 0.008
-        bodyRef.current.rotation.z = 0
-        bodyRef.current.rotation.x = 0
-
-        if (leftArmRef.current && rightArmRef.current) {
-          leftArmRef.current.position.set(-0.25, 0.04, 0)
-          rightArmRef.current.position.set(0.25, 0.04, 0)
-          leftArmRef.current.rotation.x = 0.1
-          rightArmRef.current.rotation.x = 0.1
-          leftArmRef.current.rotation.z = 0.18
-          rightArmRef.current.rotation.z = -0.18
-        }
-
-        if (headRef.current) {
-          headRef.current.rotation.y = Math.sin(t * 2.2) * 0.35
-          headRef.current.rotation.x = 0.12
-        }
-
-        if (scanBeamRef.current) {
-          scanBeamRef.current.rotation.y = Math.sin(t * 3) * 0.2
-        }
       } else {
-        // Mode Tenang Idle: Napas organik & sesekali menoleh lembut
-        const idleBreathing = Math.sin(t * 1.8) * 0.012
-        bodyRef.current.position.y = 0.52 + idleBreathing
-        bodyRef.current.rotation.z = 0
-        bodyRef.current.rotation.x = 0
+        // =========================================================
+        // MODE BERDIRI AKTIF (Posisi Tegak di Stasiun Masing-Masing)
+        // Gerakan Sangat Terlihat & Hidup dari Kamera Isometrik Jauh
+        // =========================================================
+        bodyRef.current.position.z = 0
 
-        if (leftArmRef.current && rightArmRef.current) {
-          leftArmRef.current.position.set(-0.25, 0.04, 0)
-          rightArmRef.current.position.set(0.25, 0.04, 0)
-          leftArmRef.current.rotation.x = Math.sin(t * 1.6) * 0.04
-          rightArmRef.current.rotation.x = Math.sin(t * 1.6) * 0.04
-          leftArmRef.current.rotation.z = 0.16
-          rightArmRef.current.rotation.z = -0.16
-        }
-
+        // Reset posisi pangkal kaki ke bawah bodi
         if (leftLegRef.current && rightLegRef.current) {
-          leftLegRef.current.rotation.x = 0
-          rightLegRef.current.rotation.x = 0
+          leftLegRef.current.position.set(-0.12, -0.24, 0)
+          rightLegRef.current.position.set(0.12, -0.24, 0)
+          leftLegRef.current.rotation.z = 0
+          rightLegRef.current.rotation.z = 0
         }
 
-        if (headRef.current) {
-          headRef.current.rotation.y = Math.sin(t * 0.6) * 0.14
-          headRef.current.rotation.x = Math.sin(t * 0.9) * 0.04
+        if (isSelected) {
+          // Berdiri sambil melambai ramah ke user (Tempo lambat, realistis)
+          const cheerSpeed = 3.0
+          bodyRef.current.position.y = 0.52 + Math.abs(Math.sin(t * cheerSpeed)) * 0.035
+          bodyRef.current.rotation.z = Math.sin(t * (cheerSpeed * 0.5)) * 0.02
+          bodyRef.current.rotation.x = 0.02
+
+          if (rightArmRef.current) {
+            rightArmRef.current.position.set(0.24, 0.16, 0.12)
+            rightArmRef.current.rotation.x = -1.25 + Math.sin(t * cheerSpeed) * 0.18
+            rightArmRef.current.rotation.z = -0.35 + Math.cos(t * cheerSpeed) * 0.12
+          }
+
+          if (leftArmRef.current) {
+            leftArmRef.current.position.set(-0.25, 0.04, 0)
+            leftArmRef.current.rotation.x = 0.10
+            leftArmRef.current.rotation.z = 0.16
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.rotation.x = Math.sin(t * cheerSpeed) * 0.06
+            rightLegRef.current.rotation.x = -Math.sin(t * cheerSpeed) * 0.06
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.x = -0.06 + Math.sin(t * cheerSpeed * 0.5) * 0.03
+            headRef.current.rotation.y = Math.sin(t * 1.2) * 0.14
+            headRef.current.rotation.z = Math.sin(t * cheerSpeed * 0.5) * 0.03
+          }
+        } else if (isScanning) {
+          // Mode Scanner Holografik: Menoleh luas meneliti data, tangan mengkalibrasi hologram secara halus
+          bodyRef.current.position.y = 0.52 + Math.sin(t * 1.2) * 0.02
+          bodyRef.current.rotation.z = 0
+          bodyRef.current.rotation.x = 0
+
+          if (leftArmRef.current && rightArmRef.current) {
+            leftArmRef.current.position.set(-0.25, 0.04, 0)
+            leftArmRef.current.rotation.x = 0.10
+            leftArmRef.current.rotation.z = 0.14
+
+            rightArmRef.current.position.set(0.20, 0.12, 0.18)
+            rightArmRef.current.rotation.x = -0.75 + Math.sin(t * 1.2) * 0.12
+            rightArmRef.current.rotation.z = -0.16
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.y = Math.sin(t * 1.1) * 0.32
+            headRef.current.rotation.x = 0.08
+            headRef.current.rotation.z = 0
+          }
+
+          if (scanBeamRef.current) {
+            scanBeamRef.current.rotation.y = Math.sin(t * 1.5) * 0.15
+          }
+        } else if (id === 'purple-agent') {
+          // Stasiun Kanban (Scribe): Gerakan Luwes & Alami menata task card di board kaca
+          bodyRef.current.position.y = 0.52 + Math.sin(t * 1.2) * 0.025
+          bodyRef.current.rotation.z = Math.sin(t * 0.9) * 0.02
+          bodyRef.current.rotation.x = 0.02
+
+          if (leftArmRef.current && rightArmRef.current) {
+            // Tangan kiri memegang smart tablet di pinggang
+            leftArmRef.current.position.set(-0.22, 0.08, 0.14)
+            leftArmRef.current.rotation.x = -0.45 + Math.cos(t * 1.1) * 0.12
+            leftArmRef.current.rotation.z = 0.18
+
+            // Tangan kanan mengayun santai menunjuk kartu Kanban di papan
+            rightArmRef.current.position.set(0.22, 0.14, 0.18)
+            rightArmRef.current.rotation.x = -0.95 + Math.sin(t * 1.1) * 0.22
+            rightArmRef.current.rotation.z = -0.20 + Math.cos(t * 0.9) * 0.12
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.rotation.x = Math.sin(t * 1.0) * 0.03
+            rightLegRef.current.rotation.x = -Math.sin(t * 1.0) * 0.03
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.x = -0.12 + Math.sin(t * 1.0) * 0.08
+            headRef.current.rotation.y = Math.sin(t * 0.7) * 0.22
+            headRef.current.rotation.z = Math.sin(t * 0.8) * 0.02
+          }
+        } else if (id === 'green-agent') {
+          // Stasiun Gatekeeper (Gate): Siaga tenang, memantau pintu masuk
+          bodyRef.current.position.y = 0.52 + Math.sin(t * 1.1) * 0.025
+          bodyRef.current.rotation.z = Math.sin(t * 0.8) * 0.02
+          bodyRef.current.rotation.x = 0
+
+          if (leftArmRef.current && rightArmRef.current) {
+            leftArmRef.current.position.set(-0.25, 0.04, 0)
+            leftArmRef.current.rotation.x = -0.25 + Math.cos(t * 1.0) * 0.08
+            leftArmRef.current.rotation.z = 0.18
+
+            rightArmRef.current.position.set(0.24, 0.10, 0.12)
+            rightArmRef.current.rotation.x = -0.65 + Math.sin(t * 1.2) * 0.18
+            rightArmRef.current.rotation.z = -0.22 + Math.cos(t * 1.0) * 0.10
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.rotation.x = Math.sin(t * 1.1) * 0.025
+            rightLegRef.current.rotation.x = -Math.sin(t * 1.1) * 0.025
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.y = Math.sin(t * 0.8) * 0.28
+            headRef.current.rotation.x = 0.05 + Math.sin(t * 1.1) * 0.04
+            headRef.current.rotation.z = Math.sin(t * 0.7) * 0.02
+          }
+        } else if (id === 'orange-agent') {
+          // Stasiun Vault Server (Vault): Tenang memeriksa server
+          bodyRef.current.position.y = 0.52 + Math.sin(t * 1.2) * 0.025
+          bodyRef.current.rotation.z = Math.sin(t * 0.9) * 0.02
+          bodyRef.current.rotation.x = 0.02
+
+          if (leftArmRef.current && rightArmRef.current) {
+            leftArmRef.current.position.set(-0.20, 0.10, 0.18)
+            leftArmRef.current.rotation.x = -0.75 + Math.sin(t * 1.2) * 0.18
+            leftArmRef.current.rotation.z = 0.15
+
+            rightArmRef.current.position.set(0.20, 0.12, 0.18)
+            rightArmRef.current.rotation.x = -0.85 + Math.cos(t * 1.0) * 0.20
+            rightArmRef.current.rotation.z = -0.15
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.rotation.x = Math.sin(t * 1.2) * 0.025
+            rightLegRef.current.rotation.x = -Math.sin(t * 1.2) * 0.025
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.x = -0.15 + Math.sin(t * 0.9) * 0.12
+            headRef.current.rotation.y = Math.sin(t * 0.7) * 0.20
+            headRef.current.rotation.z = 0
+          }
+        } else {
+          // Mode Berdiri Idle Default
+          const idleBreathing = Math.sin(t * 2.2) * 0.075
+          bodyRef.current.position.y = 0.52 + idleBreathing
+          bodyRef.current.rotation.z = Math.sin(t * 1.4) * 0.045
+          bodyRef.current.rotation.x = Math.sin(t * 1.8) * 0.03
+
+          if (leftArmRef.current && rightArmRef.current) {
+            leftArmRef.current.position.set(-0.25, 0.04, 0)
+            rightArmRef.current.position.set(0.25, 0.04, 0)
+            leftArmRef.current.rotation.x = Math.sin(t * 2.2) * 0.35
+            rightArmRef.current.rotation.x = -Math.sin(t * 2.2) * 0.35
+            leftArmRef.current.rotation.z = 0.22 + Math.cos(t * 1.8) * 0.10
+            rightArmRef.current.rotation.z = -0.22 - Math.cos(t * 1.8) * 0.10
+          }
+
+          if (leftLegRef.current && rightLegRef.current) {
+            leftLegRef.current.rotation.x = Math.sin(t * 2.2) * 0.06
+            rightLegRef.current.rotation.x = -Math.sin(t * 2.2) * 0.06
+          }
+
+          if (headRef.current) {
+            headRef.current.rotation.y = Math.sin(t * 1.0) * 0.45 + Math.cos(t * 0.4) * 0.18
+            headRef.current.rotation.x = 0.06 + Math.sin(t * 1.8) * 0.10
+            headRef.current.rotation.z = Math.sin(t * 0.9) * 0.08
+          }
         }
       }
     }
@@ -253,7 +492,7 @@ export function CubiCharacter({
       {showBadge && !hideBadge && (
         <Billboard position={[0, isBoss ? 1.55 : 1.45, 0]} follow={true}>
           <RoundedBox args={[badgeText.length * 0.075 + 0.45, 0.26, 0.02]} radius={0.06} smoothness={3}>
-            <meshStandardMaterial color="#F8F5EC" roughness={0.15} />
+            <meshStandardMaterial color="#FFFFFF" roughness={0.15} />
           </RoundedBox>
           <mesh position={[-(badgeText.length * 0.075 + 0.45) / 2 + 0.12, 0, 0.015]}>
             <sphereGeometry args={[0.03, 12, 12]} />
