@@ -175,10 +175,11 @@ export function CreateLeadModal({ isOpen, onClose, onCreateLead }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer disabled:opacity-50 text-xs"
+              className="px-5 py-2 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer disabled:opacity-50 text-xs border border-[#192A56]"
+              style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
             >
-              <Check className="w-4 h-4 text-white" />
-              <span>{isSubmitting ? 'Menyimpan...' : 'Tambahkan Lead'}</span>
+              <Check className="w-4 h-4 text-white shrink-0" style={{ color: '#FFFFFF' }} />
+              <span className="font-bold text-white" style={{ color: '#FFFFFF' }}>{isSubmitting ? 'Menyimpan...' : 'Tambahkan Lead'}</span>
             </button>
           </div>
         </form>

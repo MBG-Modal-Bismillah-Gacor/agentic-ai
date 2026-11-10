@@ -484,10 +484,11 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-bold flex items-center gap-1.5 shadow-sm shadow-[#192A56]/25 transition cursor-pointer text-xs font-mono uppercase"
+                className="px-5 py-2 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer text-xs font-mono uppercase border border-[#192A56]"
+                style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
               >
-                <Check className="w-4 h-4 text-white" />
-                <span>Simpan & Terapkan ke Kantor 3D</span>
+                <Check className="w-4 h-4 text-white shrink-0" style={{ color: '#FFFFFF' }} />
+                <span className="font-bold text-white" style={{ color: '#FFFFFF' }}>Simpan & Terapkan ke Kantor 3D</span>
               </button>
             </div>
           </div>
@@ -541,9 +542,10 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
                   onClick={() => setSelectedDivision('all')}
                   className={`px-2.5 py-1 rounded-xl font-medium transition cursor-pointer whitespace-nowrap ${
                     selectedDivision === 'all'
-                      ? 'bg-[#192A56] text-white'
+                      ? 'bg-[#192A56] text-white font-bold border border-[#192A56]'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
+                  style={selectedDivision === 'all' ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
                 >
                   Semua ({AGENCY_AGENTS.length})
                 </button>
@@ -558,12 +560,13 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
                       onClick={() => setSelectedDivision(key)}
                       className={`px-2.5 py-1 rounded-xl font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1 ${
                         isSel
-                          ? 'bg-[#192A56] text-white shadow-xs'
+                          ? 'bg-[#192A56] text-white font-bold border border-[#192A56] shadow-xs'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
+                      style={isSel ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
                     >
-                      <span>{info.label}</span>
-                      <span className="text-[10px] opacity-75 font-mono">({count})</span>
+                      <span className={isSel ? 'text-white font-bold' : ''}>{info.label}</span>
+                      <span className={`text-[10px] font-mono ${isSel ? 'text-white' : 'opacity-75'}`}>({count})</span>
                     </button>
                   )
                 })}
@@ -610,10 +613,11 @@ export function TeamSetupModal({ isOpen, onClose, teamConfig, onSave }) {
                     <button
                       type="button"
                       onClick={() => handleSelectPersona(agent)}
-                      className="px-3 py-1.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-semibold text-[11px] shrink-0 transition cursor-pointer shadow-xs flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-semibold text-[11px] shrink-0 transition cursor-pointer shadow-xs flex items-center gap-1 border border-[#192A56]"
+                      style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
                     >
-                      <span>Pilih</span>
-                      <ArrowRight className="w-3 h-3 text-white" />
+                      <span className="font-bold text-white" style={{ color: '#FFFFFF' }}>Pilih</span>
+                      <ArrowRight className="w-3 h-3 text-white shrink-0" style={{ color: '#FFFFFF' }} />
                     </button>
                   </div>
                 ))

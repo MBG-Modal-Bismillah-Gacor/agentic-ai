@@ -298,11 +298,12 @@ export function OfficeEntranceModal({
             <button
               type="submit"
               disabled={isOpening}
-              className="px-6 py-2.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-mono font-bold text-xs flex items-center gap-2 shadow-md shadow-[#192A56]/20 transition cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white font-mono font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer disabled:opacity-50 border border-[#192A56]"
+              style={{ color: '#FFFFFF', backgroundColor: '#192A56' }}
             >
-              <DoorOpen className="w-4 h-4 text-white" />
-              <span>Masuk ke Kantor</span>
-              <ArrowRight className="w-3.5 h-3.5 text-white" />
+              <DoorOpen className="w-4 h-4 text-white shrink-0" style={{ color: '#FFFFFF' }} />
+              <span className="text-white font-bold" style={{ color: '#FFFFFF' }}>Masuk ke Kantor</span>
+              <ArrowRight className="w-3.5 h-3.5 text-white shrink-0" style={{ color: '#FFFFFF' }} />
             </button>
           </div>
 
