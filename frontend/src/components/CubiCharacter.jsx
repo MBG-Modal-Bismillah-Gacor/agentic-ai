@@ -19,6 +19,7 @@ export function CubiCharacter({
   position = [0, 0, 0],
   targetPosition = null,
   rotationY = 0,
+  scale = null,
   isTyping = false,
   isScanning = false,
   isWalking = false,
@@ -45,21 +46,48 @@ export function CubiCharacter({
     (id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) * 1.37) % (Math.PI * 2)
   ).current
 
-  const destPos = useRef(new THREE.Vector3(...(targetPosition || position)))
+  const destPos = useRef(new THREE.Vector3(
+    Array.isArray(targetPosition?.[0]) ? targetPosition[0][0] : (targetPosition?.[0] ?? position[0]),
+    Array.isArray(targetPosition?.[0]) ? targetPosition[0][1] : (targetPosition?.[1] ?? position[1]),
+    Array.isArray(targetPosition?.[0]) ? targetPosition[0][2] : (targetPosition?.[2] ?? position[2])
+  ))
+
+  const waypointIdxRef = useRef(0)
+  const lastTargetPosRef = useRef(null)
 
   useFrame((state) => {
     if (!groupRef.current) return
     const t = state.clock.getElapsedTime() + phaseOffset
 
-    // 1. Update Posisi Target
-    if (targetPosition) {
+    // 1. Waypoint & Posisi Target Navigation
+    const isMultiWaypoint = Array.isArray(targetPosition) && Array.isArray(targetPosition[0])
+    
+    if (isMultiWaypoint) {
+      if (lastTargetPosRef.current !== targetPosition) {
+        lastTargetPosRef.current = targetPosition
+        waypointIdxRef.current = 0
+      }
+      const currentWp = targetPosition[waypointIdxRef.current] || targetPosition[targetPosition.length - 1]
+      destPos.current.set(currentWp[0], currentWp[1], currentWp[2])
+      
+      const distToCurrentWp = Math.hypot(
+        destPos.current.x - groupRef.current.position.x,
+        destPos.current.z - groupRef.current.position.z
+      )
+      if (distToCurrentWp < 0.28 && waypointIdxRef.current < targetPosition.length - 1) {
+        waypointIdxRef.current += 1
+        const nextWp = targetPosition[waypointIdxRef.current]
+        destPos.current.set(nextWp[0], nextWp[1], nextWp[2])
+      }
+    } else if (targetPosition) {
       destPos.current.set(targetPosition[0], targetPosition[1], targetPosition[2])
     } else {
       destPos.current.set(position[0], position[1], position[2])
     }
 
     const distToTarget = groupRef.current.position.distanceTo(destPos.current)
-    const isMovingToTarget = distToTarget > 0.10
+    const isFinalDestination = !isMultiWaypoint || waypointIdxRef.current >= targetPosition.length - 1
+    const isMovingToTarget = isMultiWaypoint ? (waypointIdxRef.current < targetPosition.length - 1 || distToTarget > 0.12) : distToTarget > 0.10
     const moving = isMovingToTarget || isWalking
 
     // 2. Perpindahan Halus, Stabil & Rotasi Presisi
@@ -477,11 +505,13 @@ export function CubiCharacter({
     ? `${name} • Scanning`
     : `${name} • ${role}`
 
+  const effectiveScale = scale !== null ? scale : (isBoss ? 0.48 : 0.40)
+
   return (
     <group
       ref={groupRef}
       position={position}
-      scale={isBoss ? 1.4 : 1.25}
+      scale={effectiveScale}
       onClick={(e) => {
         e.stopPropagation()
         if (onClick) onClick(id)
@@ -490,7 +520,7 @@ export function CubiCharacter({
     >
       {/* Floating Blueprint Badge (Tampil Rapi Saat Terpilih / Aktif, Disembunyikan di Mode Pure Fullscreen) */}
       {showBadge && !hideBadge && (
-        <Billboard position={[0, isBoss ? 1.55 : 1.45, 0]} follow={true}>
+        <Billboard position={[0, isBoss ? 1.45 : 1.35, 0]} follow={true}>
           <RoundedBox args={[badgeText.length * 0.075 + 0.45, 0.26, 0.02]} radius={0.06} smoothness={3}>
             <meshStandardMaterial color="#FFFFFF" roughness={0.15} />
           </RoundedBox>

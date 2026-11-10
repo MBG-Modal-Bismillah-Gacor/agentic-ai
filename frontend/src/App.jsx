@@ -1,12 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Minimize2 } from 'lucide-react'
-import { OfficeScene } from './components/OfficeScene'
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react'
+import { Minimize2, Compass, Plus, Minus } from 'lucide-react'
 import { DashboardOverlay } from './components/DashboardOverlay'
-import { TeamSetupModal } from './components/TeamSetupModal'
-import { CreateLeadModal } from './components/CreateLeadModal'
-import { OfficeEntranceModal } from './components/OfficeEntranceModal'
-import { LandingPage } from './components/LandingPage'
-import { DashboardView } from './components/DashboardView'
+import { DeviceSecurityModal } from './components/DeviceSecurityModal'
+
+// Lazy-loaded routes & heavy components to drastically reduce initial memory & bundle footprint
+const OfficeScene = lazy(() => import('./components/OfficeScene').then(m => ({ default: m.OfficeScene })))
+const LandingPage = lazy(() => import('./components/LandingPage').then(m => ({ default: m.LandingPage })))
+const DashboardView = lazy(() => import('./components/DashboardView').then(m => ({ default: m.DashboardView })))
+const TeamSetupModal = lazy(() => import('./components/TeamSetupModal').then(m => ({ default: m.TeamSetupModal })))
+const CreateLeadModal = lazy(() => import('./components/CreateLeadModal').then(m => ({ default: m.CreateLeadModal })))
+const OfficeEntranceModal = lazy(() => import('./components/OfficeEntranceModal').then(m => ({ default: m.OfficeEntranceModal })))
+
+function RouteLoadingFallback() {
+  return (
+    <div className="w-screen h-screen flex flex-col items-center justify-center bg-white text-[#192A56] font-mono select-none">
+      <div className="w-9 h-9 border-2 border-[#192A56] border-t-transparent rounded-full animate-spin mb-3" />
+      <span className="text-xs uppercase tracking-widest font-bold">Memuat Modul Sistem...</span>
+    </div>
+  )
+}
 
 const API_BASE = 'http://127.0.0.1:8000'
 
@@ -19,16 +31,22 @@ function getInitialRoute() {
   return 'landing'
 }
 
-// Titik Koordinat Stasiun Kerja di Diorama Kantor Sesuai Referensi
+// Titik Koordinat Stasiun Kerja di Model GLB Kantor (office-3d/isometric_office (1).glb)
 const STATIONS = {
-  boss_desk: [-5.8, 0.18, 2.35],
-  workstation_desk: [-3.2, 0.18, 1.85],
-  workstation_desk_02: [3.2, 0.18, -0.70],
-  kanban_board: [3.2, 0.18, -2.6],
-  whiteboard: [-1.2, 0.18, -2.5],
-  security_gate: [2.2, 0.18, 0.8],
-  data_vault: [-4.5, 0.18, -2.6],
-  center_hall: [0, 0.18, 0],
+  boss_desk: [-8.36, 0.33, 0.36],
+  workstation_desk: [-5.32, 0.33, 3.39],
+  workstation_desk_02: [-4.09, 0.33, 5.42],
+  kanban_board: [-7.58, 0.33, 9.85],
+  whiteboard: [-7.58, 0.33, 9.85],
+  security_gate: [-0.69, 0.33, 4.87],
+  data_vault: [-5.06, 0.33, 0.45],
+  center_hall: [-4.8, 0.33, 3.8],
+  // Posisi Duduk Melingkar di Meja Rapat Konferensi (Meeting_table_490)
+  meeting_boss: [-7.58, 0.33, 9.65],
+  meeting_blue: [-8.65, 0.33, 8.63],
+  meeting_purple: [-6.55, 0.33, 8.63],
+  meeting_green: [-7.58, 0.33, 7.62],
+  meeting_orange: [-8.35, 0.33, 7.85],
 }
 
 const DEFAULT_BOSS = {
@@ -41,7 +59,7 @@ const DEFAULT_BOSS = {
   badge: 'DIRECTOR',
   pos: STATIONS.boss_desk,
   targetPos: STATIONS.boss_desk,
-  rotationY: Math.PI,
+  rotationY: 0,
   isWalking: false,
   isTyping: false,
   statusText: 'Supervising Office & Deals',
@@ -58,12 +76,12 @@ const DEFAULT_AGENTS = {
     personaId: 'sales-engineer',
     pos: STATIONS.workstation_desk,
     targetPos: STATIONS.workstation_desk,
-    rotationY: Math.PI,
+    rotationY: 0,
     isWalking: false,
     isTyping: true,
     isScanning: false,
     statusText: 'Monitoring Stock & Catalog',
-    station: 'Workstation Desk 01',
+    station: 'Workstation 01',
   },
   'purple-agent': {
     id: 'purple-agent',
@@ -73,14 +91,14 @@ const DEFAULT_AGENTS = {
     emoji: 'DRAFTER',
     vibe: 'Turns buying signals into booked meetings before competition notices.',
     personaId: 'sales-outbound-strategist',
-    pos: STATIONS.kanban_board,
-    targetPos: STATIONS.kanban_board,
+    pos: STATIONS.workstation_desk_02,
+    targetPos: STATIONS.workstation_desk_02,
     rotationY: Math.PI,
     isWalking: false,
-    isTyping: false,
+    isTyping: true,
     isScanning: false,
     statusText: 'Sprint Task Ready',
-    station: 'Kanban Wall',
+    station: 'Workstation 02',
   },
   'green-agent': {
     id: 'green-agent',
@@ -92,12 +110,12 @@ const DEFAULT_AGENTS = {
     personaId: 'sales-pipeline-analyst',
     pos: STATIONS.security_gate,
     targetPos: STATIONS.security_gate,
-    rotationY: 0,
+    rotationY: -Math.PI / 2,
     isWalking: false,
     isTyping: false,
     isScanning: false,
     statusText: 'WhatsApp Gateway Standby',
-    station: 'Security Gate',
+    station: 'Meja Resepsionis',
   },
   'orange-agent': {
     id: 'orange-agent',
@@ -109,12 +127,12 @@ const DEFAULT_AGENTS = {
     personaId: 'sales-account-strategist',
     pos: STATIONS.data_vault,
     targetPos: STATIONS.data_vault,
-    rotationY: -Math.PI * 0.75,
+    rotationY: 0,
     isWalking: false,
     isTyping: false,
     isScanning: false,
     statusText: 'Database & Inventory Synced',
-    station: 'Server Vault',
+    station: 'Server Vault & Data Archive',
   },
 }
 
@@ -236,6 +254,62 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [pitchResult, setPitchResult] = useState(null)
 
+  // Device Detection & Security Authentication State
+  const [deviceProfile, setDeviceProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('aicrew_device_auth')
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      return null
+    }
+  })
+  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('aicrew_device_auth')
+      return !saved // Jika belum ada profil autentikasi di perangkat ini, buka modal setup di awal
+    } catch {
+      return true
+    }
+  })
+  const [deviceModalMode, setDeviceModalMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('aicrew_device_auth')
+      return saved ? 'profile' : 'setup'
+    } catch {
+      return 'setup'
+    }
+  })
+
+  // Sinkronkan nama pengguna ke Boss jika sudah ada profil tersimpan
+  useEffect(() => {
+    if (deviceProfile?.name) {
+      setBossConfig((prev) => ({
+        ...prev,
+        name: deviceProfile.name,
+        role: deviceProfile.role || prev.role,
+      }))
+    }
+  }, [deviceProfile])
+
+  const handleSaveDeviceProfile = (newProfile) => {
+    localStorage.setItem('aicrew_device_auth', JSON.stringify(newProfile))
+    setDeviceProfile(newProfile)
+    if (newProfile?.name) {
+      setBossConfig((prev) => ({
+        ...prev,
+        name: newProfile.name,
+        role: newProfile.role || prev.role,
+      }))
+    }
+  }
+
+  const handleResetDevice = () => {
+    localStorage.removeItem('aicrew_device_auth')
+    setDeviceProfile(null)
+    setDeviceModalMode('setup')
+    setIsDeviceModalOpen(true)
+  }
+
   // 3D Office Camera & POV States
   const [activePOV, setActivePOV] = useState('overview')
   const [transitionTrigger, setTransitionTrigger] = useState(0)
@@ -252,9 +326,280 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPure3DMode])
 
-  const handleChangePOV = (pov) => {
+  const handleChangePOV = (pov, preserveAgentId = null) => {
     setActivePOV(pov)
     setTransitionTrigger(Date.now())
+    if (preserveAgentId) {
+      setSelectedAgentId(preserveAgentId)
+      return
+    }
+    if (pov === 'boss') setSelectedAgentId('boss')
+    else if (pov === 'workstation') {
+      setSelectedAgentId((prev) => (prev === 'purple-agent' ? 'purple-agent' : 'blue-agent'))
+    }
+    else if (pov === 'reception') setSelectedAgentId('green-agent')
+    else if (pov === 'vault') setSelectedAgentId('orange-agent')
+  }
+
+  const handleSelectAgent = (agentId) => {
+    setSelectedAgentId(agentId)
+    if (agentId === 'boss') handleChangePOV('boss', 'boss')
+    else if (agentId === 'blue-agent') handleChangePOV('workstation', 'blue-agent')
+    else if (agentId === 'purple-agent') handleChangePOV('workstation', 'purple-agent')
+    else if (agentId === 'green-agent') handleChangePOV('reception', 'green-agent')
+    else if (agentId === 'orange-agent') handleChangePOV('vault', 'orange-agent')
+  }
+
+  // Eksekutor Perintah Interaktif Terminal Kantor 3D
+  const handleExecuteOfficeCommand = (commandStr) => {
+    if (!commandStr || !commandStr.trim()) return { success: false, feedback: 'Perintah kosong' }
+    const cmd = commandStr.trim().toLowerCase()
+
+    // 1. Perintah Rapat / Meeting / Kumpul / Briefing
+    if (
+      cmd.includes('rapat') ||
+      cmd.includes('meeting') ||
+      cmd.includes('kumpul') ||
+      cmd.includes('briefing') ||
+      cmd.includes('diskusi')
+    ) {
+      setBossConfig((prev) => ({
+        ...prev,
+        targetPos: STATIONS.meeting_boss,
+        rotationY: Math.PI,
+        isWalking: true,
+        isTyping: false,
+        statusText: 'Memimpin Sesi Rapat Strategis Tim',
+      }))
+
+      setAgents((prev) => ({
+        ...prev,
+        'blue-agent': {
+          ...prev['blue-agent'],
+          targetPos: STATIONS.meeting_blue,
+          rotationY: -Math.PI / 2,
+          isWalking: true,
+          isTyping: false,
+          statusText: 'Diskusi Hardware & Stok di Meja Rapat',
+        },
+        'purple-agent': {
+          ...prev['purple-agent'],
+          targetPos: STATIONS.meeting_purple,
+          rotationY: Math.PI / 2,
+          isWalking: true,
+          isTyping: false,
+          statusText: 'Review AI Pitch Deck di Meja Rapat',
+        },
+        'green-agent': {
+          ...prev['green-agent'],
+          targetPos: STATIONS.meeting_green,
+          rotationY: 0,
+          isWalking: true,
+          isTyping: false,
+          statusText: 'Laporan Gateway WhatsApp di Meja Rapat',
+        },
+        'orange-agent': {
+          ...prev['orange-agent'],
+          targetPos: STATIONS.meeting_orange,
+          rotationY: Math.PI / 4,
+          isWalking: true,
+          isTyping: false,
+          statusText: 'Laporan Sinkronisasi Data di Meja Rapat',
+        },
+      }))
+
+      handleChangePOV('meeting')
+
+      return {
+        success: true,
+        feedback: '[RAPAT DIMULAI]: Seluruh tim AI berkumpul di Meja Rapat. Kamera beralih ke Ruang Konferensi.',
+      }
+    }
+
+    // 2. Perintah Kembali / Kerja / Bubar / Selesai / Stasiun
+    if (
+      cmd.includes('kembali') ||
+      cmd.includes('kerja') ||
+      cmd.includes('bubar') ||
+      cmd.includes('selesai') ||
+      cmd.includes('stasiun') ||
+      cmd.includes('meja')
+    ) {
+      setBossConfig((prev) => ({
+        ...prev,
+        targetPos: STATIONS.boss_desk,
+        rotationY: 0,
+        isWalking: true,
+        isTyping: false,
+        statusText: 'Supervising Office & Deals',
+      }))
+
+      setAgents((prev) => ({
+        ...prev,
+        'blue-agent': {
+          ...prev['blue-agent'],
+          targetPos: STATIONS.workstation_desk,
+          rotationY: 0,
+          isWalking: true,
+          isTyping: true,
+          statusText: 'Monitoring Stock & Catalog',
+        },
+        'purple-agent': {
+          ...prev['purple-agent'],
+          targetPos: STATIONS.workstation_desk_02,
+          rotationY: Math.PI,
+          isWalking: true,
+          isTyping: true,
+          statusText: 'Sprint Task Ready',
+        },
+        'green-agent': {
+          ...prev['green-agent'],
+          targetPos: STATIONS.security_gate,
+          rotationY: -Math.PI / 2,
+          isWalking: true,
+          isTyping: false,
+          statusText: 'WhatsApp Gateway Standby',
+        },
+        'orange-agent': {
+          ...prev['orange-agent'],
+          targetPos: STATIONS.data_vault,
+          rotationY: 0,
+          isWalking: true,
+          isTyping: false,
+          statusText: 'Database & Inventory Synced',
+        },
+      }))
+
+      handleChangePOV('overview')
+
+      return {
+        success: true,
+        feedback: '[SELESAI]: Rapat berakhir. Seluruh agen AI kembali ke stasiun kerja masing-masing.',
+      }
+    }
+
+    // 3. Perintah Cek Server / Vault / Database
+    if (
+      cmd.includes('server') ||
+      cmd.includes('vault') ||
+      cmd.includes('database') ||
+      cmd.includes('db') ||
+      cmd.includes('cluster')
+    ) {
+      setAgents((prev) => ({
+        ...prev,
+        'orange-agent': {
+          ...prev['orange-agent'],
+          targetPos: [-4.6, 0.33, 1.15],
+          rotationY: Math.PI / 2,
+          isWalking: true,
+          statusText: 'Menginspeksi Kluster Server NUC & Data Vault',
+        },
+      }))
+
+      handleChangePOV('vault', 'orange-agent')
+
+      return {
+        success: true,
+        feedback: '[SERVER CHECK]: Cubi Vault menginspeksi kluster Server NUC.',
+      }
+    }
+
+    // 4. Perintah Resepsionis / Tamu / Gateway WhatsApp
+    if (
+      cmd.includes('resepsionis') ||
+      cmd.includes('reception') ||
+      cmd.includes('tamu') ||
+      cmd.includes('pintu') ||
+      cmd.includes('gate') ||
+      cmd.includes('whatsapp')
+    ) {
+      setAgents((prev) => ({
+        ...prev,
+        'green-agent': {
+          ...prev['green-agent'],
+          targetPos: STATIONS.security_gate,
+          rotationY: -Math.PI / 2,
+          isWalking: true,
+          statusText: 'Siaga Tamu & WhatsApp Dispatch',
+        },
+      }))
+
+      handleChangePOV('reception', 'green-agent')
+
+      return {
+        success: true,
+        feedback: '[GATEWAY]: Cubi Gatekeeper siaga di Meja Resepsionis & Pintu Depan.',
+      }
+    }
+
+    // 5. Perintah Workstation / Analisis Hardware / Drafting Pitch
+    if (
+      cmd.includes('workstation') ||
+      cmd.includes('analisis') ||
+      cmd.includes('hardware') ||
+      cmd.includes('draft') ||
+      cmd.includes('koding')
+    ) {
+      setAgents((prev) => ({
+        ...prev,
+        'blue-agent': {
+          ...prev['blue-agent'],
+          targetPos: STATIONS.workstation_desk,
+          rotationY: 0,
+          isWalking: true,
+          isTyping: true,
+          statusText: 'Komputasi & Analisis Spek Hardware',
+        },
+        'purple-agent': {
+          ...prev['purple-agent'],
+          targetPos: STATIONS.workstation_desk_02,
+          rotationY: Math.PI,
+          isWalking: true,
+          isTyping: true,
+          statusText: 'Menyusun Penawaran Otomatis (Qwen 2.5)',
+        },
+      }))
+
+      handleChangePOV('workstation', selectedAgentId === 'purple-agent' ? 'purple-agent' : 'blue-agent')
+
+      return {
+        success: true,
+        feedback: '[WORKSTATION]: Tim Workstation aktif memproses komputasi & draft pitch.',
+      }
+    }
+
+    // 6. Perintah Auto Pipeline / Proses Prospek
+    if (
+      cmd.includes('auto') ||
+      cmd.includes('pipeline') ||
+      cmd.includes('proses') ||
+      cmd.includes('sprint')
+    ) {
+      handleRunAutoPipeline?.()
+      return {
+        success: true,
+        feedback: '[AUTO PIPELINE]: Menjalankan proses pipeline prospek otomatis...',
+      }
+    }
+
+    // 7. Perintah Sinkronisasi Data / Refresh
+    if (
+      cmd.includes('sync') ||
+      cmd.includes('sinkron') ||
+      cmd.includes('refresh')
+    ) {
+      fetchData?.()
+      return {
+        success: true,
+        feedback: '[SYNC]: Sinkronisasi data sistem dan status real-time berhasil.',
+      }
+    }
+
+    return {
+      success: true,
+      feedback: `[PERINTAH DITERIMA]: "${commandStr}" -> Dikoordinasikan ke ${bossConfig?.name || 'Direktur'} & Tim AI.`,
+    }
   }
 
   const handleManualZoom = (delta) => {
@@ -279,21 +624,17 @@ export default function App() {
     setIsPure3DMode(false)
   }
 
-  // Modals state: Buka Sambutan Gerbang Office Setup jika belum selesai
-  const [isEntranceOpen, setIsEntranceOpen] = useState(() => getInitialRoute() === 'office')
+  // Modals state: Office setup dibuka sesuai kebutuhan, tidak memaksa loading ulang saat rute pertama
+  const [isEntranceOpen, setIsEntranceOpen] = useState(false)
   const [isTeamSetupOpen, setIsTeamSetupOpen] = useState(false)
   const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false)
 
-  // Router Navigator: Mengarahkan rute dan membuka modul gerbang masuk kantor
+  // Router Navigator: Mengarahkan rute secara instan tanpa loading berulang
   const navigate = (route, params = {}) => {
     if (params?.agentId) {
       setSelectedAgentId(params.agentId)
     }
-    if (route === 'office') {
-      if (!isOfficeSetupDone) {
-        setIsEntranceOpen(true)
-      }
-    } else {
+    if (route !== 'office') {
       setIsEntranceOpen(false)
     }
     setCurrentRoute(route)
@@ -307,9 +648,6 @@ export default function App() {
       const path = window.location.pathname.toLowerCase()
       if (path === '/office' || path === '/kantor') {
         setCurrentRoute('office')
-        if (!isOfficeSetupDone) {
-          setIsEntranceOpen(true)
-        }
       } else if (path === '/dashboard') {
         setCurrentRoute('dashboard')
       } else {
@@ -318,7 +656,7 @@ export default function App() {
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [isOfficeSetupDone])
+  }, [])
 
   // Atur overflow body: scrollable untuk Landing Page & Dashboard, locked untuk 3D Office
   useEffect(() => {
@@ -336,52 +674,51 @@ export default function App() {
     const PATROL_ACTIONS = [
       {
         agentId: 'purple-agent',
-        destination: [5.2, 0.18, -2.5],
-        rotationY: -Math.PI * 0.5,
-        status: 'Mengambil espresso di Coffee Bar ☕',
+        // Melangkah ke koridor terbuka samping workstation tanpa menembus sekat
+        destination: [[-4.09, 0.33, 4.3]],
+        rotationY: Math.PI,
+        status: 'Koordinasi materi presentasi di Ruang Rapat 📊',
         stayMs: 6000,
-        homePos: STATIONS.kanban_board,
+        homePos: [STATIONS.workstation_desk_02],
+        finalHomePos: STATIONS.workstation_desk_02,
         homeRot: Math.PI,
         homeStatus: 'Sprint Task Ready',
+        resumeTyping: true,
       },
       {
         agentId: 'green-agent',
-        destination: STATIONS.center_hall,
-        rotationY: Math.PI * 0.25,
-        status: 'Inspeksi telemetri di Center Holo Hub 🌐',
+        // Melangkah ke area terbuka lobby resepsionis tanpa menembus meja
+        destination: [[-1.25, 0.33, 4.1]],
+        rotationY: 0,
+        status: 'Memantau tamu masuk di lobby resepsionis 🌐',
         stayMs: 6500,
-        homePos: STATIONS.security_gate,
-        homeRot: 0,
+        homePos: [STATIONS.security_gate],
+        finalHomePos: STATIONS.security_gate,
+        homeRot: -Math.PI / 2,
         homeStatus: 'WhatsApp Gateway Standby',
       },
       {
         agentId: 'orange-agent',
-        destination: STATIONS.whiteboard,
-        rotationY: Math.PI,
-        status: 'Menganalisis strategi di Whiteboard 📊',
+        // Melangkah di koridor depan rak arsip & server vault
+        destination: [[-4.5, 0.33, 1.2]],
+        rotationY: Math.PI / 2,
+        status: 'Sinkronisasi database arsip di Server Vault 💾',
         stayMs: 6000,
-        homePos: STATIONS.data_vault,
-        homeRot: -Math.PI * 0.75,
+        homePos: [STATIONS.data_vault],
+        finalHomePos: STATIONS.data_vault,
+        homeRot: 0,
         homeStatus: 'Database & Inventory Synced',
       },
       {
-        agentId: 'purple-agent',
-        destination: STATIONS.workstation_desk_02,
-        rotationY: Math.PI,
-        status: 'Reviewing draf di Workstation 02 ✍️',
-        stayMs: 6000,
-        homePos: STATIONS.kanban_board,
-        homeRot: Math.PI,
-        homeStatus: 'Sprint Task Ready',
-      },
-      {
         agentId: 'blue-agent',
-        destination: [-1.4, 0.18, 0.5],
-        rotationY: -Math.PI * 0.25,
-        status: 'Sinkronisasi NPU lokal ke Center Holo Hub 💻',
+        // Melangkah ke lorong tengah terbuka stasiun kerja
+        destination: [[-5.32, 0.33, 2.5]],
+        rotationY: 0,
+        status: 'Inspeksi performa NPU & kluster komputasi 💻',
         stayMs: 5500,
-        homePos: STATIONS.workstation_desk,
-        homeRot: Math.PI,
+        homePos: [STATIONS.workstation_desk],
+        finalHomePos: STATIONS.workstation_desk,
+        homeRot: 0,
         homeStatus: 'Monitoring Stock & Catalog',
         resumeTyping: true,
       },
@@ -442,7 +779,7 @@ export default function App() {
                     ...prev[chosen.agentId],
                     isWalking: false,
                     isTyping: !!chosen.resumeTyping,
-                    targetPos: chosen.homePos,
+                    targetPos: chosen.finalHomePos || chosen.homePos,
                     rotationY: chosen.homeRot,
                     statusText: chosen.homeStatus,
                   },
@@ -808,7 +1145,7 @@ export default function App() {
           isWalking: false,
           isScanning: false,
           targetPos: STATIONS.security_gate,
-          rotationY: 0,
+          rotationY: Math.PI * 0.8,
           statusText: 'Pesan terkirim ke WhatsApp Gateway!',
         },
         'orange-agent': {
@@ -816,15 +1153,15 @@ export default function App() {
           isWalking: false,
           isScanning: false,
           targetPos: STATIONS.data_vault,
-          rotationY: -Math.PI * 0.75,
+          rotationY: 0,
           statusText: 'Data prospek berhasil diperbarui di database.',
         },
         'purple-agent': {
           ...prev['purple-agent'],
           isWalking: false,
-          isTyping: false,
-          targetPos: STATIONS.kanban_board,
-          rotationY: Math.PI,
+          isTyping: true,
+          targetPos: STATIONS.workstation_desk_02,
+          rotationY: -Math.PI / 2,
           statusText: 'Siap untuk prospek berikutnya',
         },
         'blue-agent': {
@@ -832,7 +1169,7 @@ export default function App() {
           isWalking: false,
           isTyping: true,
           targetPos: STATIONS.workstation_desk,
-          rotationY: Math.PI,
+          rotationY: Math.PI / 2,
           statusText: 'Monitoring Stock & Catalog',
         },
       }))
@@ -870,136 +1207,162 @@ export default function App() {
   return (
     <>
       <RouteErrorBoundary currentRoute={currentRoute} onNavigate={navigate}>
-        {/* 1. RUTE: LANDING PAGE (SAMS-Style Showcase) */}
-        {currentRoute === 'landing' && (
-          <LandingPage
-            onNavigate={navigate}
-            isBackendConnected={isBackendConnected}
-            systemInfo={systemInfo}
-            bossConfig={bossConfig}
-            agents={agents}
-            leads={leads}
-          />
-        )}
-
-        {/* 2. RUTE: DASHBOARD SAAS (Full Analytics & Leads Management) */}
-        {currentRoute === 'dashboard' && (
-          <DashboardView
-            onNavigate={navigate}
-            isBackendConnected={isBackendConnected}
-            systemInfo={systemInfo}
-            bossConfig={bossConfig}
-            agents={agents}
-            leads={leads}
-            activities={activities}
-            onSelectLead={handleSelectLead}
-            onApprovePitch={handleApprovePitch}
-            onRefresh={fetchData}
-            onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
-            onOpenCreateLead={() => setIsCreateLeadOpen(true)}
-            onRunAutoPipeline={handleRunAutoPipeline}
-            isGenerating={isGenerating}
-            pitchResult={pitchResult}
-          />
-        )}
-
-        {/* 3. RUTE: VIRTUAL OFFICE 3D (Architectural Blueprint Canvas & Cyber HUD) */}
-        {currentRoute === 'office' && (
-          <main className="w-screen h-screen relative bg-white overflow-hidden select-none">
-            {/* Blueprint Canvas Grid Pattern */}
-            <div className={`fixed inset-0 pointer-events-none z-0 bg-grid-pattern ${isPure3DMode ? "opacity-0" : "opacity-70"}`} aria-hidden="true" />
-            {/* 3D Diorama Kantor Virtual Modern MSI Cubi NUC */}
-            <OfficeScene
-              agents={agents}
-              bossConfig={bossConfig}
-              selectedAgentId={selectedAgentId}
-              onSelectAgent={setSelectedAgentId}
-              leads={leads}
-              activeLead={activeLead}
-              pitchResult={pitchResult}
-              isEntranceOpen={isEntranceOpen}
-              activePOV={activePOV}
-              transitionTrigger={transitionTrigger}
-              controlsRef={officeControlsRef}
-              isPure3DMode={isPure3DMode}
-            />
-
-            {/* Tombol Keluar Mode Fullscreen 3D Immersive */}
-            {isPure3DMode && (
-              <div className="absolute top-4 right-4 z-50 pointer-events-auto">
-                <button
-                  type="button"
-                  onClick={handleExitPure3D}
-                  style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
-                  className="px-4 py-2 rounded-xl bg-[#192A56] font-bold text-xs uppercase shadow-md flex items-center gap-2 cursor-pointer hover:bg-[#0E1A38] text-white transition"
-                  title="Keluar dari Fullscreen (Tekan ESC)"
-                >
-                  <Minimize2 className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-white">Keluar Fullscreen (ESC)</span>
-                </button>
-              </div>
-            )}
-
-            {/* Glassmorphism Dashboard SaaS HUD (Disembunyikan Saat Mode Fullscreen Murni) */}
-            {!isPure3DMode && (
-              <DashboardOverlay
-                agents={agents}
-                bossConfig={bossConfig}
-                officeName={officeName}
-                selectedAgentId={selectedAgentId}
-                onSelectAgent={setSelectedAgentId}
-                leads={leads}
-                activities={activities}
-                systemInfo={systemInfo}
-                isBackendConnected={isBackendConnected}
-                activeLead={activeLead}
-                isGenerating={isGenerating}
-                pitchResult={pitchResult}
-                onSelectLead={handleSelectLead}
-                onApprovePitch={handleApprovePitch}
-                onRefresh={fetchData}
-                onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
-                onOpenOfficeSetup={() => setIsEntranceOpen(true)}
-                onOpenCreateLead={() => setIsCreateLeadOpen(true)}
-                onRunAutoPipeline={handleRunAutoPipeline}
-                onOpenEntrance={() => setIsEntranceOpen(true)}
-                onNavigate={navigate}
-                activePOV={activePOV}
-                onChangePOV={handleChangePOV}
-                onZoom={handleManualZoom}
-                onResetPOV={handleResetPOV}
-                onTogglePure3D={handleTogglePure3D}
-              />
-            )}
-
-            {/* Setup Kantor Otonom AI & Sambutan Gerbang (Office Setup Wizard) */}
-            <OfficeEntranceModal
-              isOpen={isEntranceOpen}
-              onEnterOffice={handleEnterOffice}
+        <Suspense fallback={<RouteLoadingFallback />}>
+          {/* 1. RUTE: LANDING PAGE (SAMS-Style Showcase) */}
+          {currentRoute === 'landing' && (
+            <LandingPage
+              onNavigate={navigate}
               isBackendConnected={isBackendConnected}
               systemInfo={systemInfo}
               bossConfig={bossConfig}
-              currentOfficeName={officeName}
               agents={agents}
+              leads={leads}
             />
-          </main>
-        )}
+          )}
+
+          {/* 2. RUTE: DASHBOARD SAAS (Full Analytics & Leads Management) */}
+          {currentRoute === 'dashboard' && (
+            <DashboardView
+              onNavigate={navigate}
+              isBackendConnected={isBackendConnected}
+              systemInfo={systemInfo}
+              bossConfig={bossConfig}
+              agents={agents}
+              leads={leads}
+              activities={activities}
+              onSelectLead={handleSelectLead}
+              onApprovePitch={handleApprovePitch}
+              onRefresh={fetchData}
+              onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
+              onOpenCreateLead={() => setIsCreateLeadOpen(true)}
+              onRunAutoPipeline={handleRunAutoPipeline}
+              isGenerating={isGenerating}
+              pitchResult={pitchResult}
+            />
+          )}
+
+          {/* 3. RUTE: VIRTUAL OFFICE 3D (Architectural Blueprint Canvas & Clean Studio Aesthetic) */}
+          {currentRoute === 'office' && (
+            <main className="w-screen h-screen relative bg-[#f8fafc] overflow-hidden select-none">
+              {/* Studio Canvas Subtle Ambient Gradient */}
+              <div className={`fixed inset-0 pointer-events-none z-0 bg-light-office-bg ${isPure3DMode ? "opacity-0" : "opacity-80"}`} aria-hidden="true" />
+              {/* 3D Diorama Kantor Virtual Sesuai Referensi (ai/ref kantor.png) */}
+              <OfficeScene
+                agents={agents}
+                bossConfig={bossConfig}
+                selectedAgentId={selectedAgentId}
+                onSelectAgent={handleSelectAgent}
+                leads={leads}
+                activeLead={activeLead}
+                pitchResult={pitchResult}
+                isEntranceOpen={isEntranceOpen}
+                activePOV={activePOV}
+                transitionTrigger={transitionTrigger}
+                controlsRef={officeControlsRef}
+                isPure3DMode={isPure3DMode}
+              />
+
+              {/* Mode Fullscreen 3D Immersive: Bersih, Minimalis & Bebas Elemen / Icon Default AI */}
+              {isPure3DMode && (
+                <div className="absolute top-4 right-4 z-50 pointer-events-auto">
+                  <button
+                    type="button"
+                    onClick={handleExitPure3D}
+                    style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#192A56] hover:bg-[#0E1A38] text-white text-xs font-semibold shadow-md flex items-center gap-2 cursor-pointer transition active:scale-95 border border-white/10"
+                    title="Keluar dari Fullscreen (ESC)"
+                  >
+                    <Minimize2 className="w-3.5 h-3.5 text-white" />
+                    <span>Keluar (ESC)</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Glassmorphism Dashboard SaaS HUD (Disembunyikan Saat Mode Fullscreen Murni) */}
+              {!isPure3DMode && (
+                <DashboardOverlay
+                  agents={agents}
+                  bossConfig={bossConfig}
+                  officeName={officeName}
+                  selectedAgentId={selectedAgentId}
+                  onSelectAgent={handleSelectAgent}
+                  leads={leads}
+                  activities={activities}
+                  systemInfo={systemInfo}
+                  isBackendConnected={isBackendConnected}
+                  activeLead={activeLead}
+                  isGenerating={isGenerating}
+                  pitchResult={pitchResult}
+                  onSelectLead={handleSelectLead}
+                  onApprovePitch={handleApprovePitch}
+                  onRefresh={fetchData}
+                  onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
+                  onOpenOfficeSetup={() => setIsEntranceOpen(true)}
+                  onOpenCreateLead={() => setIsCreateLeadOpen(true)}
+                  onRunAutoPipeline={handleRunAutoPipeline}
+                  onOpenEntrance={() => setIsEntranceOpen(true)}
+                  onNavigate={navigate}
+                  activePOV={activePOV}
+                  onChangePOV={handleChangePOV}
+                  onExecuteCommand={handleExecuteOfficeCommand}
+                  onZoom={handleManualZoom}
+                  onResetPOV={handleResetPOV}
+                  onTogglePure3D={handleTogglePure3D}
+                  userProfile={deviceProfile}
+                  onOpenProfileSettings={() => {
+                    setDeviceModalMode('profile')
+                    setIsDeviceModalOpen(true)
+                  }}
+                />
+              )}
+
+              {/* Setup Kantor Otonom AI & Sambutan Gerbang (Office Setup Wizard) */}
+              {isEntranceOpen && (
+                <OfficeEntranceModal
+                  isOpen={isEntranceOpen}
+                  onEnterOffice={handleEnterOffice}
+                  isBackendConnected={isBackendConnected}
+                  systemInfo={systemInfo}
+                  bossConfig={bossConfig}
+                  currentOfficeName={officeName}
+                  agents={agents}
+                />
+              )}
+            </main>
+          )}
+        </Suspense>
       </RouteErrorBoundary>
 
-      {/* Modal Personalisasi Nama Bos & Tim Cubi */}
-      <TeamSetupModal
-        isOpen={isTeamSetupOpen}
-        onClose={() => setIsTeamSetupOpen(false)}
-        teamConfig={{ boss: bossConfig, agents }}
-        onSave={handleSaveTeamConfig}
-      />
+      <Suspense fallback={null}>
+        {/* Modal Personalisasi Nama Bos & Tim Cubi */}
+        {isTeamSetupOpen && (
+          <TeamSetupModal
+            isOpen={isTeamSetupOpen}
+            onClose={() => setIsTeamSetupOpen(false)}
+            teamConfig={{ boss: bossConfig, agents }}
+            onSave={handleSaveTeamConfig}
+          />
+        )}
 
-      {/* Modal Tambah Lead Baru */}
-      <CreateLeadModal
-        isOpen={isCreateLeadOpen}
-        onClose={() => setIsCreateLeadOpen(false)}
-        onCreateLead={handleCreateLead}
-      />
+        {/* Modal Tambah Lead Baru */}
+        {isCreateLeadOpen && (
+          <CreateLeadModal
+            isOpen={isCreateLeadOpen}
+            onClose={() => setIsCreateLeadOpen(false)}
+            onCreateLead={handleCreateLead}
+          />
+        )}
+
+        {/* Modal Autentikasi Keamanan & Profil Perangkat Workstation */}
+        <DeviceSecurityModal
+          isOpen={isDeviceModalOpen}
+          mode={deviceModalMode}
+          currentProfile={deviceProfile}
+          onSaveProfile={handleSaveDeviceProfile}
+          onResetDevice={handleResetDevice}
+          onClose={() => setIsDeviceModalOpen(false)}
+        />
+      </Suspense>
     </>
   )
 }
