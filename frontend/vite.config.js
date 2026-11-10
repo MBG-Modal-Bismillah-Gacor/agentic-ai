@@ -13,5 +13,26 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('three') || id.includes('@react-three')) {
+              return 'three-vendor'
+            }
+            if (id.includes('gsap') || id.includes('lenis')) {
+              return 'anim-vendor'
+            }
+            if (id.includes('lucide-react')) {
+              return 'lucide-vendor'
+            }
+            return 'vendor'
+          }
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1200,
   }
 })

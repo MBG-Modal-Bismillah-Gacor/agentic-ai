@@ -45,8 +45,10 @@
 }
 
 :root {
-  --lightgrey: #FFFFFF;
-  --canvas: #FFFFFF;
+  --light: #FFFFFF !important;
+  --lightgrey: #FFFFFF !important;
+  --canvas: #FFFFFF !important;
+  --white: #FFFFFF !important;
   --grey: rgba(25, 42, 86, 0.15);
   --dark: #192A56;
   --ink: #192A56;
@@ -189,6 +191,21 @@ html.lenis, html.lenis body {
   background-image: 
     linear-gradient(to right, rgba(25, 42, 86, 0.08) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(25, 42, 86, 0.08) 1px, transparent 1px);
+}
+
+/* Brutalist dark cyber background grid for 3D Office */
+.bg-dark-grid-pattern {
+  background-size: 64px 64px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+/* Clean bright architectural studio background for 3D Office */
+.bg-light-office-bg {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f5f9 65%, #e2e8f0 100%);
 }
 
 /* Ensure button chamfer polygon uses Navy & Cream */
@@ -593,6 +610,77 @@ html, body {
 .team-popup-decor-bottom-right {
   border-color: #192A56 !important;
 }
+
+/* ========================================================================= */
+/* PRIMARY BLUE (#192A56) THEME & HEADINGS STYLING                              */
+/* ========================================================================= */
+.capital-title-h2,
+.incubation-title .h2,
+.testimonials-title .h2,
+.st-our-team .h2,
+.h2.capital-title-h2 {
+  color: #192A56 !important;
+}
+
+/* Portfolio Card Hover: Do NOT invert to black */
+.portfolio-item-link:hover {
+  filter: none !important;
+  background-color: #192A56 !important;
+}
+
+.portfolio-item-link:hover svg path {
+  fill: #FFFFFF !important;
+}
+
+/* Force pure white on graphic boxes requested by user */
+.graphic-block,
+.graphic-block.graphic-block-alt,
+.graphic-block.graphic-block-dark,
+.graphic-block.incubation-graphic-big,
+.capital-graphic-big,
+.capital-graphic-small,
+.graphic-image.capital-graphic-image,
+.graphic-image.incubation-graphic-image,
+.testimonials-graphic,
+.testimonials-slider-row,
+.testimonials-item,
+.testimonials-social-col,
+.team-graphic,
+.section-heading-illustration,
+.faq-wrapper,
+.faq-listing {
+  background-color: #FFFFFF !important;
+}
+
+/* Subtle architectural title backgrounds so title text never disappears */
+.capital-title,
+.incubation-title,
+.testimonials-title,
+.st-our-team {
+  background-color: #F6F6F6 !important;
+}
+
+/* Custom Sleek Scrollbar for Office Drawers & Lists */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #94A3B8;
+  border-radius: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #192A56;
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #94A3B8 #F1F5F9;
+}
+
 
 
 

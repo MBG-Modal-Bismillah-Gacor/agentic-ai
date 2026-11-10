@@ -2653,6 +2653,7 @@ ul {
   z-index: 2;
   background-color: #192A56 !important;
   color: #FFFFFF !important;
+  font-weight: 700 !important;
   font-size: var(--12px-size);
   text-transform: uppercase;
   white-space: nowrap;
