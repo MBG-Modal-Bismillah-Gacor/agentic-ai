@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { RoundedBox, Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -87,54 +87,54 @@ function CuteCapsuleRobot({ inCapsule = false, accentColor = '#192A56', eyeColor
       {/* 1. KEPALA ROBOT MONITOR BULAT HALUS (Sleek Rounded Squircle) */}
       <group ref={headRef} position={[0, 0.36, 0]}>
         {/* Casing Luar Krem/Putih Mulus dengan Sudut Membulat Organik */}
-        <RoundedBox args={[0.82, 0.70, 0.64]} radius={0.16} smoothness={5} castShadow>
+        <RoundedBox args={[0.82, 0.70, 0.64]} radius={0.16} smoothness={2}>
           <meshStandardMaterial color="#FFFFFF" roughness={0.18} metalness={0.08} />
         </RoundedBox>
 
         {/* Bezel Aksen Deep Navy Lembut / Custom Accent */}
         <group position={[0, 0, 0.31]}>
-          <RoundedBox args={[0.68, 0.56, 0.04]} radius={0.11} smoothness={4}>
+          <RoundedBox args={[0.68, 0.56, 0.04]} radius={0.11} smoothness={2}>
             <meshStandardMaterial color={accentColor} roughness={0.25} metalness={0.2} />
           </RoundedBox>
         </group>
 
         {/* Layar Kaca Hitam Mengkilap di Depan */}
         <group position={[0, 0, 0.325]}>
-          <RoundedBox args={[0.60, 0.48, 0.02]} radius={0.08} smoothness={4}>
+          <RoundedBox args={[0.60, 0.48, 0.02]} radius={0.08} smoothness={2}>
             <meshStandardMaterial color="#0A0E1A" roughness={0.08} metalness={0.88} />
           </RoundedBox>
         </group>
 
         {/* Mata LED Kapsul Digital Putih / Lembut Kiri */}
         <mesh ref={leftEyeRef} position={[-0.14, 0.03, 0.342]}>
-          <capsuleGeometry args={[0.032, 0.07, 10, 14]} />
+          <capsuleGeometry args={[0.032, 0.07, 6, 8]} />
           <meshStandardMaterial color={eyeColor} emissive={eyeColor} emissiveIntensity={2.8} />
         </mesh>
 
         {/* Mata LED Kapsul Digital Putih / Lembut Kanan */}
         <mesh ref={rightEyeRef} position={[0.14, 0.03, 0.342]}>
-          <capsuleGeometry args={[0.032, 0.07, 10, 14]} />
+          <capsuleGeometry args={[0.032, 0.07, 6, 8]} />
           <meshStandardMaterial color={eyeColor} emissive={eyeColor} emissiveIntensity={2.8} />
         </mesh>
 
         {/* Antena / Dial Samping Membulat */}
         <mesh position={[-0.43, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.07, 0.07, 0.06, 20]} />
+          <cylinderGeometry args={[0.07, 0.07, 0.06, 12]} />
           <meshStandardMaterial color={accentColor} roughness={0.25} metalness={0.3} />
         </mesh>
         <mesh position={[0.43, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.07, 0.07, 0.06, 20]} />
+          <cylinderGeometry args={[0.07, 0.07, 0.06, 12]} />
           <meshStandardMaterial color={accentColor} roughness={0.25} metalness={0.3} />
         </mesh>
 
         {/* Antena Mini Atas dengan LED Glowing */}
         <group position={[0, 0.37, 0]}>
           <mesh position={[0, 0.04, 0]}>
-            <cylinderGeometry args={[0.012, 0.012, 0.09, 10]} />
+            <cylinderGeometry args={[0.012, 0.012, 0.09, 8]} />
             <meshStandardMaterial color={accentColor} metalness={0.8} />
           </mesh>
           <mesh position={[0, 0.095, 0]}>
-            <sphereGeometry args={[0.03, 16, 16]} />
+            <sphereGeometry args={[0.03, 10, 10]} />
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={2.0} />
           </mesh>
         </group>
@@ -142,20 +142,20 @@ function CuteCapsuleRobot({ inCapsule = false, accentColor = '#192A56', eyeColor
 
       {/* 2. LEHER MINIMALIS */}
       <mesh position={[0, -0.06, 0]}>
-        <cylinderGeometry args={[0.11, 0.11, 0.10, 20]} />
+        <cylinderGeometry args={[0.11, 0.11, 0.10, 12]} />
         <meshStandardMaterial color="#334155" metalness={0.85} roughness={0.2} />
       </mesh>
 
       {/* 3. BODI ROBOT PUTIH RAMPING SEIMBANG */}
       <group position={[0, -0.32, 0]}>
-        <mesh castShadow>
-          <capsuleGeometry args={[0.26, 0.30, 16, 20]} />
+        <mesh>
+          <capsuleGeometry args={[0.26, 0.30, 8, 12]} />
           <meshStandardMaterial color="#F8FAFC" roughness={0.2} metalness={0.12} />
         </mesh>
 
         {/* Chest Plate / Core Indicator Glowing */}
         <group position={[0, 0.05, 0.25]}>
-          <RoundedBox args={[0.18, 0.11, 0.03]} radius={0.04} smoothness={3}>
+          <RoundedBox args={[0.18, 0.11, 0.03]} radius={0.04} smoothness={2}>
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={2.2} />
           </RoundedBox>
         </group>
@@ -163,38 +163,38 @@ function CuteCapsuleRobot({ inCapsule = false, accentColor = '#192A56', eyeColor
 
       {/* 4. TANGAN KIRI (Floating) */}
       <group ref={leftArmRef} position={[-0.38, -0.28, 0]}>
-        <mesh position={[-0.08, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.06, 0.18, 10, 14]} />
+        <mesh position={[-0.08, -0.08, 0]}>
+          <capsuleGeometry args={[0.06, 0.18, 6, 8]} />
           <meshStandardMaterial color="#FFFFFF" roughness={0.25} />
         </mesh>
         <mesh position={[-0.08, -0.20, 0]}>
-          <sphereGeometry args={[0.07, 16, 16]} />
+          <sphereGeometry args={[0.07, 10, 10]} />
           <meshStandardMaterial color="#0E1013" metalness={0.7} />
         </mesh>
       </group>
 
       {/* 5. TANGAN KANAN (Floating & Waving) */}
       <group ref={rightArmRef} position={[0.38, -0.28, 0]}>
-        <mesh position={[0.08, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.06, 0.18, 10, 14]} />
+        <mesh position={[0.08, -0.08, 0]}>
+          <capsuleGeometry args={[0.06, 0.18, 6, 8]} />
           <meshStandardMaterial color="#FFFFFF" roughness={0.25} />
         </mesh>
         <mesh position={[0.08, -0.20, 0]}>
-          <sphereGeometry args={[0.07, 16, 16]} />
+          <sphereGeometry args={[0.07, 10, 10]} />
           <meshStandardMaterial color="#0E1013" metalness={0.7} />
         </mesh>
       </group>
 
       {/* 6. KAKI MINI MELAYANG */}
       <group position={[-0.13, -0.62, 0.04]}>
-        <mesh rotation={[-0.2, 0, 0]} castShadow>
-          <capsuleGeometry args={[0.065, 0.14, 10, 14]} />
+        <mesh rotation={[-0.2, 0, 0]}>
+          <capsuleGeometry args={[0.065, 0.14, 6, 8]} />
           <meshStandardMaterial color="#0E1013" roughness={0.35} metalness={0.6} />
         </mesh>
       </group>
       <group position={[0.13, -0.62, 0.04]}>
-        <mesh rotation={[-0.2, 0, 0]} castShadow>
-          <capsuleGeometry args={[0.065, 0.14, 10, 14]} />
+        <mesh rotation={[-0.2, 0, 0]}>
+          <capsuleGeometry args={[0.065, 0.14, 6, 8]} />
           <meshStandardMaterial color="#0E1013" roughness={0.35} metalness={0.6} />
         </mesh>
       </group>
@@ -223,7 +223,7 @@ function FloatingCoin() {
     <group ref={coinRef} position={[0, 0, 0]}>
       {/* Koin Silinder Utama Navy Bertekstur Logam - 1 Bulet Bersih Sempurna, Ukuran Proporsional */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.55, 0.55, 0.10, 48]} />
+        <cylinderGeometry args={[0.55, 0.55, 0.10, 28]} />
         <meshStandardMaterial
           color="#192A56"
           roughness={0.2}
@@ -281,11 +281,11 @@ function HoloNeuralCore() {
         <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2.2} />
       </mesh>
       <mesh ref={ring1Ref}>
-        <torusGeometry args={[0.95, 0.025, 16, 64]} />
+        <torusGeometry args={[0.95, 0.025, 8, 32]} />
         <meshStandardMaterial color="#0E1013" roughness={0.2} metalness={0.8} />
       </mesh>
       <mesh ref={ring2Ref} rotation={[Math.PI / 3, 0, 0]}>
-        <torusGeometry args={[1.15, 0.025, 16, 64]} />
+        <torusGeometry args={[1.15, 0.025, 8, 32]} />
         <meshStandardMaterial color="#192A56" roughness={0.2} metalness={0.9} />
       </mesh>
       <pointLight color="#192A56" intensity={3.5} distance={4} />
@@ -309,22 +309,22 @@ function StarConnector() {
     <group ref={meshRef}>
       {/* Central Spherical Hub */}
       <mesh>
-        <sphereGeometry args={[0.38, 24, 24]} />
+        <sphereGeometry args={[0.38, 14, 14]} />
         <meshStandardMaterial color="#FFFFFF" roughness={0.15} metalness={0.1} />
       </mesh>
       {/* X-Axis Cylindrical Pipe Arm */}
       <mesh rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.18, 0.18, 1.35, 24]} />
+        <cylinderGeometry args={[0.18, 0.18, 1.35, 14]} />
         <meshStandardMaterial color="#FFFFFF" roughness={0.15} metalness={0.1} />
       </mesh>
       {/* Y-Axis Cylindrical Pipe Arm */}
       <mesh>
-        <cylinderGeometry args={[0.18, 0.18, 1.35, 24]} />
+        <cylinderGeometry args={[0.18, 0.18, 1.35, 14]} />
         <meshStandardMaterial color="#FFFFFF" roughness={0.15} metalness={0.1} />
       </mesh>
       {/* Z-Axis Cylindrical Pipe Arm */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.18, 0.18, 1.35, 24]} />
+        <cylinderGeometry args={[0.18, 0.18, 1.35, 14]} />
         <meshStandardMaterial color="#FFFFFF" roughness={0.15} metalness={0.1} />
       </mesh>
     </group>
@@ -338,24 +338,56 @@ export function RobotMascotCanvas({
   accentColor = '#192A56',
   eyeColor = '#FFFFFF'
 }) {
-  return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'visible' }}>
-      <Canvas
-        shadows
-        dpr={[1, 1.5]}
-        camera={{ position: [0, 0, cameraDistance], fov: 38 }}
-        style={{ width: '100%', height: '100%', pointerEvents: 'auto', overflow: 'visible' }}
-        gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
-      >
-        <ambientLight intensity={1.5} color="#FFFFFF" />
-        <directionalLight position={[6, 10, 8]} intensity={1.9} color="#FFFFFF" />
-        <directionalLight position={[-6, -6, -4]} intensity={0.6} color="#192A56" />
+  const containerRef = useRef(null)
+  const [isInView, setIsInView] = useState(false)
+  const [hasMountedOnce, setHasMountedOnce] = useState(false)
 
-        {mode === 'robot' && <CuteCapsuleRobot inCapsule={inCapsule} accentColor={accentColor} eyeColor={eyeColor} />}
-        {mode === 'core' && <HoloNeuralCore />}
-        {mode === 'coin' && <FloatingCoin />}
-        {mode === 'connector' && <StarConnector />}
-      </Canvas>
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting
+        setIsInView(visible)
+        if (visible) {
+          setHasMountedOnce(true)
+        }
+      },
+      { rootMargin: '120px' }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'visible' }}>
+      {hasMountedOnce && (
+        <Canvas
+          frameloop={isInView ? 'always' : 'never'}
+          dpr={[1, 1.25]}
+          camera={{ position: [0, 0, cameraDistance], fov: 38 }}
+          style={{ width: '100%', height: '100%', pointerEvents: 'auto', overflow: 'visible' }}
+          gl={{
+            alpha: true,
+            antialias: false,
+            powerPreference: 'low-power',
+            preserveDrawingBuffer: false,
+            stencil: false,
+            depth: true,
+          }}
+        >
+          <ambientLight intensity={1.5} color="#FFFFFF" />
+          <directionalLight position={[6, 10, 8]} intensity={1.9} color="#FFFFFF" />
+          <directionalLight position={[-6, -6, -4]} intensity={0.6} color="#192A56" />
+
+          {mode === 'robot' && <CuteCapsuleRobot inCapsule={inCapsule} accentColor={accentColor} eyeColor={eyeColor} />}
+          {mode === 'core' && <HoloNeuralCore />}
+          {mode === 'coin' && <FloatingCoin />}
+          {mode === 'connector' && <StarConnector />}
+        </Canvas>
+      )}
     </div>
   )
 }

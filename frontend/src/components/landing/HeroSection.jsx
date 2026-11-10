@@ -13,24 +13,26 @@ export function HeroSection({ onNavigate }) {
     if (!heroRobotRef.current) return
 
     const ctx = gsap.context(() => {
-      // Robot floats down seamlessly into the conduit pipe when scrolling past Hero
+      // Robot dives down towards the pipe and Section 2 on scroll
       gsap.fromTo(
         heroRobotRef.current,
         {
           y: 0,
           scale: 1,
           opacity: 1,
+          rotation: 0,
         },
         {
-          y: 330,
-          scale: 0.88,
-          opacity: 0.25,
-          ease: 'power1.in',
+          y: 580,
+          scale: 0.82,
+          opacity: 0,
+          rotation: 6,
+          ease: 'power2.in',
           scrollTrigger: {
             trigger: '#hero-section',
             start: 'top top',
-            end: 'bottom 10%',
-            scrub: 0.8,
+            end: 'bottom 15%',
+            scrub: 0.7,
             invalidateOnRefresh: true,
           }
         }
@@ -231,7 +233,7 @@ export function HeroSection({ onNavigate }) {
               >
                 <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
                   <div
-                    className="button-primary-text font-bold text-white"
+                    className="button-primary-text font-bold"
                     style={{
                       backgroundColor: '#192A56',
                       color: '#FFFFFF',

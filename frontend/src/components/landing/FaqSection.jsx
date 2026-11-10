@@ -50,8 +50,8 @@ export function FaqSection() {
               />
             </div>
 
-            <div className="section-heading-illustration">
-              <div className="graphic-block graphic-block-alt">
+            <div className="section-heading-illustration bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+              <div className="graphic-block graphic-block-alt bg-white" style={{ backgroundColor: '#FFFFFF' }}>
                 <div className="graphic-block-decor graphic-block-decor-top-left" />
                 <div className="graphic-block-decor graphic-block-decor-top-right" />
                 <div className="graphic-block-decor graphic-block-decor-bottom-right" />
@@ -85,8 +85,8 @@ export function FaqSection() {
           <div className="gap-vertical show-in-tablet" />
 
           {/* FAQ Accordion List */}
-          <div className="faq-wrapper w-dyn-list">
-            <div role="list" className="faq-listing w-dyn-items">
+          <div className="faq-wrapper w-dyn-list bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+            <div role="list" className="faq-listing w-dyn-items bg-white" style={{ backgroundColor: '#FFFFFF' }}>
               {faqs.map((item, idx) => {
                 const isOpen = openIdx === idx
                 return (
@@ -104,11 +104,8 @@ export function FaqSection() {
                         <h3 className="accordion-title">{item.q}</h3>
                         <div className="accordion-button flex items-center justify-center shrink-0">
                           <div
-                            className={`w-9 h-9 sm:w-10 sm:h-10 border border-[#192A56] flex items-center justify-center transition-all duration-200 ${
-                              isOpen
-                                ? 'bg-[#192A56] text-white'
-                                : 'bg-white hover:bg-[#192A56] text-[#192A56] hover:text-white'
-                            }`}
+                            className="faq-toggle-btn w-9 h-9 sm:w-10 sm:h-10 border border-[#192A56]/20 bg-white text-[#192A56] hover:border-[#192A56] flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xs"
+                            style={{ backgroundColor: '#FFFFFF', color: '#192A56', borderColor: 'rgba(25, 42, 86, 0.25)' }}
                           >
                             <svg
                               width="14"
@@ -118,8 +115,8 @@ export function FaqSection() {
                               xmlns="http://www.w3.org/2000/svg"
                               className={`transition-transform duration-300 ${isOpen ? 'rotate-45' : 'rotate-0'}`}
                             >
-                              <line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="square"/>
-                              <line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" strokeWidth="2" strokeLinecap="square"/>
+                              <line x1="8" y1="1" x2="8" y2="15" stroke="#192A56" strokeWidth="2.5" strokeLinecap="square"/>
+                              <line x1="1" y1="8" x2="15" y2="8" stroke="#192A56" strokeWidth="2.5" strokeLinecap="square"/>
                             </svg>
                           </div>
                         </div>

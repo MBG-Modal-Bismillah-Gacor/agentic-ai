@@ -119,8 +119,8 @@ export function FoundersSection({ onNavigate }) {
           
           {/* Section Heading with Webflow grid */}
           <div className="section-heading sh-grid-2-1-1">
-            <div className="section-title st-our-team">
-              <h2 anim-trigger="" className="h2 h2-lg uppercase">
+            <div className="section-title st-our-team" style={{ backgroundColor: '#F6F6F6' }}>
+              <h2 anim-trigger="" className="h2 h2-lg uppercase" style={{ color: '#192A56', fontFamily: "'LabsAmiga', sans-serif" }}>
                 TEAM AI
               </h2>
             </div>
@@ -168,8 +168,8 @@ export function FoundersSection({ onNavigate }) {
               </div>
             </div>
 
-            <div className="team-graphic">
-              <div className="graphic-block graphic-block-alt">
+            <div className="team-graphic bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+              <div className="graphic-block graphic-block-alt bg-white" style={{ backgroundColor: '#FFFFFF' }}>
                 <div className="graphic-block-decor graphic-block-decor-top-left" />
                 <div className="graphic-block-decor graphic-block-decor-top-right" />
                 <div className="graphic-block-decor graphic-block-decor-bottom-right" />
@@ -369,7 +369,7 @@ export function FoundersSection({ onNavigate }) {
                   handleCloseDetail()
                   onNavigate?.('office', { agentId: selectedAgent.id })
                 }}
-                className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white font-mono text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
+                className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white font-mono text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 border border-[#192A56]"
               >
                 <span>Buka di Virtual Office</span>
                 <span>➔</span>

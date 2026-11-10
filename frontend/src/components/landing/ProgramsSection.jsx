@@ -15,11 +15,11 @@ export function ProgramsSection({ onNavigate }) {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // 1. Smooth Entry: Robot mascot descends and glides gracefully into Section 2 from Hero
+      // 1. Robot Stage (AICOSYSTEM): Dives in smoothly from above connecting with Hero scroll
       if (robotStageRef.current) {
         gsap.fromTo(
           robotStageRef.current,
-          { y: -100, opacity: 0.2, scale: 0.88 },
+          { y: -160, opacity: 0.2, scale: 0.88 },
           {
             y: 0,
             opacity: 1,
@@ -35,35 +35,24 @@ export function ProgramsSection({ onNavigate }) {
         )
       }
 
-      // 2. Smooth Morph: Robot smoothly condenses and morphs into the 3D MBG Token as user scrolls into Section 3
-      if (morphRobotRef.current && morphCoinRef.current) {
-        gsap.set(morphRobotRef.current, { scale: 1, opacity: 1, rotationY: 0 })
-        gsap.set(morphCoinRef.current, { scale: 0.1, opacity: 0, rotationY: -180 })
-
-        const morphTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: '#incubation-section',
-            start: 'top 85%',
-            end: 'top 25%',
-            scrub: 0.8,
-          }
-        })
-
-        morphTl
-          // Robot shrinks and dissolves into the conduit energy beam
-          .to(morphRobotRef.current, {
-            scale: 0.1,
-            opacity: 0,
-            rotationY: 180,
-            ease: 'power2.inOut',
-          }, 0)
-          // 3D MBG Token expands and materializes with cyber rotation
-          .to(morphCoinRef.current, {
+      // 2. Cohesive Section 2 Pipeline Reveal: Continuous conduit stream into 3D MBG emblem
+      if (morphCoinRef.current) {
+        gsap.fromTo(
+          morphCoinRef.current,
+          { scale: 0.75, opacity: 0.4, rotationY: -90 },
+          {
             scale: 1,
             opacity: 1,
             rotationY: 0,
-            ease: 'power2.inOut',
-          }, 0)
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: '#incubation-section',
+              start: 'top 80%',
+              end: 'top 30%',
+              scrub: 0.6,
+            }
+          }
+        )
       }
     })
 
@@ -132,15 +121,17 @@ export function ProgramsSection({ onNavigate }) {
 
           {/* Header Section 1 */}
           <div className="capital-top border-t border-b border-[#192A56]/20 bg-white">
-            <div id="w-node-_3b476a89-29e0-a676-f444-cab94e4d329d-ef5b982d" className="capital-title flex flex-col justify-center">
-              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#192A56]/60 mb-1 block">
+            <div id="w-node-_3b476a89-29e0-a676-f444-cab94e4d329d-ef5b982d" className="capital-title flex flex-col justify-center" style={{ backgroundColor: '#F6F6F6' }}>
+              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#576574] mb-1 block">
                 powered by MSI Cubi NUC AI &amp; Autonomous Agent Mesh
               </span>
-              <h2 className="h2 capital-title-h2 uppercase">AICOSYSTEM</h2>
+              <h2 className="h2 capital-title-h2 uppercase" style={{ color: '#192A56', fontFamily: "'LabsAmiga', sans-serif" }}>
+                AICOSYSTEM
+              </h2>
             </div>
 
-            <div id="w-node-d275d776-fc7c-c0ea-a1cc-06b08ad04da3-ef5b982d" className="capital-graphic-small">
-              <div className="graphic-image capital-graphic-image">
+            <div id="w-node-d275d776-fc7c-c0ea-a1cc-06b08ad04da3-ef5b982d" className="capital-graphic-small bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+              <div className="graphic-image capital-graphic-image bg-white" style={{ backgroundColor: '#FFFFFF' }}>
                 <img
                   src="/assets/webflow/664753c2515af09bef5b9826/6655e4989e684108dbc43a7e_graphic.svg"
                   loading="lazy"
@@ -150,7 +141,7 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
 
-            <div className="graphic-block capital-graphic-big bg-white">
+            <div className="graphic-block capital-graphic-big bg-white" style={{ backgroundColor: '#FFFFFF' }}>
               <div className="graphic-block-decor graphic-block-decor-top-left" />
               <div className="graphic-block-decor graphic-block-decor-top-right" />
               <div className="graphic-block-decor graphic-block-decor-bottom-right" />
@@ -196,13 +187,15 @@ export function ProgramsSection({ onNavigate }) {
           {/* 3-Column Body Section 1: Specs | Free Floating 3D Robot Mascot (Tanpa Kapsul) | Hardware Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-stretch relative min-h-[560px]">
             {/* Kolom Kiri: Hardware Specs Checklist */}
-            <div className="border-b lg:border-b-0 lg:border-r border-[#192A56]/20 p-6 sm:p-8 flex flex-col justify-between">
+            <div className="border-b lg:border-b-0 lg:border-r border-[#192A56]/20 p-6 sm:p-8 flex flex-col justify-between bg-white">
               <ul role="list" className="w-full space-y-3 list-none p-0 m-0">
                 {capitalItems.map((item, idx) => (
                   <li key={idx} className="aico-spec-item flex items-center gap-3.5 p-3.5 bg-white border border-[#192A56]/20 rounded-none shadow-xs hover:border-[#192A56] hover:shadow-md transition-all w-full">
-                    <svg width="20" height="16" viewBox="0 0 23 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
-                      <path d="M1.1657 7.65653C0.75024 7.65653 0.453205 8.0173 0.575087 8.37386L2.56277 14.1889C3.22999 16.1456 4.83132 17.2238 7.14434 17.2238H11.2366C12.838 17.2238 13.0159 17.064 13.0159 15.6264V14.0291C13.0159 12.5916 13.1938 12.4318 14.7951 12.4318H17.0192C18.6205 12.4318 18.8429 12.2721 19.3322 10.9144L22.5207 1.43876C22.6405 1.08269 22.3436 0.723755 21.9293 0.723755H17.4375C17.1651 0.723755 16.9248 0.883907 16.8461 1.11799L13.5497 10.9144C13.0604 12.2721 12.838 12.4318 11.2366 12.4318H9.45737C7.85604 12.4318 7.63364 12.2721 7.14434 10.9144L6.18077 8.05077C6.102 7.81669 5.86175 7.65653 5.58937 7.65653H1.1657Z" fill="#192A56"/>
-                    </svg>
+                    <div className="w-7 h-7 rounded-sm bg-[#192A56]/10 border border-[#192A56]/20 flex items-center justify-center shrink-0">
+                      <svg width="18" height="14" viewBox="0 0 23 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+                        <path d="M1.1657 7.65653C0.75024 7.65653 0.453205 8.0173 0.575087 8.37386L2.56277 14.1889C3.22999 16.1456 4.83132 17.2238 7.14434 17.2238H11.2366C12.838 17.2238 13.0159 17.064 13.0159 15.6264V14.0291C13.0159 12.5916 13.1938 12.4318 14.7951 12.4318H17.0192C18.6205 12.4318 18.8429 12.2721 19.3322 10.9144L22.5207 1.43876C22.6405 1.08269 22.3436 0.723755 21.9293 0.723755H17.4375C17.1651 0.723755 16.9248 0.883907 16.8461 1.11799L13.5497 10.9144C13.0604 12.2721 12.838 12.4318 11.2366 12.4318H9.45737C7.85604 12.4318 7.63364 12.2721 7.14434 10.9144L6.18077 8.05077C6.102 7.81669 5.86175 7.65653 5.58937 7.65653H1.1657Z" fill="#192A56"/>
+                      </svg>
+                    </div>
                     <div>
                       <div className="font-mono font-bold text-xs sm:text-sm text-[#192A56]">{item.name}</div>
                       <div className="font-mono text-[11px] text-[#576574]">{item.desc}</div>
@@ -220,8 +213,8 @@ export function ProgramsSection({ onNavigate }) {
                   }}
                   className="button-primary w-inline-block"
                 >
-                  <div className="button-primary-border bg-[#192A56]">
-                    <div className="button-primary-text font-bold text-white">
+                  <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
+                    <div className="button-primary-text font-bold" style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}>
                       MASUK KE AICREW
                     </div>
                   </div>
@@ -229,7 +222,7 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
 
-            {/* Kolom Tengah: Cyber Stage Terbuka (Kapsul Dihapus Sesuai Permintaan) dengan Transisi Halus dari Hero */}
+            {/* Kolom Tengah: Cyber Stage Terbuka (Kapsul & Badge Hijau Dihapus) dengan Transisi Halus dari Hero */}
             <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col items-center justify-between relative overflow-visible pointer-events-none">
               
               {/* Pipa Sambungan Atas: Menyambung sempurna dari dasar HeroSection */}
@@ -269,12 +262,6 @@ export function ProgramsSection({ onNavigate }) {
                   <div style={{ width: '100%', height: '100%', maxWidth: '320px', maxHeight: '380px', position: 'relative' }}>
                     <RobotMascotCanvas mode="robot" inCapsule={false} cameraDistance={2.8} />
                   </div>
-                </div>
-
-                {/* Badge Status Cyber di Bawah Maskot */}
-                <div className="absolute bottom-4 bg-[#192A56] text-white border border-[#192A56] font-mono text-[10px] font-bold px-3 py-1 rounded-full shadow-md tracking-widest z-20 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  <span>AICREW AUTONOMOUS MESH</span>
                 </div>
               </div>
 
@@ -334,8 +321,8 @@ export function ProgramsSection({ onNavigate }) {
 
           {/* Header Section 2 */}
           <div className="incubation-top border-t border-b border-[#192A56]/20 bg-white">
-            <div className="incubation-left">
-              <div className="graphic-block incubation-graphic-big bg-white">
+            <div className="incubation-left bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+              <div className="graphic-block incubation-graphic-big bg-white" style={{ backgroundColor: '#FFFFFF' }}>
                 <div className="graphic-block-decor graphic-block-decor-top-left" />
                 <div className="graphic-block-decor graphic-block-decor-top-right" />
                 <div className="graphic-block-decor graphic-block-decor-bottom-right" />
@@ -348,7 +335,7 @@ export function ProgramsSection({ onNavigate }) {
                   style={{ filter: 'grayscale(0.6)' }}
                 />
               </div>
-              <div className="graphic-image incubation-graphic-image">
+              <div className="graphic-image incubation-graphic-image bg-white" style={{ backgroundColor: '#FFFFFF' }}>
                 <img
                   src="/assets/webflow/664753c2515af09bef5b9826/6655e4989e684108dbc43a7e_graphic.svg"
                   loading="lazy"
@@ -358,8 +345,8 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
 
-            <div className="incubation-title">
-              <h2 className="h2 h2-mobile uppercase">
+            <div className="incubation-title" style={{ backgroundColor: '#F6F6F6' }}>
+              <h2 className="h2 h2-mobile uppercase" style={{ color: '#192A56', fontFamily: "'LabsAmiga', sans-serif" }}>
                 CARA KERJA
               </h2>
             </div>
@@ -493,7 +480,7 @@ export function ProgramsSection({ onNavigate }) {
                   </div>
                   {/* Badge MBG Pill */}
                   <div className="mt-2 bg-[#192A56] text-white border border-[#192A56] font-mono text-[10px] font-bold px-3.5 py-0.5 rounded-full shadow-md tracking-widest z-20">
-                    MBG TOKEN
+                    MBG
                   </div>
                 </div>
 
@@ -529,8 +516,8 @@ export function ProgramsSection({ onNavigate }) {
                   }}
                   className="button-primary w-inline-block"
                 >
-                  <div className="button-primary-border bg-[#192A56]">
-                    <div className="button-primary-text font-bold text-white">
+                  <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
+                    <div className="button-primary-text font-bold" style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}>
                       MASUK KE AICREW
                     </div>
                   </div>

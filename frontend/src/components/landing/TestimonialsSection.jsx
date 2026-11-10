@@ -61,14 +61,14 @@ export function TestimonialsSection() {
       <div className="w-layout-blockcontainer container w-container">
         <div>
           {/* Testimonials Heading */}
-          <div className="testimonials-heading">
-            <div className="testimonials-title">
-              <h2 anim-trigger="" className="h2 h2-tablet-lg whitespace-nowrap" style={{ whiteSpace: 'nowrap' }}>
+          <div className="testimonials-heading bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+            <div className="testimonials-title" style={{ backgroundColor: '#F6F6F6' }}>
+              <h2 anim-trigger="" className="h2 h2-tablet-lg whitespace-nowrap uppercase" style={{ color: '#192A56', whiteSpace: 'nowrap', fontFamily: "'LabsAmiga', sans-serif" }}>
                 Testimonials
               </h2>
             </div>
 
-            <div className="testimonials-info">
+            <div className="testimonials-info bg-white" style={{ backgroundColor: '#FFFFFF' }}>
               <div className="section-heading-descr shd-paddings-l hide-in-tablet">
                 <div className="section-heading-descr-inner">
                   <div className="section-descr-info">
@@ -81,8 +81,8 @@ export function TestimonialsSection() {
               </div>
             </div>
 
-            <div className="testimonials-graphic">
-              <div className="graphic-block graphic-block-dark graphic-block-alt">
+            <div className="testimonials-graphic bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+              <div className="graphic-block graphic-block-dark graphic-block-alt bg-white" style={{ backgroundColor: '#FFFFFF' }}>
                 <div className="graphic-block-decor graphic-block-decor-top-left" />
                 <div className="graphic-block-decor graphic-block-decor-top-right" />
                 <div className="graphic-block-decor graphic-block-decor-bottom-right" />
@@ -106,7 +106,7 @@ export function TestimonialsSection() {
           </div>
 
           {/* Testimonials Slider Row */}
-          <div className="testimonials-slider-row">
+          <div className="testimonials-slider-row bg-white" style={{ backgroundColor: '#FFFFFF' }}>
             <div className="testimonials-buttons">
               <div
                 testimonial-slider-prev=""

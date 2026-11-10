@@ -265,7 +265,7 @@ export function Navbar({ onNavigate }) {
               )}
             </div>
 
-            {/* Primary Action Button: Masuk ke AICREW (Navy & Cream Chamfer) */}
+            {/* Primary Action Button: Masuk ke AICREW (#192A56 Chamfer) */}
             <a
               href="/office"
               onClick={(e) => {
@@ -274,8 +274,8 @@ export function Navbar({ onNavigate }) {
               }}
               className="button-primary w-inline-block"
             >
-              <div className="button-primary-border">
-                <div className="button-primary-text" style={{ padding: '0.75rem 1.6rem' }}>
+              <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
+                <div className="button-primary-text font-bold" style={{ padding: '0.75rem 1.6rem', backgroundColor: '#192A56', color: '#FFFFFF' }}>
                   MASUK KE AICREW
                 </div>
               </div>
