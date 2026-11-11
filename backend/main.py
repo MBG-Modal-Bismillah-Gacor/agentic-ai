@@ -7,7 +7,13 @@ from typing import Dict, Any, List, Optional
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+
+try:
+    from backend.engine_pdf import generate_spk_pdf, hitung_simulasi_kredit, hitung_angsuran_bulanan, OUTPUT_DIR
+except ImportError:
+    from engine_pdf import generate_spk_pdf, hitung_simulasi_kredit, hitung_angsuran_bulanan, OUTPUT_DIR
 
 app = FastAPI(title="Agentic Sales Hub Core API - MSI Cubi NUC", version="1.1.0")
 
@@ -321,33 +327,21 @@ def generate_pitch(req: PitchRequest):
     persona_title = req.persona_name or "Outbound Strategist"
     persona_vibe = req.persona_vibe or "Signal-based outreach: conversational, punchy, respectful of buyer time, zero fluff"
 
-    prompt = f"""
-Anda adalah {persona_title} di dealer resmi Astra Motor.
+    prompt = f"""Anda adalah {persona_title} di dealer resmi Astra Motor.
 Filosofi & Vibe Anda: "{persona_vibe}".
 Buatkan 1 pesan draf WhatsApp pendek (maksimal 3 kalimat) untuk calon pembeli.
 Nama Calon Konsumen: {req.nama}
 Kebutuhan/Minat: {req.minat}
-Unit yang Pas: {target_unit}
-Stok Cabang: {stok_status}
-Bonus Bundling: {bundling_text}
+Unit yang Pas & Ready: {target_unit} ({stok_status})
+Bonus Bundling Spesial: {bundling_text}
+Domisili: {req.domisili}
 
 Aturan Penulisan:
 1. Sapa ramah secara personal menyebut nama Kak {req.nama}.
-2. Hubungkan langsung minat konsumen dengan keunggulan unit {target_unit} yang ready di {stok_status} dan bonus {bundling_text}.
-3. Berikan Call-To-Action (CTA) santai untuk jadwalkan test drive atau simulasi angsuran.
+2. Hubungkan langsung minat konsumen dengan keunggulan unit {target_unit} yang ready di {stok_status} dan bonus {bundling_text} serta diskon DP menarik.
+3. Berikan Call-To-Action (CTA) santai untuk jadwalkan test drive atau konfirmasi konsultasi simulasi SPK.
 
-Format Output: HANYA berikan isi draf pesan WhatsApp tanpa basa-basi pengantar atau tanda petik.
-"""
-Kebutuhan/Minat: {req.minat}
-Unit yang Pas & Ready: {target_unit}
-Bonus Bundling Spesial: {bundling_text}
-Domisili: {req.domisili} ({stok_status})
-
-Pesan harus:
-1. Menyapa secara ramah dan santun personal.
-2. Menginfokan bahwa {target_unit} sedang ready di {req.domisili} dengan paket bundling {bundling_text} + diskon DP menarik.
-3. Memberikan Call-To-Action santai untuk konfirmasi konsultasi atau pembuatan simulasi SPK.
-"""
+Format Output: HANYA berikan isi draf pesan WhatsApp tanpa basa-basi pengantar atau tanda petik."""
     payload = {
         "model": "qwen2.5:3b",
         "prompt": prompt,
@@ -435,3 +429,75 @@ class ActivityCreateRequest(BaseModel):
 def post_activity(req: ActivityCreateRequest):
     add_log(req.agent, req.action, req.detail or "")
     return {"status": "ok"}
+
+# ==============================================================================
+# DETERMINISTIC DOCUMENT & SPK ENGINE ENDPOINTS
+# ==============================================================================
+
+class GenerateSPKRequest(BaseModel):
+    nama_konsumen: str
+    domisili: str
+    unit_barang: str
+    harga_otr: int
+    nominal_dp: int
+    tenor_bulan: int
+    angsuran_per_bulan: Optional[int] = None
+    items_bundling: Optional[List[Dict[str, Any]]] = None
+    nomor_spk: Optional[str] = None
+
+@app.post("/api/v1/sales/generate-spk")
+def api_generate_spk(req: GenerateSPKRequest):
+    angsuran = req.angsuran_per_bulan
+    if not angsuran or angsuran <= 0:
+        angsuran = hitung_angsuran_bulanan(req.harga_otr, req.nominal_dp, req.tenor_bulan)
+    
+    pdf_path = generate_spk_pdf(
+        nama_konsumen=req.nama_konsumen,
+        domisili=req.domisili,
+        unit_barang=req.unit_barang,
+        harga_otr=req.harga_otr,
+        nominal_dp=req.nominal_dp,
+        tenor_bulan=req.tenor_bulan,
+        angsuran_per_bulan=angsuran,
+        items_bundling=req.items_bundling or [],
+        nomor_spk=req.nomor_spk
+    )
+    
+    filename = os.path.basename(pdf_path)
+    add_log("Cubi Vault", f"SPK Diterbitkan: {req.unit_barang} untuk {req.nama_konsumen}", f"File: {filename}")
+
+    return {
+        "status": "success",
+        "file_name": filename,
+        "pdf_path": pdf_path,
+        "download_url": f"/api/v1/sales/download-spk/{filename}",
+        "rincian": {
+            "nama_konsumen": req.nama_konsumen,
+            "domisili": req.domisili,
+            "unit_barang": req.unit_barang,
+            "harga_otr": req.harga_otr,
+            "nominal_dp": req.nominal_dp,
+            "tenor_bulan": req.tenor_bulan,
+            "angsuran_per_bulan": angsuran
+        }
+    }
+
+@app.get("/api/v1/sales/download-spk/{filename}")
+def download_spk(filename: str):
+    file_path = os.path.join(OUTPUT_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Berkas SPK tidak ditemukan.")
+    return FileResponse(file_path, media_type="application/pdf", filename=filename)
+
+class SimulasiKreditRequest(BaseModel):
+    harga_otr: int
+    nominal_dp: int
+    bunga_tahunan: Optional[float] = 0.08
+
+@app.post("/api/v1/sales/simulasi-kredit")
+def api_simulasi_kredit(req: SimulasiKreditRequest):
+    return hitung_simulasi_kredit(
+        harga_otr=req.harga_otr,
+        nominal_dp=req.nominal_dp,
+        bunga_tahunan=req.bunga_tahunan or 0.08
+    )

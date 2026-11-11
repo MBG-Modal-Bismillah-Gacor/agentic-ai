@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Generated Documents
+backend/output_dokumen/*.pdf
+!backend/output_dokumen/.gitkeep
