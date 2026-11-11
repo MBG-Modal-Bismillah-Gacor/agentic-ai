@@ -1,46 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import React, { useState, useRef } from 'react'
 import { RobotMascotCanvas } from './RobotMascotCanvas'
-
-gsap.registerPlugin(ScrollTrigger)
 
 export function HeroSection({ onNavigate }) {
   const [sliderOffset, setSliderOffset] = useState(0)
   const heroRobotRef = useRef(null)
-
-  useEffect(() => {
-    if (!heroRobotRef.current) return
-
-    const ctx = gsap.context(() => {
-      // Robot dives down towards the pipe and Section 2 on scroll
-      gsap.fromTo(
-        heroRobotRef.current,
-        {
-          y: 0,
-          scale: 1,
-          opacity: 1,
-          rotation: 0,
-        },
-        {
-          y: 580,
-          scale: 0.82,
-          opacity: 0,
-          rotation: 6,
-          ease: 'power2.in',
-          scrollTrigger: {
-            trigger: '#hero-section',
-            start: 'top top',
-            end: 'bottom 15%',
-            scrub: 0.7,
-            invalidateOnRefresh: true,
-          }
-        }
-      )
-    })
-
-    return () => ctx.revert()
-  }, [])
 
   const partners = [
     {
@@ -118,7 +81,7 @@ export function HeroSection({ onNavigate }) {
   }
 
   return (
-    <section id="hero-section" className="hero-section min-h-[92vh] flex flex-col justify-between" style={{ paddingTop: '74px', position: 'relative' }}>
+    <section id="hero-section" className="hero-section min-h-[92vh] flex flex-col justify-between relative z-0" style={{ paddingTop: '74px' }}>
       <div id="hero-section-container" className="w-layout-blockcontainer container hero-container w-container flex-1 flex flex-col justify-between" style={{ paddingTop: '0px' }}>
         
         {/* HERO WRAPPER (Exact Webflow Grid Layout) */}
@@ -131,8 +94,8 @@ export function HeroSection({ onNavigate }) {
             <div className="absolute top-0 bottom-0 left-[75%] w-px bg-[#192A56]/15" />
           </div>
 
-          {/* Top Architectural Corner Embellishments (Matching rfhero.png) */}
-          <div className="absolute top-0 left-0 z-20 w-11 h-11 border-r border-b border-[#192A56]/20 flex items-center justify-center bg-white">
+          {/* Top Architectural Corner Embellishments: Kotak dengan isi X dipindah ke luar garis batas utama */}
+          <div className="absolute top-0 -left-[45px] z-20 w-11 h-11 border border-[#192A56]/20 flex items-center justify-center bg-white">
             <img
               src="/assets/webflow/664753c2515af09bef5b9826/665640330d1b87aa18aa9882_cross.svg"
               alt=""
@@ -149,8 +112,8 @@ export function HeroSection({ onNavigate }) {
           <div className="hero-top" style={{ paddingTop: '0rem', paddingBottom: '0rem', marginTop: '0rem' }}>
             <div className="hero-backing hero-backing-top" style={{ display: 'none' }} />
 
-            {/* High-Contrast Bold Cyber Typography "AI AGENTIC" Berada tepat di belakang robot (Sesuai rf hero.png) */}
-            <div className="hero-marquee-wrapper overflow-hidden select-none pointer-events-none relative z-0" style={{ paddingTop: '2.5rem', marginBottom: '-4.5rem' }}>
+            {/* High-Contrast Bold Cyber Typography "AI AGENTIC" Berada di latar belakang atas robot */}
+            <div className="hero-marquee-wrapper overflow-hidden select-none pointer-events-none relative z-0" style={{ paddingTop: '1.5rem', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
               <div className="hero-marquee animate-marquee flex items-center">
                 <span className="marquee-heading mr-12 text-[#192A56] font-display tracking-tight" style={{ fontFamily: "'LabsAmiga', sans-serif" }}>
                   AI AGENTIC
@@ -179,12 +142,13 @@ export function HeroSection({ onNavigate }) {
               </div>
             </div>
 
-            <div className="hero-top-content" style={{ marginTop: '0rem', position: 'relative' }}>
+            <div className="hero-top-content" style={{ marginTop: '0.75rem', position: 'relative' }}>
               {/* Vibrant Orange Corner Decor Markers (Matching rfhero.png) */}
               <div className="hero-square hero-square-top-right hero-square-mobile" style={{ backgroundColor: '#FF5B00' }} />
               <div className="hero-square hero-square-top-left hero-square-mobile" style={{ backgroundColor: '#FF5B00' }} />
 
-              <div className="hero-backing" style={{ paddingLeft: '2.25rem', marginBottom: '0.5rem' }}>
+              {/* Teks AI AGENTIC :: AICREW - Diberi jarak nyaman di bawah marquee running text agar tidak menabrak */}
+              <div className="hero-backing" style={{ paddingLeft: '2.25rem', marginBottom: '1.25rem' }}>
                 <div id="w-node-_30e76485-ae6c-05d7-60f5-023e5c311de5-ef5b982d" className="w-layout-hflex hero-backing-text">
                   <div className="hero-backing-item font-mono font-bold text-xs uppercase tracking-widest text-[#192A56]">
                     AI AGENTIC :: AICREW
@@ -193,31 +157,32 @@ export function HeroSection({ onNavigate }) {
                 <div id="w-node-bf49c4bc-c533-46a4-5e65-738d863c031d-ef5b982d" className="w-2.5 h-2.5 bg-[#192A56]" />
               </div>
 
-              {/* Central Mascot: Greeting 3D Robot Mascot (Ditarik ke atas proporsional, tanpa magnet/clamp penggantung) */}
+              {/* Central Mascot: Robot 3D Statis - Diturunkan presisi sejajar di atas batas partner teknologi */}
               <div
+                id="hero-mascot-target"
                 ref={heroRobotRef}
-                className="hero-video w-embed"
+                className="w-embed"
                 style={{
-                  willChange: 'transform, opacity',
-                  width: '460px',
-                  maxWidth: '92vw',
-                  height: '420px',
-                  pointerEvents: 'none',
+                  position: 'absolute',
+                  left: '50%',
+                  top: '48%',
+                  transform: 'translate(-50%, calc(-50% + 115px))',
+                  width: '580px',
+                  maxWidth: '94vw',
+                  height: '540px',
+                  pointerEvents: 'auto',
                   overflow: 'visible',
-                  top: '38%',
-                  transform: 'translate(-50%, -46%)',
+                  zIndex: 10,
                 }}
               >
-                <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'visible' }}>
-                  <RobotMascotCanvas mode="robot" cameraDistance={3.3} />
-                </div>
+                <RobotMascotCanvas mode="robot" cameraDistance={2.68} isGlobalPointer={true} />
               </div>
 
             </div>
           </div>
 
-          {/* HERO MAIN */}
-          <div className="hero-main" style={{ paddingTop: '0.25rem' }}>
+          {/* HERO MAIN - Deskripsi dan Tombol diturunkan agar komposisi bersih, teratur, dan tidak menabrak */}
+          <div className="hero-main" style={{ paddingTop: '0.75rem' }}>
             <div className="hero-info" style={{ padding: '2.25rem 2rem 2rem 2.25rem' }}>
               <div className="hero-description font-mono text-xs sm:text-sm leading-relaxed text-[#192A56]" style={{ maxWidth: '18rem' }}>
                 Mendukung pimpinan dealer &amp; enterprise terbaik — mentransformasi armada agen AI on-premise menjadi pipeline penjualan motor &amp; deal closing otonom tanpa risiko kebocoran cloud.
@@ -229,7 +194,7 @@ export function HeroSection({ onNavigate }) {
                   onNavigate?.('office')
                 }}
                 className="button-primary hero-apply w-inline-block"
-                style={{ marginTop: '1.5rem', display: 'inline-block' }}
+                style={{ marginTop: '1.75rem', display: 'inline-block' }}
               >
                 <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
                   <div
@@ -403,35 +368,6 @@ export function HeroSection({ onNavigate }) {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Conduit Pipe Mechanical Collar & Segment Connecting Hero to Section 2 (Sesuai fsrefrensi.png) */}
-        <div className="relative w-full h-20 sm:h-24 bg-white border-l border-r border-[#192A56]/20 flex flex-col items-center justify-center overflow-visible z-20">
-          {/* Mechanical Upper Collar Clamp */}
-          <div className="w-56 sm:w-64 h-3 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 flex items-center justify-between px-3 shadow-xs">
-            <span className="w-1.5 h-1.5 bg-[#192A56] rounded-full" />
-            <div className="flex gap-2">
-              <span className="w-8 h-1 bg-[#192A56]/25 block" />
-              <span className="w-8 h-1 bg-[#192A56]/25 block" />
-            </div>
-            <span className="w-1.5 h-1.5 bg-[#192A56] rounded-full" />
-          </div>
-
-          {/* Central Conduit Pipe Segment with Seams */}
-          <div
-            className="w-44 sm:w-52 h-full pointer-events-none relative"
-            style={{
-              backgroundImage: 'url(/assets/webflow/664753c2515af09bef5b9826/6653b82c498773bed25d76ff_pipe_segment.webp)',
-              backgroundRepeat: 'repeat-y',
-              backgroundPosition: 'center',
-              backgroundSize: 'contain',
-              opacity: 0.95
-            }}
-          >
-            {/* Left & Right Guide Rail Lines */}
-            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#192A56]/25" />
-            <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-[#192A56]/25" />
           </div>
         </div>
 

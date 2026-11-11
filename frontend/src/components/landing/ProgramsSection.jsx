@@ -1,63 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import React, { useState } from 'react'
 import { RobotMascotCanvas } from './RobotMascotCanvas'
-
-gsap.registerPlugin(ScrollTrigger)
 
 export function ProgramsSection({ onNavigate }) {
   const [incubationSlideIndex, setIncubationSlideIndex] = useState(0)
-
-  // Refs for scroll-triggered mascot entry & morph transitions
-  const robotStageRef = useRef(null)
-  const morphRobotRef = useRef(null)
-  const morphCoinRef = useRef(null)
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // 1. Robot Stage (AICOSYSTEM): Dives in smoothly from above connecting with Hero scroll
-      if (robotStageRef.current) {
-        gsap.fromTo(
-          robotStageRef.current,
-          { y: -160, opacity: 0.2, scale: 0.88 },
-          {
-            y: 0,
-            opacity: 1,
-            scale: 1,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: '#beyond-capital',
-              start: 'top 95%',
-              end: 'top 35%',
-              scrub: 0.6,
-            }
-          }
-        )
-      }
-
-      // 2. Cohesive Section 2 Pipeline Reveal: Continuous conduit stream into 3D MBG emblem
-      if (morphCoinRef.current) {
-        gsap.fromTo(
-          morphCoinRef.current,
-          { scale: 0.75, opacity: 0.4, rotationY: -90 },
-          {
-            scale: 1,
-            opacity: 1,
-            rotationY: 0,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: '#incubation-section',
-              start: 'top 80%',
-              end: 'top 30%',
-              scrub: 0.6,
-            }
-          }
-        )
-      }
-    })
-
-    return () => ctx.revert()
-  }, [])
 
   // MSI Cubi NUC AI + B206 Hardware Specifications (Checklist on the left)
   const capitalItems = [
@@ -108,7 +53,7 @@ export function ProgramsSection({ onNavigate }) {
   const handlePrev = handlePrevIncubation
 
   return (
-    <div id="Capital-Incubation-Section" className="relative w-full bg-white">
+    <div id="Capital-Incubation-Section" className="relative w-full bg-white z-10 shadow-2xl">
       {/* Target Anchor Links untuk Navigasi */}
       <div id="beyond-capital" className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
       <div id="programs" className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
@@ -222,54 +167,23 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
 
-            {/* Kolom Tengah: Cyber Stage Terbuka (Kapsul & Badge Hijau Dihapus) dengan Transisi Halus dari Hero */}
-            <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col items-center justify-between relative overflow-visible pointer-events-none">
-              
-              {/* Pipa Sambungan Atas: Menyambung sempurna dari dasar HeroSection */}
-              <div className="w-44 sm:w-52 h-14 sm:h-16 relative flex flex-col items-center justify-start shrink-0">
-                <div
-                  className="w-full h-full"
-                  style={{
-                    backgroundImage: 'url(/assets/webflow/664753c2515af09bef5b9826/6653b82c498773bed25d76ff_pipe_segment.webp)',
-                    backgroundRepeat: 'repeat-y',
-                    backgroundPosition: 'center',
-                    backgroundSize: 'contain',
-                    borderLeft: '1px solid rgba(25, 42, 86, 0.25)',
-                    borderRight: '1px solid rgba(25, 42, 86, 0.25)',
-                  }}
-                />
-                {/* Flange Collar Cincin Atas */}
-                <div className="w-52 sm:w-60 h-2.5 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 absolute bottom-0 shadow-xs" />
-              </div>
-
-              {/* Free-Floating 3D Mascot Stage: Bersih Tanpa Kapsul, Meluncur Halus dari Atas */}
-              <div 
-                ref={robotStageRef}
-                className="relative w-full max-w-[340px] sm:max-w-[380px] h-[480px] sm:h-[540px] flex flex-col items-center justify-center my-auto shrink-0"
-              >
+            {/* Kolom Tengah: Cyber Stage Terbuka (Tanpa Pipa & Tanpa Kapsul) */}
+            <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col items-center justify-center relative overflow-visible pointer-events-none py-6">
+              <div className="relative w-full max-w-[340px] sm:max-w-[380px] h-[480px] sm:h-[540px] flex flex-col items-center justify-center my-auto shrink-0">
                 {/* Holographic Concentric Ring Accents di Belakang Maskot */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
                   <div className="w-64 h-64 rounded-full border border-[#192A56]/15 animate-pulse" />
                   <div className="w-80 h-80 rounded-full border border-dashed border-[#192A56]/10 absolute" />
                 </div>
 
-                {/* 3D Robot Mascot (Melayang Bebas & Hidup Tanpa Kotak Kapsul) */}
-                <div 
-                  ref={morphRobotRef}
-                  className="w-full h-full relative flex items-center justify-center z-10 pointer-events-none"
-                  style={{ willChange: 'transform, opacity' }}
+                {/* Robot Biasa di Section 2 (AICOSYSTEM) */}
+                <div
+                  id="sec2-mascot-target"
+                  className="w-full h-full max-w-[320px] max-h-[380px] relative flex items-center justify-center z-10 pointer-events-auto"
                 >
-                  <div style={{ width: '100%', height: '100%', maxWidth: '320px', maxHeight: '380px', position: 'relative' }}>
-                    <RobotMascotCanvas mode="robot" inCapsule={false} cameraDistance={2.8} />
-                  </div>
+                  <RobotMascotCanvas mode="robot" cameraDistance={3.8} />
                 </div>
               </div>
-
-              {/* Bagian Bawah Stage: Kerah Penghubung ke Section 2 */}
-              <div className="w-44 sm:w-52 h-4 relative flex items-center justify-center shrink-0">
-                <div className="w-52 sm:w-60 h-2 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 absolute bottom-0 shadow-xs" />
-              </div>
-
             </div>
 
             {/* Kolom Kanan: Hardware Cards */}
@@ -451,44 +365,25 @@ export function ProgramsSection({ onNavigate }) {
               </div>
             </div>
 
-            {/* Kolom Tengah: Pipa Silinder Kaca Statis + 3D Rotating MBG Token (Hasil Morph Halus) */}
-            <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col items-center justify-between relative py-0 overflow-visible">
-              
-              {/* Continuous Pipe Body running straight down (100% Stationary, NO Jitter) */}
-              <div
-                className="w-44 sm:w-52 h-full min-h-[500px] pointer-events-none relative flex flex-col items-center justify-between"
-                style={{
-                  backgroundImage: 'url(/assets/webflow/664753c2515af09bef5b9826/6653b82c498773bed25d76ff_pipe_segment.webp)',
-                  backgroundRepeat: 'repeat-y',
-                  backgroundPosition: 'center',
-                  backgroundSize: 'contain',
-                  borderLeft: '1px solid rgba(25, 42, 86, 0.25)',
-                  borderRight: '1px solid rgba(25, 42, 86, 0.25)',
-                }}
-              >
-                {/* Upper Seam Ring Collar */}
-                <div className="w-52 sm:w-60 h-3 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 shadow-xs mt-0" />
-
-                {/* Mounted Rotating 3D Cyber Token (Hasil Transisi Morph Halus dari Robot di Section 2) */}
-                <div
-                  ref={morphCoinRef}
-                  className="w-44 h-44 sm:w-52 sm:h-52 relative flex flex-col items-center justify-center my-auto pointer-events-none"
-                  style={{ willChange: 'transform, opacity' }}
-                >
-                  <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-                    <RobotMascotCanvas mode="coin" cameraDistance={2.4} />
-                  </div>
-                  {/* Badge MBG Pill */}
-                  <div className="mt-2 bg-[#192A56] text-white border border-[#192A56] font-mono text-[10px] font-bold px-3.5 py-0.5 rounded-full shadow-md tracking-widest z-20">
-                    MBG
-                  </div>
+            {/* Kolom Tengah: Clean Cyber Pedestal Stage (Pipa & Kapsul Dihapus Bersih Sesuai Permintaan) */}
+            <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col items-center justify-center relative py-6 overflow-visible pointer-events-none">
+              <div className="relative w-full max-w-[340px] sm:max-w-[380px] h-[480px] sm:h-[520px] flex flex-col items-center justify-center my-auto shrink-0">
+                {/* Holographic Concentric Ring Accents & Hairlines */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                  <div className="w-64 h-64 rounded-full border border-[#192A56]/15 animate-pulse" />
+                  <div className="w-80 h-80 rounded-full border border-dashed border-[#192A56]/10 absolute" />
                 </div>
 
-                {/* Lower Terminal Seam Collar */}
-                <div className="w-52 sm:w-60 h-3 bg-[#F1F5F9] border-t border-b border-[#192A56]/30 shadow-xs mb-0 flex items-center justify-between px-3">
-                  <span className="w-1.5 h-1.5 bg-[#192A56] rounded-full" />
-                  <span className="w-10 h-0.5 bg-[#192A56]/30 block" />
-                  <span className="w-1.5 h-1.5 bg-[#192A56] rounded-full" />
+                {/* 3D Bulet MBG Biasa di Section 3 (Cara Kerja) */}
+                <div
+                  id="sec3-mascot-target"
+                  className="w-48 h-48 sm:w-56 sm:h-56 relative flex flex-col items-center justify-center my-auto pointer-events-auto"
+                >
+                  <RobotMascotCanvas mode="coin" cameraDistance={3.2} />
+                  {/* Badge MBG Pill */}
+                  <div className="absolute -bottom-2 bg-[#192A56] text-white border border-[#192A56] font-mono text-[10px] font-bold px-3.5 py-0.5 rounded-full shadow-md tracking-widest z-20">
+                    MBG
+                  </div>
                 </div>
               </div>
             </div>

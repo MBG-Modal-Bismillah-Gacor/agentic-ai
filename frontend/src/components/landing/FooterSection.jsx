@@ -2,7 +2,7 @@ import React from 'react'
 
 export function FooterSection({ onNavigate }) {
   return (
-    <footer className="w-full bg-white border-t border-[#192A56]/20 pt-12 pb-6 font-mono text-xs relative overflow-hidden">
+    <footer className="w-full bg-white border-t border-[#192A56]/20 pt-12 pb-6 font-mono text-xs relative z-10 overflow-hidden">
       <div className="w-layout-blockcontainer container w-container relative z-10">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b border-[#192A56]/20">
           <div>

@@ -31,7 +31,7 @@ export function FaqSection() {
   }
 
   return (
-    <section id="faq-section" className="faq-section">
+    <section id="faq-section" className="faq-section relative z-10 bg-white border-b border-[#192A56]/20">
       <div className="container">
         <div>
           {/* Section Heading with Webflow grid 1-1-2 */}

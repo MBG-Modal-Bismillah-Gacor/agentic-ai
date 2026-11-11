@@ -104,6 +104,32 @@ export function LandingPage({
           )
         })
       })
+
+      // Stacking Card Effect: Hero dipin secara presisi HANYA sampai Section 2 selesai menumpuk di atasnya
+      ScrollTrigger.create({
+        trigger: '#hero-section',
+        start: 'top top',
+        endTrigger: '#Capital-Incubation-Section',
+        end: 'top top',
+        pin: true,
+        pinSpacing: false,
+        anticipatePin: 1,
+        onUpdate: (self) => {
+          gsap.set('#hero-section', {
+            scale: 1 - self.progress * 0.06,
+            opacity: 1 - self.progress * 0.25,
+            transformOrigin: 'center 40%',
+          })
+        },
+        onLeave: () => {
+          const el = document.getElementById('hero-section')
+          if (el) el.style.visibility = 'hidden'
+        },
+        onEnterBack: () => {
+          const el = document.getElementById('hero-section')
+          if (el) el.style.visibility = 'visible'
+        },
+      })
     })
 
     return () => {
