@@ -38,6 +38,7 @@ export function CubiCharacter({
   const rightLegRef = useRef()
   const leftEyeRef = useRef()
   const rightEyeRef = useRef()
+  const antennaBeaconRef = useRef()
   const haloRef = useRef()
   const scanBeamRef = useRef()
 
@@ -55,7 +56,7 @@ export function CubiCharacter({
   const waypointIdxRef = useRef(0)
   const lastTargetPosRef = useRef(null)
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!groupRef.current) return
     const t = state.clock.getElapsedTime() + phaseOffset
 
@@ -86,9 +87,8 @@ export function CubiCharacter({
     }
 
     const distToTarget = groupRef.current.position.distanceTo(destPos.current)
-    const isFinalDestination = !isMultiWaypoint || waypointIdxRef.current >= targetPosition.length - 1
     const isMovingToTarget = isMultiWaypoint ? (waypointIdxRef.current < targetPosition.length - 1 || distToTarget > 0.12) : distToTarget > 0.10
-    const moving = isMovingToTarget || isWalking
+    const moving = isMovingToTarget
 
     // 2. Perpindahan Halus, Stabil & Rotasi Presisi
     if (isMovingToTarget) {
@@ -97,7 +97,8 @@ export function CubiCharacter({
       const dist = Math.hypot(dirX, dirZ)
 
       if (dist > 0.04) {
-        const speed = 0.032
+        // Kecepatan jalan normal berbobot alami (bukan super cepat seperti The Flash)
+        const speed = Math.min(0.035, (delta || 0.016) * 1.35)
         const step = Math.min(speed, dist)
         groupRef.current.position.x += (dirX / dist) * step
         groupRef.current.position.z += (dirZ / dist) * step
@@ -134,7 +135,7 @@ export function CubiCharacter({
     if (bodyRef.current) {
       if (moving) {
         // Mode Berjalan: Langkah mantap & santai, bobbing berbobot
-        const walkSpeed = 3.8
+        const walkSpeed = 4.2
         const step = Math.sin(t * walkSpeed)
         bodyRef.current.position.y = 0.52 + Math.abs(step) * 0.035
         bodyRef.current.position.z = 0
@@ -396,30 +397,83 @@ export function CubiCharacter({
             headRef.current.rotation.z = Math.sin(t * 0.8) * 0.02
           }
         } else if (id === 'green-agent') {
-          // Stasiun Gatekeeper (Gate): Siaga tenang, memantau pintu masuk
-          bodyRef.current.position.y = 0.52 + Math.sin(t * 1.1) * 0.025
-          bodyRef.current.rotation.z = Math.sin(t * 0.8) * 0.02
-          bodyRef.current.rotation.x = 0
+          // Stasiun Gatekeeper (Cubi Gate): Sangat hidup & aktif - Siklus Memantau, Menyapa Tamu, & Verifikasi
+          const gateCycle = t % 15
 
-          if (leftArmRef.current && rightArmRef.current) {
-            leftArmRef.current.position.set(-0.25, 0.04, 0)
-            leftArmRef.current.rotation.x = -0.25 + Math.cos(t * 1.0) * 0.08
-            leftArmRef.current.rotation.z = 0.18
+          if (antennaBeaconRef.current) {
+            antennaBeaconRef.current.material.emissiveIntensity = 2.2 + Math.sin(t * 6.0) * 1.5
+          }
 
-            rightArmRef.current.position.set(0.24, 0.10, 0.12)
-            rightArmRef.current.rotation.x = -0.65 + Math.sin(t * 1.2) * 0.18
-            rightArmRef.current.rotation.z = -0.22 + Math.cos(t * 1.0) * 0.10
+          if (gateCycle < 5) {
+            // Fase 1: Memantau pintu masuk resepsionis secara seksama (Attentive Scan)
+            bodyRef.current.position.y = 0.52 + Math.sin(t * 1.2) * 0.02
+            bodyRef.current.rotation.z = Math.sin(t * 0.8) * 0.02
+            bodyRef.current.rotation.x = 0
+
+            if (leftArmRef.current && rightArmRef.current) {
+              leftArmRef.current.position.set(-0.24, 0.04, 0.05)
+              leftArmRef.current.rotation.x = -0.3 + Math.cos(t * 0.9) * 0.06
+              leftArmRef.current.rotation.z = 0.16
+
+              rightArmRef.current.position.set(0.24, 0.06, 0.10)
+              rightArmRef.current.rotation.x = -0.45 + Math.sin(t * 1.1) * 0.10
+              rightArmRef.current.rotation.z = -0.18
+            }
+
+            if (headRef.current) {
+              headRef.current.rotation.y = Math.sin(t * 0.75) * 0.42
+              headRef.current.rotation.x = 0.04 + Math.sin(t * 1.2) * 0.03
+              headRef.current.rotation.z = Math.sin(t * 0.6) * 0.04
+            }
+          } else if (gateCycle < 10) {
+            // Fase 2: Melambaikan tangan ramah menyapa pengunjung yang masuk (Friendly Greeting Wave)
+            bodyRef.current.position.y = 0.53 + Math.sin(t * 1.5) * 0.025
+            bodyRef.current.rotation.z = Math.sin(t * 0.8) * 0.025
+            bodyRef.current.rotation.x = 0.02
+
+            if (leftArmRef.current) {
+              leftArmRef.current.position.set(-0.25, 0.03, 0)
+              leftArmRef.current.rotation.x = -0.2
+              leftArmRef.current.rotation.z = 0.18
+            }
+
+            if (rightArmRef.current) {
+              rightArmRef.current.position.set(0.26, 0.20, 0.08)
+              rightArmRef.current.rotation.x = -0.35 + Math.sin(t * 1.5) * 0.10
+              rightArmRef.current.rotation.z = -1.15 + Math.sin(t * 6.5) * 0.28
+            }
+
+            if (headRef.current) {
+              headRef.current.rotation.y = 0.15 + Math.sin(t * 1.2) * 0.15
+              headRef.current.rotation.x = -0.05
+              headRef.current.rotation.z = 0.12 + Math.sin(t * 2.5) * 0.04
+            }
+          } else {
+            // Fase 3: Mengetik & mengecek verifikasi tiket approval di konsol meja resepsionis (Active Dispatch Typing)
+            bodyRef.current.position.y = 0.51 + Math.sin(t * 2.0) * 0.015
+            bodyRef.current.rotation.z = 0
+            bodyRef.current.rotation.x = 0.05
+
+            if (leftArmRef.current && rightArmRef.current) {
+              leftArmRef.current.position.set(-0.16, 0.08, 0.20)
+              leftArmRef.current.rotation.x = -0.85 + Math.sin(t * 8.5) * 0.12
+              leftArmRef.current.rotation.z = 0.12
+
+              rightArmRef.current.position.set(0.16, 0.08, 0.20)
+              rightArmRef.current.rotation.x = -0.85 + Math.cos(t * 8.5) * 0.12
+              rightArmRef.current.rotation.z = -0.12
+            }
+
+            if (headRef.current) {
+              headRef.current.rotation.y = Math.sin(t * 1.2) * 0.12
+              headRef.current.rotation.x = 0.22 + Math.sin(t * 1.8) * 0.04
+              headRef.current.rotation.z = 0
+            }
           }
 
           if (leftLegRef.current && rightLegRef.current) {
-            leftLegRef.current.rotation.x = Math.sin(t * 1.1) * 0.025
-            rightLegRef.current.rotation.x = -Math.sin(t * 1.1) * 0.025
-          }
-
-          if (headRef.current) {
-            headRef.current.rotation.y = Math.sin(t * 0.8) * 0.28
-            headRef.current.rotation.x = 0.05 + Math.sin(t * 1.1) * 0.04
-            headRef.current.rotation.z = Math.sin(t * 0.7) * 0.02
+            leftLegRef.current.rotation.x = Math.sin(t * 1.1) * 0.02
+            rightLegRef.current.rotation.x = -Math.sin(t * 1.1) * 0.02
           }
         } else if (id === 'orange-agent') {
           // Stasiun Vault Server (Vault): Tenang memeriksa server
@@ -644,17 +698,18 @@ export function CubiCharacter({
             </group>
           )}
 
-          {/* Antena Radio untuk Green Agent (WhatsApp Gate) */}
+          {/* Antena Radio untuk Green Agent (WhatsApp Gate) - Lampu Indikator Beacon Hidup Berkedip */}
           {!isBoss && id === 'green-agent' && (
             <group position={[0, 0.30, 0]}>
               <mesh position={[0, 0.06, 0]}>
                 <cylinderGeometry args={[0.01, 0.015, 0.13, 8]} />
                 <meshStandardMaterial color="#334155" metalness={0.8} />
               </mesh>
-              <mesh position={[0, 0.14, 0]}>
-                <sphereGeometry args={[0.03, 12, 12]} />
-                <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={2.8} />
+              <mesh ref={antennaBeaconRef} position={[0, 0.14, 0]}>
+                <sphereGeometry args={[0.034, 12, 12]} />
+                <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={3.2} />
               </mesh>
+              <pointLight color="#22c55e" intensity={1.5} distance={1.2} />
             </group>
           )}
 

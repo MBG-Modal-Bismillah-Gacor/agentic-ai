@@ -26,16 +26,20 @@ import {
   Home,
   Compass,
   Camera,
+  Video,
+  Radio,
   ZoomIn,
   ZoomOut,
   RotateCcw,
+  RotateCw,
   Maximize2,
   LayoutGrid,
   Briefcase,
   Monitor,
   Columns3,
   Lock,
-  LayoutDashboard
+  LayoutDashboard,
+  SlidersHorizontal
 } from 'lucide-react'
 
 export function DashboardOverlay({
@@ -68,6 +72,9 @@ export function DashboardOverlay({
   onTogglePure3D,
   userProfile = null,
   onOpenProfileSettings = null,
+  isCctvAutoScanning = false,
+  onToggleCctvAutoScan = null,
+  onRotateCctv = null,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('leads') // 'leads' | 'activity'
@@ -78,6 +85,19 @@ export function DashboardOverlay({
   const [commandText, setCommandText] = useState('')
   const [commandFeedback, setCommandFeedback] = useState('Sistem siap menerima instruksi terminal.')
   const [isPovDropdownOpen, setIsPovDropdownOpen] = useState(false)
+  const [clockStr, setClockStr] = useState('')
+
+  useEffect(() => {
+    const updateClock = () => {
+      const d = new Date()
+      setClockStr(
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
+      )
+    }
+    updateClock()
+    const timer = setInterval(updateClock, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   const POV_OPTIONS = [
     { id: 'overview', label: 'Seluruh Kantor', icon: Building2, desc: 'Tampilan Isometrik 3D Lengkap' },
@@ -87,9 +107,16 @@ export function DashboardOverlay({
     { id: 'reception', label: 'Meja Resepsionis', icon: DoorOpen, desc: 'Cubi Gatekeeper' },
     { id: 'meeting', label: 'Ruang Rapat & Screen', icon: Columns3, desc: 'Live Kanban Presentation' },
     { id: 'vault', label: 'Server Vault', icon: Database, desc: 'MSI Cubi NUC Archive' },
+    { id: 'cctv_boss', label: 'CAM 01: Ruang Direktur', icon: Video, desc: 'CCTV 360° Surveillance', isCctv: true },
+    { id: 'cctv_workstation', label: 'CAM 02: Workstation AI', icon: Video, desc: 'CCTV 360° Surveillance', isCctv: true },
+    { id: 'cctv_reception', label: 'CAM 03: Resepsionis', icon: Video, desc: 'CCTV 360° Surveillance', isCctv: true },
+    { id: 'cctv_vault', label: 'CAM 04: Server Vault', icon: Video, desc: 'CCTV 360° Surveillance', isCctv: true },
+    { id: 'cctv_meeting', label: 'CAM 05: Ruang Rapat', icon: Video, desc: 'CCTV 360° Surveillance', isCctv: true },
   ]
 
-  const currentPovOption = POV_OPTIONS.find((p) => p.id === activePOV) || POV_OPTIONS[0]
+  const isCctvActive = activePOV.startsWith('cctv_')
+  const visiblePovOptions = POV_OPTIONS.filter((opt) => (isCctvActive ? opt.isCctv : !opt.isCctv))
+  const currentPovOption = POV_OPTIONS.find((p) => p.id === activePOV) || (isCctvActive ? visiblePovOptions[0] : POV_OPTIONS[0])
 
   const handleSendCommand = (e) => {
     e.preventDefault()
@@ -207,7 +234,7 @@ export function DashboardOverlay({
       {/* ========================================================================= */}
       {/* 1. TOP NAVBAR (Modern Sleek Floating Header, Profile & Camera Dropdown)  */}
       {/* ========================================================================= */}
-      <header className="w-full relative z-40 pointer-events-auto shrink-0 px-3 pt-2.5 pb-1 sm:px-4">
+      <header className="w-full relative z-50 pointer-events-auto shrink-0 px-3 pt-2.5 pb-1 sm:px-4">
         <div className="w-full bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-lg shadow-slate-900/5 px-3.5 py-2 flex items-center justify-between gap-2 overflow-x-auto lg:overflow-visible">
           
           {/* Sisi Kiri: Navigasi Cepat (Beranda, Office AKTIF di tengah, Dashboard) */}
@@ -247,8 +274,33 @@ export function DashboardOverlay({
             </span>
           </div>
 
-          {/* Sisi Tengah: CUSTOM STYLED CAMERA POV DROPDOWN & VIEW CONTROLS */}
-          <div className="relative flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 shrink-0 font-mono">
+          {/* Sisi Tengah: CUSTOM STYLED CAMERA POV DROPDOWN & CCTV 360° CONTROLS */}
+          <div className="relative flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 shrink-0 font-mono">
+            {/* Dedicated CCTV 360° Quick Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (activePOV.startsWith('cctv_')) {
+                  onChangePOV && onChangePOV('overview')
+                } else {
+                  onChangePOV && onChangePOV('cctv_boss')
+                }
+              }}
+              style={activePOV.startsWith('cctv_') ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-bold text-xs transition cursor-pointer shadow-2xs ${
+                activePOV.startsWith('cctv_')
+                  ? 'bg-[#192A56] text-white border-[#192A56]'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-[#192A56]'
+              }`}
+              title="Buka / Tutup CCTV 360° Tiap Ruangan"
+            >
+              <Video className={`w-3.5 h-3.5 ${activePOV.startsWith('cctv_') ? 'text-rose-400 animate-pulse' : 'text-[#192A56]'}`} />
+              <span className="hidden sm:inline">CCTV 360°</span>
+              {activePOV.startsWith('cctv_') && (
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping ml-0.5" />
+              )}
+            </button>
+
             {/* Custom POV Trigger Button */}
             <div className="relative">
               <button
@@ -257,9 +309,9 @@ export function DashboardOverlay({
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-[#192A56] font-bold text-xs transition cursor-pointer shadow-2xs"
                 title="Pilih Sudut Pandang Kamera"
               >
-                <Camera className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <Camera className="w-3.5 h-3.5 text-[#192A56] shrink-0" />
                 <span className="max-w-[130px] sm:max-w-none truncate">{currentPovOption?.label || 'Seluruh Kantor'}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${isPovDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${isPovDropdownOpen ? 'rotate-180 text-[#192A56]' : ''}`} />
               </button>
 
               {/* Floating Glassmorphic Popover Menu */}
@@ -271,9 +323,9 @@ export function DashboardOverlay({
                   />
                   <div className="absolute top-full mt-2 left-0 z-50 w-64 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-2xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 font-sans">
                     <div className="px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 border-b border-slate-100 mb-1">
-                      Sudut Pandang Kamera 3D
+                      {isCctvActive ? 'Kamera CCTV 360°' : 'Sudut Pandang Kamera 3D'}
                     </div>
-                    {POV_OPTIONS.map((opt) => {
+                    {visiblePovOptions.map((opt) => {
                       const Icon = opt.icon
                       const isSelected = activePOV === opt.id
                       return (
@@ -310,7 +362,7 @@ export function DashboardOverlay({
                             </div>
                           </div>
                           {isSelected && (
-                            <Check className="w-4 h-4 text-sky-400 shrink-0 ml-2" />
+                            <Check className="w-4 h-4 text-white shrink-0 ml-2" />
                           )}
                         </button>
                       )
@@ -380,6 +432,18 @@ export function DashboardOverlay({
               <span>{isBackendConnected ? 'Online' : 'Offline'}</span>
             </div>
 
+            {onOpenTeamSetup && (
+              <button
+                type="button"
+                onClick={onOpenTeamSetup}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#192A56] font-bold text-xs transition cursor-pointer border border-slate-200 shadow-xs"
+                title="Konfigurasi & Ubah Nama Tim AI"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#192A56] shrink-0" />
+                <span className="hidden md:inline font-bold">Ubah Nama Tim</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onOpenCreateLead}
@@ -430,12 +494,12 @@ export function DashboardOverlay({
       <div className="flex-1 flex flex-col justify-between p-3 sm:p-4 pointer-events-none overflow-hidden gap-3 min-h-0">
 
         {/* ========================================================================= */}
-        {/* 2. CENTER ROW: Left Leads Drawer & Right System Sidebar                   */}
+        {/* 2. CENTER ROW: Left Leads Drawer, CCTV Top Badges & Right System Sidebar  */}
         {/* ========================================================================= */}
-        {isHudVisible && (
-          <div className="flex-1 flex justify-between items-start gap-4 overflow-hidden pointer-events-none min-h-0">
-            
-            {/* Left Drawer: Tab Antrean Leads & Activity Feed (Modern Rounded Card) */}
+        <div className="flex-1 flex justify-between items-start gap-4 overflow-hidden pointer-events-none min-h-0">
+          
+          {/* Left Drawer: Tab Antrean Leads & Activity Feed (Modern Rounded Card) */}
+          {isHudVisible && (
             <aside
               className={`pointer-events-auto transition-all duration-300 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-900/5 p-4 flex flex-col h-full max-h-full min-h-0 ${
                 isSidebarOpen ? 'w-80 sm:w-92' : 'w-14'
@@ -606,17 +670,64 @@ export function DashboardOverlay({
                 </div>
               )}
             </aside>
+          )}
 
-            {/* Right System Sidebar: Inspector & Agent Selection */}
+          {/* Center Top Badges saat CCTV Aktif: Sejajar Kotak Prospek di kiri dan Kotak Tim Cubi di kanan */}
+          {activePOV.startsWith('cctv_') && (
+            <div className="flex-1 flex items-start justify-between gap-3 pointer-events-none px-1">
+              {/* Sisi Kiri: REC & Nama Kamera Aktif (Sejajar dengan Kotak Prospek) */}
+              <div className="pointer-events-auto select-none font-mono">
+                <div className="bg-[#192A56]/95 backdrop-blur-md border border-white/20 text-white px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-rose-400">REC</span>
+                  </div>
+                  <div className="h-3.5 w-px bg-white/20" />
+                  <div>
+                    <div className="text-xs font-bold tracking-wider text-white">
+                      {POV_OPTIONS.find((p) => p.id === activePOV)?.label || 'CCTV // LIVE FEED'}
+                    </div>
+                    <div className="text-[10px] text-slate-300">
+                      ON-PREMISE RTSP // 1080P 60FPS
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sisi Kanan: Jam & Telemetri Node (Sejajar di kiri Kotak Tim Cubi) */}
+              <div className="pointer-events-auto select-none font-mono hidden md:block">
+                <div className="bg-[#192A56]/95 backdrop-blur-md border border-white/20 text-white px-3.5 py-2 rounded-xl shadow-xl text-right">
+                  <div className="text-xs font-bold text-white tracking-widest">{clockStr}</div>
+                  <div className="text-[10px] text-emerald-400 font-bold">● NODE SECURE // ZERO CLOUD EGRESS</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Right System Sidebar: Inspector & Agent Selection */}
+          {isHudVisible && (
             <aside className="pointer-events-auto bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-900/5 p-4 w-68 sm:w-76 flex flex-col h-full max-h-full min-h-0 gap-2.5 text-xs font-mono">
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 shrink-0">
                 <div className="flex items-center gap-2 font-bold text-[#192A56]">
                   <Cpu className="w-4 h-4 text-[#192A56]" />
                   <span className="text-xs uppercase tracking-wide">Tim AI Cubi</span>
                 </div>
-                <span className="text-[10px] px-2.5 py-0.5 bg-emerald-50 text-emerald-800 font-bold rounded-full border border-emerald-200">
-                  5 Aktif
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {onOpenTeamSetup && (
+                    <button
+                      type="button"
+                      onClick={onOpenTeamSetup}
+                      title="Ubah Nama & Persona Tim Robot"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] bg-slate-100 hover:bg-[#192A56] hover:text-white text-[#192A56] font-bold rounded-lg border border-slate-300 transition cursor-pointer"
+                    >
+                      <SlidersHorizontal className="w-2.5 h-2.5" />
+                      <span>Ubah Nama</span>
+                    </button>
+                  )}
+                  <span className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-800 font-bold rounded-full border border-emerald-200">
+                    5 Aktif
+                  </span>
+                </div>
               </div>
 
               {/* Daftar Agen Interaktif (Scrollable with custom-scrollbar) */}
@@ -807,9 +918,96 @@ export function DashboardOverlay({
                   <span>Penggunaan Token:</span>
                   <span className="font-mono">{currentAgent.tokens}</span>
                 </div>
+                {onOpenTeamSetup && (
+                  <button
+                    type="button"
+                    onClick={onOpenTeamSetup}
+                    className="w-full mt-1.5 py-1.5 px-2 bg-[#192A56] hover:bg-[#0E1A38] text-white text-[11px] font-bold rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    title="Ubah Nama & Persona Tim Robot"
+                  >
+                    <SlidersHorizontal className="w-3 h-3 text-white" />
+                    <span>Ubah Nama & Persona Tim</span>
+                  </button>
+                )}
               </div>
 
             </aside>
+          )}
+        </div>
+
+        {/* ========================================================================= */}
+        {/* CCTV 360° SINGLE-LINE CONTROL BAR (Tepat di atas bar perintah, tombol Keluar di kanan sendiri) */}
+        {/* ========================================================================= */}
+        {activePOV.startsWith('cctv_') && (
+          <div className="w-full mb-2 pointer-events-auto shrink-0 z-30 font-mono">
+            <div className="w-full bg-[#192A56]/95 backdrop-blur-md border border-white/20 text-white px-3.5 py-2 rounded-xl shadow-xl flex items-center justify-between gap-3">
+              {/* Sisi Kiri: Status & Label 360° */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/10 text-rose-400 font-bold text-xs">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                  <span>360° FEED</span>
+                </div>
+                <span className="text-xs text-slate-300 hidden md:inline truncate">
+                  Rotasi Kamera 360°
+                </span>
+              </div>
+
+              {/* Sisi Tengah: Tombol Rotasi 360° (Putar Kiri, Auto Scan, Putar Kanan, Reset) */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <button
+                  type="button"
+                  onClick={() => onRotateCctv && onRotateCctv(-0.35)}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                  title="Putar Sudut Kamera ke Kiri (360°)"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Putar Kiri</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onToggleCctvAutoScan && onToggleCctvAutoScan()}
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer active:scale-95 ${
+                    isCctvAutoScanning ? 'bg-emerald-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                  title="Otomatis Memutar Kamera 360 Derajat"
+                >
+                  <Radio className={`w-3.5 h-3.5 ${isCctvAutoScanning ? 'animate-pulse' : ''}`} />
+                  <span>{isCctvAutoScanning ? 'Auto 360° [AKTIF]' : 'Auto 360°'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onRotateCctv && onRotateCctv(0.35)}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                  title="Putar Sudut Kamera ke Kanan (360°)"
+                >
+                  <span className="hidden sm:inline">Putar Kanan</span>
+                  <RotateCw className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onResetPOV && onResetPOV()}
+                  className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition cursor-pointer"
+                  title="Reset Sudut Pandang Kamera"
+                >
+                  <span>Reset</span>
+                </button>
+              </div>
+
+              {/* Sisi Kanan Sendiri: Tombol Keluar CCTV */}
+              <div className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onChangePOV && onChangePOV('overview')}
+                  className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+                  title="Keluar dari CCTV dan Kembali ke Tampilan Normal"
+                >
+                  <span>✕ Keluar CCTV</span>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -994,6 +1192,22 @@ export function DashboardOverlay({
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* CCTV 360° CORNER BADGES & VIEWFINDER RETICLE             */}
+      {/* ======================================================== */}
+      {/* OVERLAY KHUSUS MODE CCTV 360°: CENTER VIEWFINDER RETICLE */}
+      {/* ======================================================== */}
+      {activePOV.startsWith('cctv_') && (
+        <div className="fixed inset-0 m-auto w-56 h-56 border border-white/15 pointer-events-none flex items-center justify-center z-20">
+          <div className="w-4 h-4 border-t-2 border-l-2 border-white/60 absolute top-0 left-0" />
+          <div className="w-4 h-4 border-t-2 border-r-2 border-white/60 absolute top-0 right-0" />
+          <div className="w-4 h-4 border-b-2 border-l-2 border-white/60 absolute bottom-0 left-0" />
+          <div className="w-4 h-4 border-b-2 border-r-2 border-white/60 absolute bottom-0 right-0" />
+          <div className="w-2 h-2 rounded-full bg-white/40" />
+          <div className="text-[9px] text-white/50 tracking-widest absolute bottom-2 font-mono">360° PAN/ORBIT ACTIVE</div>
         </div>
       )}
 

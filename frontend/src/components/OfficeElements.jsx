@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Billboard, Text, RoundedBox, useGLTF, useTexture } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -12,7 +12,7 @@ import * as THREE from 'three'
  *   Mempertahankan 100% detail corak kayu/ubin asli model namun dengan palet putih cerah modern.
  * - Dinding Utama (Wall_material) -> Deep Navy Blue (#192A56) yang kontras dan profesional
  * - Seluruh Furnitur Kayu (wood, wood_4, wood.002, wood.004, wood.005) -> Soft Warm Cream / Off-White (#F5EFEB)
- * - Meja Resepsionis & Front Counters (Pam_desk) -> Sky Tech Blue (#0284c7)
+ * - Meja Resepsionis & Front Counters (Pam_desk) -> Deep Navy Blue (#192A56) - Selaras Tema & Dinding Website
  * - Lis Lantai (Baseboard_material) -> Dark Midnight Navy (#0E1A38)
  */
 export function IsometricOfficeGlb() {
@@ -72,11 +72,11 @@ export function IsometricOfficeGlb() {
             mat.roughness = 0.38
             mat.metalness = 0.02
           }
-          // 5. Meja Resepsionis & Front Counters: Sky Tech Blue (#0284c7)
+          // 5. Meja Resepsionis & Front Counters: Deep Navy Blue (#192A56 - Selaras dengan Dinding & Tema Website)
           else if (mat.name === 'Pam_desk') {
-            mat.color = new THREE.Color('#0284c7')
-            mat.roughness = 0.35
-            mat.metalness = 0.08
+            mat.color = new THREE.Color('#192A56')
+            mat.roughness = 0.45
+            mat.metalness = 0.12
           } 
           // 6. Lis Bawah Dinding (Baseboard): Dark Midnight Navy (#0E1A38)
           else if (mat.name === 'Baseboard_material') {
@@ -382,6 +382,124 @@ export function KanbanGlassBoard({
           100% OPERATIONAL
         </Text>
       </group>
+    </group>
+  )
+}
+
+/**
+ * CctvCameraMesh:
+ * Model 3D kamera pengawas CCTV interaktif yang terpasang di sudut dinding/plafon tiap ruangan.
+ * Dilengkapi lampu indikator REC berkedip merah dan badge penamaan kamera.
+ */
+export function CctvCameraMesh({
+  id = 'cctv_boss',
+  camNumber = '01',
+  roomName = 'Ruang Direktur',
+  position = [0, 4, 0],
+  rotation = [0, 0, 0],
+  isActive = false,
+  onClick = null,
+}) {
+  const ledRef = useRef()
+  const [hovered, setHovered] = useState(false)
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime()
+    if (ledRef.current) {
+      // Kedipan lampu REC merah setiap 1 detik
+      const isLit = (t * 2) % 2 > 0.8
+      ledRef.current.material.emissiveIntensity = isLit ? 3.5 : 0.4
+    }
+  })
+
+  return (
+    <group
+      position={position}
+      rotation={rotation}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick && onClick(id)
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        setHovered(true)
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={() => {
+        setHovered(false)
+        document.body.style.cursor = 'default'
+      }}
+    >
+      {/* 1. Dudukan Bracket Dinding Logam */}
+      <mesh position={[0, 0, -0.06]}>
+        <boxGeometry args={[0.24, 0.24, 0.08]} />
+        <meshStandardMaterial color="#0F172A" metalness={0.8} roughness={0.3} />
+      </mesh>
+
+      {/* 2. Lengan Swivel Sendi Pengatur Sudut */}
+      <mesh position={[0, -0.08, 0.06]} rotation={[0.4, 0, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 0.18, 12]} />
+        <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, -0.16, 0.12]}>
+        <sphereGeometry args={[0.06, 12, 12]} />
+        <meshStandardMaterial color="#1E293B" metalness={0.9} roughness={0.2} />
+      </mesh>
+
+      {/* 3. Bodi Utama Housing CCTV Putih Cyber */}
+      <group position={[0, -0.22, 0.22]} rotation={[0.45, 0, 0]}>
+        <RoundedBox args={[0.26, 0.24, 0.46]} radius={0.06} smoothness={3}>
+          <meshStandardMaterial
+            color={isActive ? '#192A56' : hovered ? '#E2E8F0' : '#FFFFFF'}
+            metalness={0.2}
+            roughness={0.25}
+          />
+        </RoundedBox>
+
+        {/* Lensa Depan Kaca Hitam Kamera */}
+        <mesh position={[0, 0, 0.235]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.085, 0.095, 0.03, 20]} />
+          <meshStandardMaterial color="#0A0E1A" metalness={0.95} roughness={0.05} />
+        </mesh>
+        <mesh position={[0, 0, 0.248]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.065, 0.065, 0.005, 16]} />
+          <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.8} metalness={0.9} />
+        </mesh>
+
+        {/* LED Indikator REC Merah Berkedip */}
+        <mesh ref={ledRef} position={[0.08, 0.07, 0.235]}>
+          <sphereGeometry args={[0.018, 8, 8]} />
+          <meshStandardMaterial color="#EF4444" emissive="#EF4444" emissiveIntensity={3.2} />
+        </mesh>
+        <pointLight position={[0.08, 0.07, 0.3]} color="#EF4444" intensity={isActive ? 1.5 : 0.8} distance={1.2} />
+
+        {/* Strip Aksen Navy di Bodi */}
+        <mesh position={[0, 0.125, 0]}>
+          <boxGeometry args={[0.262, 0.015, 0.462]} />
+          <meshBasicMaterial color="#192A56" />
+        </mesh>
+      </group>
+
+      {/* Floating Badge Nama CCTV */}
+      {(hovered || isActive) && (
+        <Billboard position={[0, 0.45, 0]}>
+          <group>
+            <RoundedBox args={[1.6, 0.32, 0.02]} radius={0.06} smoothness={2}>
+              <meshStandardMaterial color="#192A56" roughness={0.2} metalness={0.5} />
+            </RoundedBox>
+            <mesh position={[-0.65, 0, 0.015]}>
+              <sphereGeometry args={[0.04, 10, 10]} />
+              <meshStandardMaterial color="#EF4444" emissive="#EF4444" emissiveIntensity={3.0} />
+            </mesh>
+            <Text position={[-0.52, 0.03, 0.02]} fontSize={0.085} color="#FFFFFF" anchorX="left" anchorY="middle" fontFamily="monospace" fontWeight="bold">
+              {`CAM ${camNumber} // REC`}
+            </Text>
+            <Text position={[-0.52, -0.06, 0.02]} fontSize={0.062} color="#94A3B8" anchorX="left" anchorY="middle">
+              {roomName}
+            </Text>
+          </group>
+        </Billboard>
+      )}
     </group>
   )
 }

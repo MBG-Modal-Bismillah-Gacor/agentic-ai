@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react'
+import * as THREE from 'three'
 import { Minimize2, Compass, Plus, Minus } from 'lucide-react'
 import { DashboardOverlay } from './components/DashboardOverlay'
 import { DeviceSecurityModal } from './components/DeviceSecurityModal'
@@ -47,6 +48,70 @@ const STATIONS = {
   meeting_purple: [-6.55, 0.33, 8.63],
   meeting_green: [-7.58, 0.33, 7.62],
   meeting_orange: [-8.35, 0.33, 7.85],
+}
+
+// Rute Jalur Waypoint Koridor & Pintu (Mencegah Menembus Sekat, Meja & Tembok)
+const OFFICE_PATHS = {
+  boss_to_meeting: [
+    [-7.2, 0.33, 0.36],
+    [-5.6, 0.33, 2.0],
+    [-4.8, 0.33, 4.5],
+    [-6.2, 0.33, 6.8],
+    STATIONS.meeting_boss,
+  ],
+  boss_to_desk: [
+    [-6.2, 0.33, 6.8],
+    [-4.8, 0.33, 4.5],
+    [-5.6, 0.33, 2.0],
+    [-7.2, 0.33, 0.36],
+    STATIONS.boss_desk,
+  ],
+  blue_to_meeting: [
+    [-4.8, 0.33, 3.8],
+    [-4.8, 0.33, 5.5],
+    [-6.2, 0.33, 6.8],
+    STATIONS.meeting_blue,
+  ],
+  blue_to_desk: [
+    [-6.2, 0.33, 6.8],
+    [-4.8, 0.33, 5.5],
+    [-4.8, 0.33, 3.8],
+    STATIONS.workstation_desk,
+  ],
+  purple_to_meeting: [
+    [-4.8, 0.33, 5.5],
+    [-6.2, 0.33, 6.8],
+    STATIONS.meeting_purple,
+  ],
+  purple_to_desk: [
+    [-6.2, 0.33, 6.8],
+    [-4.8, 0.33, 5.5],
+    STATIONS.workstation_desk_02,
+  ],
+  green_to_meeting: [
+    [-2.2, 0.33, 4.87],
+    [-4.6, 0.33, 5.2],
+    [-6.2, 0.33, 6.8],
+    STATIONS.meeting_green,
+  ],
+  green_to_desk: [
+    [-6.2, 0.33, 6.8],
+    [-4.6, 0.33, 5.2],
+    [-2.2, 0.33, 4.87],
+    STATIONS.security_gate,
+  ],
+  orange_to_meeting: [
+    [-5.06, 0.33, 2.0],
+    [-4.8, 0.33, 5.0],
+    [-6.2, 0.33, 6.8],
+    STATIONS.meeting_orange,
+  ],
+  orange_to_desk: [
+    [-6.2, 0.33, 6.8],
+    [-4.8, 0.33, 5.0],
+    [-5.06, 0.33, 2.0],
+    STATIONS.data_vault,
+  ],
 }
 
 const DEFAULT_BOSS = {
@@ -243,8 +308,32 @@ export default function App() {
   const [currentRoute, setCurrentRoute] = useState(getInitialRoute)
   const [officeName, setOfficeName] = useState('MSI Cubi Sovereign AI HQ')
   const [isOfficeSetupDone, setIsOfficeSetupDone] = useState(false)
-  const [bossConfig, setBossConfig] = useState(DEFAULT_BOSS)
-  const [agents, setAgents] = useState(DEFAULT_AGENTS)
+  const [bossConfig, setBossConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cubi_team_config')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.boss) return { ...DEFAULT_BOSS, ...parsed.boss }
+      }
+    } catch {}
+    return DEFAULT_BOSS
+  })
+  const [agents, setAgents] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cubi_team_config')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.agents) {
+          const merged = { ...DEFAULT_AGENTS }
+          for (const [k, v] of Object.entries(parsed.agents)) {
+            if (merged[k]) merged[k] = { ...merged[k], ...v }
+          }
+          return merged
+        }
+      }
+    } catch {}
+    return DEFAULT_AGENTS
+  })
   const [selectedAgentId, setSelectedAgentId] = useState('boss')
   const [systemInfo, setSystemInfo] = useState(null)
   const [isBackendConnected, setIsBackendConnected] = useState(false)
@@ -314,7 +403,19 @@ export default function App() {
   const [activePOV, setActivePOV] = useState('overview')
   const [transitionTrigger, setTransitionTrigger] = useState(0)
   const [isPure3DMode, setIsPure3DMode] = useState(false)
+  const [isCctvAutoScanning, setIsCctvAutoScanning] = useState(false)
   const officeControlsRef = useRef(null)
+
+  const handleRotateCctv = (delta) => {
+    if (!officeControlsRef.current) return
+    const controls = officeControlsRef.current
+    const offset = new THREE.Vector3().subVectors(controls.object.position, controls.target)
+    const spherical = new THREE.Spherical().setFromVector3(offset)
+    spherical.theta += delta
+    offset.setFromSpherical(spherical)
+    controls.object.position.copy(controls.target).add(offset)
+    controls.update()
+  }
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -329,16 +430,19 @@ export default function App() {
   const handleChangePOV = (pov, preserveAgentId = null) => {
     setActivePOV(pov)
     setTransitionTrigger(Date.now())
+    if (!pov.startsWith('cctv_')) {
+      setIsCctvAutoScanning(false)
+    }
     if (preserveAgentId) {
       setSelectedAgentId(preserveAgentId)
       return
     }
-    if (pov === 'boss') setSelectedAgentId('boss')
-    else if (pov === 'workstation') {
+    if (pov === 'boss' || pov === 'cctv_boss') setSelectedAgentId('boss')
+    else if (pov === 'workstation' || pov === 'cctv_workstation') {
       setSelectedAgentId((prev) => (prev === 'purple-agent' ? 'purple-agent' : 'blue-agent'))
     }
-    else if (pov === 'reception') setSelectedAgentId('green-agent')
-    else if (pov === 'vault') setSelectedAgentId('orange-agent')
+    else if (pov === 'reception' || pov === 'cctv_reception') setSelectedAgentId('green-agent')
+    else if (pov === 'vault' || pov === 'cctv_vault') setSelectedAgentId('orange-agent')
   }
 
   const handleSelectAgent = (agentId) => {
@@ -365,7 +469,7 @@ export default function App() {
     ) {
       setBossConfig((prev) => ({
         ...prev,
-        targetPos: STATIONS.meeting_boss,
+        targetPos: OFFICE_PATHS.boss_to_meeting,
         rotationY: Math.PI,
         isWalking: true,
         isTyping: false,
@@ -376,7 +480,7 @@ export default function App() {
         ...prev,
         'blue-agent': {
           ...prev['blue-agent'],
-          targetPos: STATIONS.meeting_blue,
+          targetPos: OFFICE_PATHS.blue_to_meeting,
           rotationY: -Math.PI / 2,
           isWalking: true,
           isTyping: false,
@@ -384,7 +488,7 @@ export default function App() {
         },
         'purple-agent': {
           ...prev['purple-agent'],
-          targetPos: STATIONS.meeting_purple,
+          targetPos: OFFICE_PATHS.purple_to_meeting,
           rotationY: Math.PI / 2,
           isWalking: true,
           isTyping: false,
@@ -392,7 +496,7 @@ export default function App() {
         },
         'green-agent': {
           ...prev['green-agent'],
-          targetPos: STATIONS.meeting_green,
+          targetPos: OFFICE_PATHS.green_to_meeting,
           rotationY: 0,
           isWalking: true,
           isTyping: false,
@@ -400,13 +504,25 @@ export default function App() {
         },
         'orange-agent': {
           ...prev['orange-agent'],
-          targetPos: STATIONS.meeting_orange,
+          targetPos: OFFICE_PATHS.orange_to_meeting,
           rotationY: Math.PI / 4,
           isWalking: true,
           isTyping: false,
           statusText: 'Laporan Sinkronisasi Data di Meja Rapat',
         },
       }))
+
+      // Reset isWalking setelah durasi melangkah di koridor selesai
+      setTimeout(() => {
+        setBossConfig((prev) => ({ ...prev, isWalking: false }))
+        setAgents((prev) => ({
+          ...prev,
+          'blue-agent': { ...prev['blue-agent'], isWalking: false },
+          'purple-agent': { ...prev['purple-agent'], isWalking: false },
+          'green-agent': { ...prev['green-agent'], isWalking: false },
+          'orange-agent': { ...prev['orange-agent'], isWalking: false },
+        }))
+      }, 5500)
 
       handleChangePOV('meeting')
 
@@ -427,7 +543,7 @@ export default function App() {
     ) {
       setBossConfig((prev) => ({
         ...prev,
-        targetPos: STATIONS.boss_desk,
+        targetPos: OFFICE_PATHS.boss_to_desk,
         rotationY: 0,
         isWalking: true,
         isTyping: false,
@@ -438,7 +554,7 @@ export default function App() {
         ...prev,
         'blue-agent': {
           ...prev['blue-agent'],
-          targetPos: STATIONS.workstation_desk,
+          targetPos: OFFICE_PATHS.blue_to_desk,
           rotationY: 0,
           isWalking: true,
           isTyping: true,
@@ -446,7 +562,7 @@ export default function App() {
         },
         'purple-agent': {
           ...prev['purple-agent'],
-          targetPos: STATIONS.workstation_desk_02,
+          targetPos: OFFICE_PATHS.purple_to_desk,
           rotationY: Math.PI,
           isWalking: true,
           isTyping: true,
@@ -454,7 +570,7 @@ export default function App() {
         },
         'green-agent': {
           ...prev['green-agent'],
-          targetPos: STATIONS.security_gate,
+          targetPos: OFFICE_PATHS.green_to_desk,
           rotationY: -Math.PI / 2,
           isWalking: true,
           isTyping: false,
@@ -462,13 +578,25 @@ export default function App() {
         },
         'orange-agent': {
           ...prev['orange-agent'],
-          targetPos: STATIONS.data_vault,
+          targetPos: OFFICE_PATHS.orange_to_desk,
           rotationY: 0,
           isWalking: true,
           isTyping: false,
           statusText: 'Database & Inventory Synced',
         },
       }))
+
+      // Reset isWalking setelah tiba kembali di stasiun kerja
+      setTimeout(() => {
+        setBossConfig((prev) => ({ ...prev, isWalking: false }))
+        setAgents((prev) => ({
+          ...prev,
+          'blue-agent': { ...prev['blue-agent'], isWalking: false },
+          'purple-agent': { ...prev['purple-agent'], isWalking: false },
+          'green-agent': { ...prev['green-agent'], isWalking: false },
+          'orange-agent': { ...prev['orange-agent'], isWalking: false },
+        }))
+      }, 5500)
 
       handleChangePOV('overview')
 
@@ -899,6 +1027,9 @@ export default function App() {
   // Simpan Konfigurasi Tim ke Backend & LocalStorage
   const handleSaveTeamConfig = async (newConfig) => {
     localStorage.setItem('cubi_team_setup_done', 'true')
+    try {
+      localStorage.setItem('cubi_team_config', JSON.stringify(newConfig))
+    } catch {}
     setBossConfig((prev) => ({ ...prev, ...newConfig.boss }))
     setAgents((prev) => {
       const next = { ...prev }
@@ -1260,6 +1391,8 @@ export default function App() {
                 transitionTrigger={transitionTrigger}
                 controlsRef={officeControlsRef}
                 isPure3DMode={isPure3DMode}
+                onChangePOV={handleChangePOV}
+                isCctvAutoScanning={isCctvAutoScanning}
               />
 
               {/* Mode Fullscreen 3D Immersive: Bersih, Minimalis & Bebas Elemen / Icon Default AI */}
@@ -1304,6 +1437,9 @@ export default function App() {
                   onNavigate={navigate}
                   activePOV={activePOV}
                   onChangePOV={handleChangePOV}
+                  isCctvAutoScanning={isCctvAutoScanning}
+                  onToggleCctvAutoScan={() => setIsCctvAutoScanning((prev) => !prev)}
+                  onRotateCctv={handleRotateCctv}
                   onExecuteCommand={handleExecuteOfficeCommand}
                   onZoom={handleManualZoom}
                   onResetPOV={handleResetPOV}

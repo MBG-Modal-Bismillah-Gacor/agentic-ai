@@ -6,12 +6,31 @@ import {
   IsometricOfficeGlb, 
   FloatingBadge, 
   KanbanGlassBoard, 
-  MsiCubiServerClusterAndVault 
+  MsiCubiServerClusterAndVault,
+  CctvCameraMesh
 } from './OfficeElements'
 import { CubiCharacter } from './CubiCharacter'
 
 // Skala pembesaran kantor agar ruangan luas, megah, dan proporsional terhadap karakter
 const OFFICE_SCALE = 2.1
+
+// Lokasi Stasiun yang Memiliki Kursi Nyata di Model Kantor GLB
+const CHAIR_LOCATIONS = [
+  [-8.36, 0.36], // Kursi Meja Direktur
+  [-5.32, 3.39], // Kursi Workstation 01 (Scout)
+  [-4.09, 5.42], // Kursi Workstation 02 (Scribe)
+  [-7.58, 9.65], // Kursi Meja Rapat (Boss)
+  [-8.65, 8.63], // Kursi Meja Rapat (Blue)
+  [-6.55, 8.63], // Kursi Meja Rapat (Purple)
+  [-7.58, 7.62], // Kursi Meja Rapat (Green)
+  [-8.35, 7.85], // Kursi Meja Rapat (Orange)
+]
+
+function hasChairAt(pos) {
+  if (!pos) return false
+  const p = Array.isArray(pos[0]) ? pos[pos.length - 1] : pos
+  return CHAIR_LOCATIONS.some(([cx, cz]) => Math.hypot(p[0] - cx, p[2] - cz) < 0.65)
+}
 
 /**
  * Preset Sudut Pandang (POV) Kamera Arsitektural untuk Model GLB Kantor Luas (OFFICE_SCALE = 2.1)
@@ -59,6 +78,56 @@ export const POV_PRESETS = {
     pos: [-6.0, 5.5, -3.5],
     lookAt: [-10.62, 1.2, 0.95],
     zoom: 54,
+  },
+  cctv_boss: {
+    label: 'CAM 01: Ruang Direktur',
+    // POV CCTV Sudut Dinding Dalam Ruang Direktur, Menatap Langsung Meja Eksekutif
+    pos: [-15.2, 3.2, -1.2],
+    lookAt: [-17.55, 0.8, 1.2],
+    zoom: 72,
+    isCctv: true,
+    camNumber: '01',
+    cctvName: 'CAM 01 // RUANG EKSEKUTIF DIREKTUR',
+  },
+  cctv_workstation: {
+    label: 'CAM 02: Workstation AI',
+    // POV CCTV Sudut Dinding Dalam Workstation, Menatap Scout & Scribe
+    pos: [-7.2, 3.2, 5.8],
+    lookAt: [-9.88, 0.8, 9.25],
+    zoom: 68,
+    isCctv: true,
+    camNumber: '02',
+    cctvName: 'CAM 02 // WORKSTATION COMPUTE & AI DRAFTER',
+  },
+  cctv_reception: {
+    label: 'CAM 03: Resepsionis',
+    // POV CCTV Dinding Sudut Dalam Resepsionis, Menatap Konter & Pintu Gate
+    pos: [0.6, 3.0, 7.2],
+    lookAt: [-1.45, 0.8, 10.22],
+    zoom: 68,
+    isCctv: true,
+    camNumber: '03',
+    cctvName: 'CAM 03 // RESEPSIONIS & TURNSTILE GATE',
+  },
+  cctv_vault: {
+    label: 'CAM 04: Server Vault',
+    // POV CCTV Dinding Sudut Dalam Ruang Server, Menatap Server NUC & Brankas
+    pos: [-8.2, 3.0, -0.8],
+    lookAt: [-10.2, 0.8, 1.3],
+    zoom: 72,
+    isCctv: true,
+    camNumber: '04',
+    cctvName: 'CAM 04 // SERVER VAULT & DATABASE NVMe',
+  },
+  cctv_meeting: {
+    label: 'CAM 05: Ruang Rapat',
+    // POV CCTV Sudut Dinding Dalam Ruang Rapat, Menatap Meja Konferensi & Layar Digital
+    pos: [-13.2, 3.2, 14.8],
+    lookAt: [-16.5, 0.8, 18.0],
+    zoom: 66,
+    isCctv: true,
+    camNumber: '05',
+    cctvName: 'CAM 05 // RUANG RAPAT & LIVE KANBAN',
   },
 }
 
@@ -151,6 +220,8 @@ export function OfficeScene({
   transitionTrigger = 0,
   controlsRef = null,
   isPure3DMode = false,
+  onChangePOV = null,
+  isCctvAutoScanning = false,
 }) {
   const internalControlsRef = useRef(null)
   const effectiveControlsRef = controlsRef || internalControlsRef
@@ -239,6 +310,8 @@ export function OfficeScene({
           enableRotate={true}
           enableZoom={true}
           enablePan={true}
+          autoRotate={isCctvAutoScanning}
+          autoRotateSpeed={2.2}
           screenSpacePanning={true}
           enableDamping={true}
           dampingFactor={0.08}
@@ -298,6 +371,62 @@ export function OfficeScene({
               position={[-4.5, 0.55, 0.79]}
               showLabels={!isPure3DMode}
             />
+
+            {/* Model 3D CCTV Kamera Pengawas di Dinding Dalam Tiap Ruangan Kantor */}
+            {/* CCTV 01: Ruang Direktur Eksekutif (Menempel pada Dinding Dalam Belakang) */}
+            <CctvCameraMesh
+              id="cctv_boss"
+              camNumber="01"
+              roomName="Ruang Direktur Eksekutif"
+              position={[-8.8, 1.85, 0.16]}
+              rotation={[0, 0.25, 0]}
+              isActive={activePOV === 'cctv_boss'}
+              onClick={onChangePOV}
+            />
+
+            {/* CCTV 02: Workstation Utama Scout & Scribe (Menempel pada Dinding Partisi Dalam) */}
+            <CctvCameraMesh
+              id="cctv_workstation"
+              camNumber="02"
+              roomName="Workstation AI Swarm"
+              position={[-3.8, 1.85, 2.65]}
+              rotation={[0, -2.1, 0]}
+              isActive={activePOV === 'cctv_workstation'}
+              onClick={onChangePOV}
+            />
+
+            {/* CCTV 03: Meja Resepsionis & Pintu Masuk (Menempel pada Dinding Dalam Area Depan) */}
+            <CctvCameraMesh
+              id="cctv_reception"
+              camNumber="03"
+              roomName="Resepsionis & Turnstile Gate"
+              position={[-0.38, 1.85, 3.8]}
+              rotation={[0, -1.8, 0]}
+              isActive={activePOV === 'cctv_reception'}
+              onClick={onChangePOV}
+            />
+
+            {/* CCTV 04: Server Vault & Arsip Data (Menempel pada Dinding Dalam Belakang Ruang Server) */}
+            <CctvCameraMesh
+              id="cctv_vault"
+              camNumber="04"
+              roomName="Server Vault & Database"
+              position={[-4.8, 1.85, 0.16]}
+              rotation={[0, 0.2, 0]}
+              isActive={activePOV === 'cctv_vault'}
+              onClick={onChangePOV}
+            />
+
+            {/* CCTV 05: Ruang Rapat & Layar Presentasi (Menempel pada Dinding Dalam Ruang Rapat) */}
+            <CctvCameraMesh
+              id="cctv_meeting"
+              camNumber="05"
+              roomName="Ruang Rapat & Screen"
+              position={[-6.8, 1.85, 9.72]}
+              rotation={[0, 2.8, 0]}
+              isActive={activePOV === 'cctv_meeting'}
+              onClick={onChangePOV}
+            />
           </Suspense>
 
           {/* ======================================================== */}
@@ -319,7 +448,7 @@ export function OfficeScene({
             scale={0.88}
             hideBadge={isPure3DMode}
             isBoss={true}
-            isSitting={!boss.isWalking}
+            isSitting={!boss.isWalking && hasChairAt(boss.targetPos || boss.pos)}
             isWalking={boss.isWalking}
             isTyping={boss.isTyping}
             isSelected={!isPure3DMode && selectedAgentId === 'boss'}
@@ -340,7 +469,7 @@ export function OfficeScene({
             rotationY={blueAgent.rotationY ?? 0}
             scale={0.78}
             hideBadge={isPure3DMode}
-            isSitting={!blueAgent.isWalking}
+            isSitting={!blueAgent.isWalking && hasChairAt(blueAgent.targetPos || blueAgent.pos)}
             isWalking={blueAgent.isWalking}
             isTyping={blueAgent.isTyping ?? true}
             isScanning={blueAgent.isScanning}
@@ -362,7 +491,7 @@ export function OfficeScene({
             rotationY={purpleAgent.rotationY ?? Math.PI}
             scale={0.78}
             hideBadge={isPure3DMode}
-            isSitting={!purpleAgent.isWalking}
+            isSitting={!purpleAgent.isWalking && hasChairAt(purpleAgent.targetPos || purpleAgent.pos)}
             isWalking={purpleAgent.isWalking}
             isTyping={purpleAgent.isTyping ?? true}
             isSelected={!isPure3DMode && selectedAgentId === 'purple-agent'}
@@ -383,7 +512,7 @@ export function OfficeScene({
             rotationY={greenAgent.rotationY ?? (-Math.PI / 2)}
             scale={0.78}
             hideBadge={isPure3DMode}
-            isSitting={!greenAgent.isWalking}
+            isSitting={!greenAgent.isWalking && hasChairAt(greenAgent.targetPos || greenAgent.pos)}
             isWalking={greenAgent.isWalking}
             isSelected={!isPure3DMode && selectedAgentId === 'green-agent'}
             onClick={onSelectAgent}
@@ -403,7 +532,7 @@ export function OfficeScene({
             rotationY={orangeAgent.rotationY ?? 0}
             scale={0.78}
             hideBadge={isPure3DMode}
-            isSitting={!orangeAgent.isWalking}
+            isSitting={!orangeAgent.isWalking && hasChairAt(orangeAgent.targetPos || orangeAgent.pos)}
             isWalking={orangeAgent.isWalking}
             isSelected={!isPure3DMode && selectedAgentId === 'orange-agent'}
             onClick={onSelectAgent}

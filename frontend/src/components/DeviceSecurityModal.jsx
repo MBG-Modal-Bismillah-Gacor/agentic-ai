@@ -94,42 +94,40 @@ export function DeviceSecurityModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200 select-none">
       <div 
-        className="w-full max-w-md bg-white rounded-3xl border border-slate-200/90 shadow-2xl overflow-hidden font-sans"
+        className="w-full max-w-md bg-white rounded-2xl border border-[#192A56]/25 shadow-2xl overflow-hidden font-mono"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Banner */}
-        <div className="bg-[#192A56] px-6 py-5 text-white relative">
+        {/* Header Banner - Office Cyber Style */}
+        <div className="bg-[#192A56] px-6 py-5 text-white relative border-b border-[#192A56]">
           {!isSetupMode && onClose && (
             <button
               onClick={onClose}
-              className="absolute top-5 right-5 p-1 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition"
+              className="absolute top-5 right-5 p-1 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer"
               title="Tutup"
             >
               <X className="w-5 h-5" />
             </button>
           )}
 
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center shrink-0">
               {isSetupMode ? (
-                <Fingerprint className="w-6 h-6 text-sky-400" />
+                <Fingerprint className="w-6 h-6 text-white" />
               ) : (
-                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                <ShieldCheck className="w-6 h-6 text-white" />
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-mono font-bold tracking-widest px-2 py-0.5 rounded-full bg-white/15 text-sky-300 border border-white/20">
-                  {isSetupMode ? 'Akses Terenkripsi Perangkat' : 'Profil & Keamanan Perangkat'}
-                </span>
-              </div>
-              <h2 className="text-lg font-bold font-mono tracking-tight mt-1 text-white">
+              <h2 className="text-base sm:text-lg font-bold font-mono tracking-tight text-white uppercase">
                 {isSetupMode ? 'Autentikasi Workstation' : 'Profil Workstation'}
               </h2>
+              <div className="text-[11px] text-slate-300 font-mono mt-0.5">
+                {isSetupMode ? 'Keamanan Perangkat MSI Cubi NUC' : 'Sistem Keamanan & Kredensial On-Premise'}
+              </div>
             </div>
           </div>
 
-          <p className="text-xs text-slate-300 mt-2 font-normal leading-relaxed">
+          <p className="text-xs text-slate-300 mt-2.5 font-sans font-normal leading-relaxed">
             {isSetupMode 
               ? 'Sistem mendeteksi perangkat baru. Masukkan nama dan password keamanan untuk membuka akses kantor virtual.'
               : 'Kelola identitas dan kredensial akses yang terdaftar pada perangkat workstation ini.'}

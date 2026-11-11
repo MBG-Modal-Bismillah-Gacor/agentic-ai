@@ -135,25 +135,66 @@ export function DashboardView({
     setCustomLogs((prev) => [newLog, ...prev])
     setCommandInput('')
 
-    // Simulasi respons agen
+    // Simulasi respons agen sesuai nama di office
     if (commandTarget === '@scout') {
       setTimeout(() => {
         setCustomLogs((prev) => [
           {
             id: Date.now() + 1,
-            agent: 'Sales Engineer',
+            agent: 'Cubi Scout',
             time: timeStr,
             action: 'Analisis Stok Selesai',
-            detail: 'Database katalog unit cabang sinkron 100%. Data siap dialirkan ke Scribe.',
+            detail: 'Database katalog unit cabang sinkron 100%. Data siap dialirkan ke Cubi Scribe.',
             type: 'agent'
           },
           ...prev
         ])
-      }, 1200)
+      }, 1000)
     } else if (commandTarget === '@scribe') {
       if (onRunAutoPipeline) {
         onRunAutoPipeline()
       }
+      setTimeout(() => {
+        setCustomLogs((prev) => [
+          {
+            id: Date.now() + 1,
+            agent: 'Cubi Scribe',
+            time: timeStr,
+            action: 'Draf Penawaran AI Dihasilkan',
+            detail: 'Qwen 2.5 3B lokal menyelesaikan draf pesan personal untuk verifikasi Cubi Gate.',
+            type: 'agent'
+          },
+          ...prev
+        ])
+      }, 1000)
+    } else if (commandTarget === '@gate') {
+      setTimeout(() => {
+        setCustomLogs((prev) => [
+          {
+            id: Date.now() + 1,
+            agent: 'Cubi Gate',
+            time: timeStr,
+            action: 'Turnstile Gate Diperiksa',
+            detail: 'Verifikasi keamanan transmisi selesai. WhatsApp dispatch disetujui.',
+            type: 'agent'
+          },
+          ...prev
+        ])
+      }, 1000)
+    } else if (commandTarget === '@vault') {
+      setTimeout(() => {
+        setCustomLogs((prev) => [
+          {
+            id: Date.now() + 1,
+            agent: 'Cubi Vault',
+            time: timeStr,
+            action: 'Arsip Data NVMe Tersinkron',
+            detail: 'Snapshot telemetri lokal tersimpan di brankas SSD berdaulat.',
+            type: 'agent'
+          },
+          ...prev
+        ])
+      }, 1000)
     }
   }
 
@@ -358,8 +399,8 @@ export function DashboardView({
             <button
               onClick={onRunAutoPipeline}
               disabled={isGenerating || pendingLeads === 0}
-              style={{ backgroundColor: '#2563EB', color: '#FFFFFF' }}
-              className="flex-1 md:flex-initial px-5 py-2.5 hover:bg-[#1D4ED8] disabled:opacity-50 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer rounded-xl shadow-xs"
+              style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
+              className="flex-1 md:flex-initial px-5 py-2.5 bg-[#192A56] hover:bg-[#0E1A38] text-white disabled:opacity-50 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer rounded-xl shadow-xs border border-[#192A56]"
             >
               <Play className="w-3.5 h-3.5 shrink-0" style={{ fill: '#FFFFFF', stroke: '#FFFFFF' }} />
               <span className="font-extrabold tracking-wide text-white">
@@ -368,7 +409,7 @@ export function DashboardView({
             </button>
             <button
               onClick={onRefresh}
-              className="group p-2.5 bg-white border border-slate-200 hover:bg-[#192A56] hover:text-white text-[#192A56] transition cursor-pointer shadow-xs rounded-xl"
+              className="group p-2.5 bg-white border border-[#192A56]/30 hover:bg-[#192A56] hover:text-white text-[#192A56] transition cursor-pointer shadow-xs rounded-xl"
               title="Perbarui Data"
             >
               <RefreshCw className="w-4 h-4 text-[#192A56] group-hover:text-white transition-colors" />
@@ -376,51 +417,66 @@ export function DashboardView({
           </div>
         </div>
 
-        {/* 4 Kolom KPI Grid */}
+        {/* 4 Kolom KPI Grid - Style Selaras 4 Kotak Beranda (Hairline Navy & Corner Square Marker) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs font-mono">
           
           {/* KPI 1 */}
-          <div className="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs">
-            <div className="text-[10px] text-[#576574] font-bold uppercase tracking-wider">TOTAL ANTREAN PROSPEK</div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#192A56] mt-1">
-              {totalLeads}
+          <div className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between">
+            <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
+            <div>
+              <div className="text-[10px] text-[#576574] font-bold uppercase tracking-wider">TOTAL ANTREAN PROSPEK</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#192A56] mt-1.5">
+                {totalLeads}
+              </div>
             </div>
-            <div className="text-[10px] text-[#576574] mt-1 font-semibold flex items-center gap-1">
+            <div className="text-[10px] text-[#576574] mt-2 font-semibold pt-2 border-t border-[#192A56]/10 flex items-center justify-between">
               <span>PENYIMPANAN DATA LOKAL</span>
+              <span className="font-bold text-[#192A56]">CSV // ACTIVE</span>
             </div>
           </div>
 
           {/* KPI 2 */}
-          <div className="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs">
-            <div className="text-[10px] text-[#576574] font-bold uppercase tracking-wider">PROSPEK PRIORITAS (HOT)</div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#192A56] mt-1">
-              {hotLeads}
+          <div className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between">
+            <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
+            <div>
+              <div className="text-[10px] text-[#576574] font-bold uppercase tracking-wider">PROSPEK PRIORITAS (HOT)</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#192A56] mt-1.5">
+                {hotLeads}
+              </div>
             </div>
-            <div className="text-[10px] text-[#192A56] font-bold mt-1">
-              DP &gt;= RP 3.500.000 (PRIORITAS)
+            <div className="text-[10px] text-[#192A56] font-bold mt-2 pt-2 border-t border-[#192A56]/10 flex items-center justify-between">
+              <span>DP &gt;= RP 3.500.000</span>
+              <span className="text-emerald-700">SIAP DEAL</span>
             </div>
           </div>
 
           {/* KPI 3 */}
-          <div className="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs">
-            <div className="text-[10px] text-[#576574] font-bold uppercase tracking-wider">DISETUJUI &amp; TERKIRIM</div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-700 mt-1">
-              {dispatchedLeads}
+          <div className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between">
+            <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
+            <div>
+              <div className="text-[10px] text-[#576574] font-bold uppercase tracking-wider">DISETUJUI &amp; TERKIRIM</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-700 mt-1.5">
+                {dispatchedLeads}
+              </div>
             </div>
-            <div className="text-[10px] text-emerald-700 font-bold mt-1 flex items-center gap-1">
+            <div className="text-[10px] text-emerald-700 font-bold mt-2 pt-2 border-t border-[#192A56]/10 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
-              <span>WHATSAPP TERKIRIM</span>
+              <span>WHATSAPP DISPATCHED</span>
             </div>
           </div>
 
           {/* KPI 4 */}
-          <div className="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs">
-            <div className="text-[10px] text-[#576574] font-bold uppercase tracking-wider">LATENSI INFERENSI HARDWARE</div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#192A56] mt-1">
-              &lt; 0.8s
+          <div className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between">
+            <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
+            <div>
+              <div className="text-[10px] text-[#576574] font-bold uppercase tracking-wider">LATENSI INFERENSI HARDWARE</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#192A56] mt-1.5">
+                &lt; 0.8s
+              </div>
             </div>
-            <div className="text-[10px] text-[#576574] font-bold mt-1">
-              AKSELERASI INTEL NPU 48 TOPS
+            <div className="text-[10px] text-[#576574] font-bold mt-2 pt-2 border-t border-[#192A56]/10 flex items-center justify-between">
+              <span>AKSELERASI METEOR LAKE</span>
+              <span className="text-[#192A56]">NPU 48 TOPS</span>
             </div>
           </div>
         </div>
@@ -595,22 +651,27 @@ export function DashboardView({
             </button>
           </div>
 
-          {/* 5 Workstation Cards Grid */}
+          {/* 5 Workstation Cards Grid - Beranda Style (Sharp Border, Corner Square Accent, Hover Transition) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs font-mono">
             
             {/* Station 00: Boss */}
-            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
+            <div 
+              onClick={() => onNavigate && onNavigate('office')}
+              className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group"
+              title="Klik untuk inspeksi di Meja Direktur (Kantor 3D)"
+            >
+              <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_00</span>
-                  <span className="text-[#192A56] font-bold">SUITE DIREKTUR</span>
+                  <span className="text-[#192A56] font-bold">RUANG DIREKTUR</span>
                 </div>
                 <div className="flex items-center gap-2 font-bold text-sm text-[#192A56] mb-0.5">
                   <ShieldCheck className="w-4 h-4 text-[#192A56] shrink-0" />
                   <span className="truncate">{bossConfig?.name || 'Pak Alfa'}</span>
                 </div>
                 <div className="text-[11px] text-[#576574] truncate mb-2 font-medium">
-                  {bossConfig?.role || 'Direktur Penjualan'}
+                  {bossConfig?.role || 'Direktur Utama & Strategi'}
                 </div>
               </div>
 
@@ -636,18 +697,23 @@ export function DashboardView({
             </div>
 
             {/* Station 01: Scout */}
-            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
+            <div 
+              onClick={() => onNavigate && onNavigate('office')}
+              className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group"
+              title="Klik untuk inspeksi di Meja 01 (Kantor 3D)"
+            >
+              <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_01</span>
-                  <span className="text-[#192A56] font-bold">MEJA 01</span>
+                  <span className="text-[#192A56] font-bold">WORKSTATION 01</span>
                 </div>
                 <div className="flex items-center gap-2 font-bold text-sm text-[#192A56] mb-0.5">
-                  <Cpu className="w-4 h-4 text-[#0284c7] shrink-0" />
+                  <Cpu className="w-4 h-4 text-[#192A56] shrink-0" />
                   <span className="truncate">{agents?.['blue-agent']?.name || 'Cubi Scout'}</span>
                 </div>
                 <div className="text-[11px] text-[#576574] truncate mb-2 font-medium">
-                  {agents?.['blue-agent']?.role || 'Analisis Stok & Komputasi'}
+                  {agents?.['blue-agent']?.role || 'Compute & Stock'}
                 </div>
               </div>
 
@@ -673,25 +739,30 @@ export function DashboardView({
             </div>
 
             {/* Station 02: Scribe */}
-            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
+            <div 
+              onClick={() => onNavigate && onNavigate('office')}
+              className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group"
+              title="Klik untuk inspeksi di Meja 02 / Papan Kanban (Kantor 3D)"
+            >
+              <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_02</span>
-                  <span className="text-[#192A56] font-bold">PAPAN KANBAN</span>
+                  <span className="text-[#192A56] font-bold">WORKSTATION 02</span>
                 </div>
                 <div className="flex items-center gap-2 font-bold text-sm text-[#192A56] mb-0.5">
-                  <Terminal className="w-4 h-4 text-[#4F46E5] shrink-0" />
+                  <Terminal className="w-4 h-4 text-[#192A56] shrink-0" />
                   <span className="truncate">{agents?.['purple-agent']?.name || 'Cubi Scribe'}</span>
                 </div>
                 <div className="text-[11px] text-[#576574] truncate mb-2 font-medium">
-                  {agents?.['purple-agent']?.role || 'Drafter Penawaran AI'}
+                  {agents?.['purple-agent']?.role || 'AI Drafter'}
                 </div>
               </div>
 
               <div className="space-y-1.5 pt-2 border-t border-[#192A56]/15 text-[10px]">
                 <div className="flex justify-between text-[#576574]">
                   <span>LLM LOKAL:</span>
-                  <span className="text-purple-700 font-bold">Qwen 2.5 3B</span>
+                  <span className="text-[#192A56] font-bold">Qwen 2.5 3B</span>
                 </div>
                 <div className="flex justify-between text-[#576574]">
                   <span>MEMORI AKTIF:</span>
@@ -714,18 +785,23 @@ export function DashboardView({
             </div>
 
             {/* Station 03: Gate */}
-            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
+            <div 
+              onClick={() => onNavigate && onNavigate('office')}
+              className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group"
+              title="Klik untuk inspeksi di Meja Resepsionis / Gerbang (Kantor 3D)"
+            >
+              <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_03</span>
-                  <span className="text-[#192A56] font-bold">GERBANG TURNSTILE</span>
+                  <span className="text-[#192A56] font-bold">RESEPSIONIS &amp; PINTU MASUK</span>
                 </div>
                 <div className="flex items-center gap-2 font-bold text-sm text-[#192A56] mb-0.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#16a34a] shrink-0" />
-                  <span className="truncate">{agents?.['green-agent']?.name || 'Pipeline Analyst'}</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#192A56] shrink-0" />
+                  <span className="truncate">{agents?.['green-agent']?.name || 'Cubi Gate'}</span>
                 </div>
                 <div className="text-[11px] text-[#576574] truncate mb-2 font-medium">
-                  {agents?.['green-agent']?.role || 'Otorisasi & Verifikasi'}
+                  {agents?.['green-agent']?.role || 'Approval & Dispatch'}
                 </div>
               </div>
 
@@ -751,18 +827,23 @@ export function DashboardView({
             </div>
 
             {/* Station 04: Vault */}
-            <div className="p-4 bg-white border border-slate-200/90 hover:border-[#192A56] rounded-2xl shadow-xs transition-all flex flex-col justify-between">
+            <div 
+              onClick={() => onNavigate && onNavigate('office')}
+              className="p-4 sm:p-5 bg-white border border-[#192A56]/20 relative shadow-xs hover:border-[#192A56] hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group"
+              title="Klik untuk inspeksi di Server Vault (Kantor 3D)"
+            >
+              <div className="w-2 h-2 bg-[#192A56] absolute top-2 right-2" />
               <div>
                 <div className="flex items-center justify-between text-[10px] text-[#576574] mb-1">
                   <span>STASIUN_04</span>
-                  <span className="text-[#192A56] font-bold">BRANKAS VAULT</span>
+                  <span className="text-[#192A56] font-bold">SERVER VAULT &amp; DATABASE</span>
                 </div>
                 <div className="flex items-center gap-2 font-bold text-sm text-[#192A56] mb-0.5">
-                  <HardDrive className="w-4 h-4 text-[#334155] shrink-0" />
-                  <span className="truncate">{agents?.['orange-agent']?.name || 'Cubi Sentinel'}</span>
+                  <HardDrive className="w-4 h-4 text-[#192A56] shrink-0" />
+                  <span className="truncate">{agents?.['orange-agent']?.name || 'Cubi Vault'}</span>
                 </div>
                 <div className="text-[11px] text-[#576574] truncate mb-2 font-medium">
-                  {agents?.['orange-agent']?.role || 'Pengarsip Data Terenkripsi'}
+                  {agents?.['orange-agent']?.role || 'Data Archivist'}
                 </div>
               </div>
 
@@ -932,10 +1013,10 @@ export function DashboardView({
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/20 mb-4">
                 <div className="flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-emerald-400" />
-                  <span className="font-bold text-white text-xs">STREAM LOG REALTIME</span>
+                  <Terminal className="w-4 h-4 text-white" />
+                  <span className="font-bold text-white text-xs tracking-wider">STREAM LOG REALTIME</span>
                 </div>
-                <span className="text-[10px] text-emerald-400 font-bold">● AKTIF</span>
+                <span className="text-[10px] text-white font-bold tracking-widest">● AKTIF</span>
               </div>
 
               {/* Feed List Terminal Monospaced */}
