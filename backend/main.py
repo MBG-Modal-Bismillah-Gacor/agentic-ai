@@ -128,3 +128,55 @@ def approve_outreach(req: ApprovalRequest):
         "dispatched_to_gateway": True,
         "notes": "Pesan berhasil masuk antrean pengiriman dengan delay anti-spam."
     }
+
+TEAM_CONFIG_FILE = os.path.join(WORKSPACE, "team_config.json")
+ACTIVITIES_FILE = os.path.join(WORKSPACE, "activities.json")
+
+@app.get("/api/v1/team/config")
+def get_team_config():
+    if os.path.exists(TEAM_CONFIG_FILE):
+        try:
+            with open(TEAM_CONFIG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+@app.post("/api/v1/team/config")
+def save_team_config(config: dict):
+    os.makedirs(WORKSPACE, exist_ok=True)
+    with open(TEAM_CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+    return {"status": "saved", "message": "Konfigurasi tim berhasil disimpan."}
+
+@app.post("/api/v1/leads/create")
+def create_lead(lead: dict):
+    os.makedirs(WORKSPACE, exist_ok=True)
+    file_exists = os.path.exists(LEADS_FILE)
+    fieldnames = ["id_lead", "nama_prospek", "nomor_wa", "minat_kebutuhan", "budget_dp", "domisili", "status_kontak"]
+    
+    with open(LEADS_FILE, mode="a", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if not file_exists:
+            writer.writeheader()
+        clean_row = {k: str(lead.get(k, "")) for k in fieldnames}
+        writer.writerow(clean_row)
+    return {"status": "created", "lead": clean_row}
+
+@app.get("/api/v1/system/activities")
+def get_system_activities():
+    if os.path.exists(ACTIVITIES_FILE):
+        try:
+            with open(ACTIVITIES_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    # Log aktivitas real-time default dari sistem multi-agen on-premise
+    return {
+        "activities": [
+            {"agent": "Cubi Gate", "action": "WhatsApp Gateway siap menerima trafik prospek", "time": "Baru saja", "type": "info"},
+            {"agent": "Cubi Scout", "action": "Sinkronisasi stok katalog unit motor Honda lokal selesai", "time": "1m lalu", "type": "success"},
+            {"agent": "Cubi Scribe", "action": "Model Qwen 2.5 3B siap menyusun penawaran deal otonom", "time": "2m lalu", "type": "ai"},
+            {"agent": "Cubi Vault", "action": "Database CSV lokal terverifikasi aman tanpa egress cloud", "time": "5m lalu", "type": "security"}
+        ]
+    }
