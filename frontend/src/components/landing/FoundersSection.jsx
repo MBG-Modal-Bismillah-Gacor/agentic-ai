@@ -1,9 +1,21 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { RobotMascotCanvas } from './RobotMascotCanvas'
 
 export function FoundersSection({ onNavigate }) {
   const [selectedAgent, setSelectedAgent] = useState(null)
   const [slideOffset, setSlideOffset] = useState(0)
+  const [isCloseBtnHovered, setIsCloseBtnHovered] = useState(false)
+
+  // Kunci scrolling halaman saat modal detail agen aktif
+  useEffect(() => {
+    if (selectedAgent) {
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [selectedAgent])
 
   // AI Agent Team Members (Swarm Intelijen Showroom On-Premise)
   const teamMembers = [
@@ -113,7 +125,7 @@ export function FoundersSection({ onNavigate }) {
   }
 
   return (
-    <section id="team-section" className="team-section">
+    <section id="team-section" className="team-section relative z-10 bg-white border-b border-[#192A56]/20">
       <div className="w-layout-blockcontainer container w-container">
         <div className="team-slider-row">
           
@@ -277,7 +289,7 @@ export function FoundersSection({ onNavigate }) {
       {/* Cyber Agent Specification Modal Dialog (Modul Detail Agen) */}
       {selectedAgent && (
         <div className="fixed inset-0 z-50 bg-[#192A56]/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border-2 border-[#192A56] max-w-xl w-full p-6 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-[#F6F6F6] border-2 border-[#192A56] max-w-xl w-full p-6 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             {/* 4 Corner Bracket Decors */}
             <span className="absolute top-2.5 left-2.5 w-3 h-3 border-t-2 border-l-2 border-[#192A56]" />
             <span className="absolute top-2.5 right-2.5 w-3 h-3 border-t-2 border-r-2 border-[#192A56]" />
@@ -288,8 +300,8 @@ export function FoundersSection({ onNavigate }) {
             <div className="flex items-start justify-between border-b border-[#192A56]/20 pb-4 mb-5">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="w-2 h-2 bg-[#0047FF] rounded-full animate-pulse" />
-                  <span className="font-mono text-[10px] font-bold text-[#0047FF] uppercase tracking-wider">
+                  <span className="w-2 h-2 bg-[#192A56] rounded-full animate-pulse" />
+                  <span className="font-mono text-[10px] font-bold text-[#192A56] uppercase tracking-wider">
                     ON-PREMISE AI AGENT SPECIFICATION
                   </span>
                 </div>
@@ -302,7 +314,23 @@ export function FoundersSection({ onNavigate }) {
               </div>
               <button
                 onClick={handleCloseDetail}
-                className="w-8 h-8 border border-[#192A56]/30 bg-white hover:bg-[#192A56] hover:text-white flex items-center justify-center font-mono font-bold text-sm transition-colors cursor-pointer"
+                onMouseEnter={() => setIsCloseBtnHovered(true)}
+                onMouseLeave={() => setIsCloseBtnHovered(false)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  border: '1px solid rgba(25, 42, 86, 0.3)',
+                  backgroundColor: isCloseBtnHovered ? '#192A56' : '#FFFFFF',
+                  color: isCloseBtnHovered ? '#F6F6F6' : '#192A56',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'monospace',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
                 title="Tutup"
               >
                 ✕
@@ -325,7 +353,7 @@ export function FoundersSection({ onNavigate }) {
               </div>
               <div className="p-3 bg-white border border-[#192A56]/20 shadow-xs">
                 <div className="text-[10px] text-[#576574] uppercase font-bold">CLOUD EGRESS</div>
-                <div className="text-xs sm:text-sm font-bold text-[#0047FF] mt-0.5">{selectedAgent.egress}</div>
+                <div className="text-xs sm:text-sm font-bold text-[#192A56] mt-0.5">{selectedAgent.egress}</div>
               </div>
             </div>
 
@@ -335,7 +363,7 @@ export function FoundersSection({ onNavigate }) {
                 <span className="w-1.5 h-1.5 bg-[#192A56] block" />
                 Deskripsi Operasional Showroom
               </div>
-              <p className="font-mono text-xs sm:text-[13px] text-[#192A56]/80 leading-relaxed bg-slate-50 p-3 border border-[#192A56]/15">
+              <p className="font-mono text-xs sm:text-[13px] text-[#192A56]/80 leading-relaxed bg-white p-3 border border-[#192A56]/15">
                 {selectedAgent.bio}
               </p>
             </div>
@@ -343,13 +371,13 @@ export function FoundersSection({ onNavigate }) {
             {/* Kapabilitas Utama */}
             <div className="mb-6">
               <div className="font-mono text-xs font-bold text-[#192A56] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-[#0047FF] block" />
+                <span className="w-1.5 h-1.5 bg-[#192A56] block" />
                 Kapabilitas &amp; Tanggung Jawab
               </div>
               <ul className="space-y-1.5 font-mono text-xs text-[#576574]">
                 {selectedAgent.capabilities?.map((cap, idx) => (
                   <li key={idx} className="flex items-start gap-2">
-                    <span className="text-[#0047FF] font-bold">✔</span>
+                    <span className="text-[#192A56] font-bold">✔</span>
                     <span>{cap}</span>
                   </li>
                 ))}
@@ -360,7 +388,8 @@ export function FoundersSection({ onNavigate }) {
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#192A56]/20">
               <button
                 onClick={handleCloseDetail}
-                className="px-4 py-2 bg-white border border-[#192A56]/30 hover:bg-[#192A56]/10 font-mono text-xs font-bold text-[#192A56] transition-colors cursor-pointer"
+                className="px-4 py-2 bg-white border border-[#192A56]/30 hover:bg-[#192A56] hover:text-[#F6F6F6] font-mono text-xs font-bold transition-colors cursor-pointer"
+                style={{ color: '#192A56' }}
               >
                 Tutup
               </button>
@@ -369,10 +398,15 @@ export function FoundersSection({ onNavigate }) {
                   handleCloseDetail()
                   onNavigate?.('office', { agentId: selectedAgent.id })
                 }}
-                className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white font-mono text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 border border-[#192A56]"
+                className="px-5 py-2 font-mono text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 border"
+                style={{
+                  backgroundColor: '#192A56',
+                  color: '#F6F6F6',
+                  borderColor: '#192A56',
+                }}
               >
-                <span>Buka di Virtual Office</span>
-                <span>➔</span>
+                <span style={{ color: '#F6F6F6' }}>Buka di Virtual Office</span>
+                <span style={{ color: '#F6F6F6' }}>➔</span>
               </button>
             </div>
 

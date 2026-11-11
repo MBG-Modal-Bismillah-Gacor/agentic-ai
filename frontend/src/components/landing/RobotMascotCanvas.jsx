@@ -3,19 +3,26 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { RoundedBox, Text } from '@react-three/drei'
 import * as THREE from 'three'
 
-function CuteCapsuleRobot({ inCapsule = false, accentColor = '#192A56', eyeColor = '#FFFFFF' }) {
+function CuteCapsuleRobot({ inCapsule = false, accentColor = '#192A56', eyeColor = '#FFFFFF', pointerCoord }) {
   const robotGroupRef = useRef()
   const headRef = useRef()
   const leftArmRef = useRef()
   const rightArmRef = useRef()
   const leftEyeRef = useRef()
   const rightEyeRef = useRef()
+  const currentPointer = useRef({ x: 0, y: 0 })
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime()
-    // Responsive dynamic pointer tracking (fluid, never stiff)
-    const mouseX = Math.max(-0.4, Math.min(0.4, state.pointer.x * 0.5))
-    const mouseY = Math.max(-0.35, Math.min(0.35, state.pointer.y * 0.4))
+    const targetX = pointerCoord?.current ? pointerCoord.current.x : 0
+    const targetY = pointerCoord?.current ? pointerCoord.current.y : 0
+
+    // Smooth lerp ke target pointer koordinat (halus saat mengikuti kursor dan saat kembali ke posisi idle tengah)
+    currentPointer.current.x = THREE.MathUtils.lerp(currentPointer.current.x, targetX, 0.08)
+    currentPointer.current.y = THREE.MathUtils.lerp(currentPointer.current.y, targetY, 0.08)
+
+    const mouseX = Math.max(-0.6, Math.min(0.6, currentPointer.current.x * 0.7))
+    const mouseY = Math.max(-0.5, Math.min(0.5, currentPointer.current.y * 0.6))
 
     // Fluid organic bobbing, gentle roll & breathing (Calm, weighted, realistic pace)
     if (robotGroupRef.current) {
@@ -25,28 +32,28 @@ function CuteCapsuleRobot({ inCapsule = false, accentColor = '#192A56', eyeColor
       robotGroupRef.current.rotation.y = THREE.MathUtils.lerp(
         robotGroupRef.current.rotation.y,
         (inCapsule ? Math.sin(t * 0.6) * 0.08 : 0) + mouseX * 0.45,
-        0.04
+        0.05
       )
       robotGroupRef.current.rotation.x = THREE.MathUtils.lerp(
         robotGroupRef.current.rotation.x,
         -mouseY * 0.18,
-        0.04
+        0.05
       )
     }
 
-    // Dynamic responsive head with subtle tilt (Smooth & realistic)
+    // Dynamic responsive head with realistic tilt (Menatap dan mengikuti arah kursor mouse pengguna)
     if (headRef.current) {
       headRef.current.rotation.y = THREE.MathUtils.lerp(
         headRef.current.rotation.y,
-        mouseX * 0.45,
-        0.05
+        mouseX * 0.65,
+        0.08
       )
       headRef.current.rotation.x = THREE.MathUtils.lerp(
         headRef.current.rotation.x,
-        -mouseY * 0.25,
-        0.05
+        -mouseY * 0.45,
+        0.08
       )
-      headRef.current.rotation.z = Math.sin(t * 1.2) * 0.018
+      headRef.current.rotation.z = Math.sin(t * 1.2) * 0.018 + mouseX * 0.04
     }
 
     // Left arm counterbalances with organic swing
@@ -76,8 +83,8 @@ function CuteCapsuleRobot({ inCapsule = false, accentColor = '#192A56', eyeColor
     if (leftEyeRef.current && rightEyeRef.current) {
       leftEyeRef.current.scale.y = eyeScaleY
       rightEyeRef.current.scale.y = eyeScaleY
-      leftEyeRef.current.position.x = -0.14 + mouseX * 0.02
-      rightEyeRef.current.position.x = 0.14 + mouseX * 0.02
+      leftEyeRef.current.position.x = -0.14 + mouseX * 0.03
+      rightEyeRef.current.position.x = 0.14 + mouseX * 0.03
     }
   })
 
@@ -336,11 +343,48 @@ export function RobotMascotCanvas({
   cameraDistance = 3.8,
   inCapsule = false,
   accentColor = '#192A56',
-  eyeColor = '#FFFFFF'
+  eyeColor = '#FFFFFF',
+  isGlobalPointer = false
 }) {
   const containerRef = useRef(null)
+  const pointerCoord = useRef({ x: 0, y: 0, active: false })
   const [isInView, setIsInView] = useState(false)
   const [hasMountedOnce, setHasMountedOnce] = useState(false)
+
+  useEffect(() => {
+    const handlePointerMove = (e) => {
+      if (isGlobalPointer) {
+        const nx = (e.clientX / window.innerWidth) * 2 - 1
+        const ny = -(e.clientY / window.innerHeight) * 2 + 1
+        pointerCoord.current = { x: nx, y: ny, active: true }
+        return
+      }
+
+      const el = containerRef.current
+      if (!el) return
+
+      const rect = el.getBoundingClientRect()
+      const buffer = 50
+      const isNearOrInside =
+        e.clientX >= rect.left - buffer &&
+        e.clientX <= rect.right + buffer &&
+        e.clientY >= rect.top - buffer &&
+        e.clientY <= rect.bottom + buffer
+
+      if (isNearOrInside) {
+        const centerX = rect.left + rect.width / 2
+        const centerY = rect.top + rect.height / 2
+        const nx = Math.max(-1, Math.min(1, (e.clientX - centerX) / (rect.width / 2 + buffer)))
+        const ny = Math.max(-1, Math.min(1, -(e.clientY - centerY) / (rect.height / 2 + buffer)))
+        pointerCoord.current = { x: nx, y: ny, active: true }
+      } else {
+        pointerCoord.current = { x: 0, y: 0, active: false }
+      }
+    }
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    return () => window.removeEventListener('pointermove', handlePointerMove)
+  }, [isGlobalPointer])
 
   useEffect(() => {
     const el = containerRef.current
@@ -382,7 +426,14 @@ export function RobotMascotCanvas({
           <directionalLight position={[6, 10, 8]} intensity={1.9} color="#FFFFFF" />
           <directionalLight position={[-6, -6, -4]} intensity={0.6} color="#192A56" />
 
-          {mode === 'robot' && <CuteCapsuleRobot inCapsule={inCapsule} accentColor={accentColor} eyeColor={eyeColor} />}
+          {mode === 'robot' && (
+            <CuteCapsuleRobot
+              inCapsule={inCapsule}
+              accentColor={accentColor}
+              eyeColor={eyeColor}
+              pointerCoord={pointerCoord}
+            />
+          )}
           {mode === 'core' && <HoloNeuralCore />}
           {mode === 'coin' && <FloatingCoin />}
           {mode === 'connector' && <StarConnector />}
