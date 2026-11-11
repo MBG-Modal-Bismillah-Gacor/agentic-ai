@@ -1,0 +1,690 @@
+@import "tailwindcss";
+@import "./styles/chaingpt-labs.css";
+
+@font-face {
+  font-family: 'LabsAmiga';
+  src: url('/assets/webflow/664753c2515af09bef5b9826/6647809f28af789ca1b7f574_LABSAmiga-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RobotoMono';
+  src: url('/assets/webflow/664753c2515af09bef5b9826/66477f2ed2dcb7d90a72f158_RobotoMono-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RobotoMonoBold';
+  src: url('/assets/webflow/664753c2515af09bef5b9826/6708e0ad4363d574b66cc248_RobotoMono-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --color-canvas: #FFFFFF;
+  --color-primary: #FFFFFF;
+  --color-on-primary: #192A56;
+  --color-ink: #192A56;
+  --color-body: #1E3163;
+  --color-muted: #576574;
+  --color-hairline: rgba(25, 42, 86, 0.15);
+  --color-accent-1: #192A56;
+  --color-neutral-1: #F8FAFC;
+  --color-neutral-2: #0E1A38;
+  --color-neutral-3: #192A56;
+
+  --font-display: "LabsAmiga", sans-serif;
+  --font-stencil: "LabsAmiga", monospace;
+  --font-mono: "RobotoMono", monospace;
+  --font-sans: "RobotoMono", monospace;
+}
+
+:root {
+  --light: #FFFFFF !important;
+  --lightgrey: #FFFFFF !important;
+  --canvas: #FFFFFF !important;
+  --white: #FFFFFF !important;
+  --grey: rgba(25, 42, 86, 0.15);
+  --dark: #192A56;
+  --ink: #192A56;
+  --orange: #FF5B00;
+}
+
+html {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #FFFFFF;
+  color: #192A56;
+}
+
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #FFFFFF;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #192A56;
+  overflow-x: clip;
+}
+
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Lenis Smooth Scroll Optimizations */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Industrial Color-Blocking Elevation Utilities (Strictly 0px rounded, 0px shadow) */
+.sharp-card {
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  border: 1px solid #9E9E9E;
+  background-color: #F6F6F6;
+}
+
+.sharp-btn-primary {
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  background-color: #ed1e28;
+  color: #FFFFFF;
+  font-family: "RobotoMono", monospace;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.sharp-btn-primary:hover {
+  background-color: #000000;
+  color: #EFEFE5;
+}
+
+.sharp-btn-secondary {
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  background-color: #F6F6F6;
+  color: #0E0E0E;
+  border: 1px solid #9E9E9E;
+  font-family: "RobotoMono", monospace;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 24px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.sharp-btn-secondary:hover {
+  background-color: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+/* Decorative Crosshairs */
+.decor-crosshair {
+  position: relative;
+}
+.decor-crosshair::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  border-top: 1px solid #ed1e28;
+  border-left: 1px solid #ed1e28;
+}
+.decor-crosshair::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-bottom: 1px solid #ed1e28;
+  border-right: 1px solid #ed1e28;
+}
+
+/* Brutalist architectural background grid (Navy & Cream pattern) */
+.bg-grid-pattern {
+  background-size: 64px 64px;
+  background-image: 
+    linear-gradient(to right, rgba(25, 42, 86, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(25, 42, 86, 0.08) 1px, transparent 1px);
+}
+
+/* Brutalist dark cyber background grid for 3D Office */
+.bg-dark-grid-pattern {
+  background-size: 64px 64px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+/* Clean bright architectural studio background for 3D Office */
+.bg-light-office-bg {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f5f9 65%, #e2e8f0 100%);
+}
+
+/* Ensure button chamfer polygon uses Navy & Cream */
+.button-primary {
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  padding: 0 !important;
+  display: inline-block !important;
+  position: relative !important;
+  text-decoration: none !important;
+  line-height: normal !important;
+  cursor: pointer !important;
+}
+
+.button-primary-border {
+  background-color: #192A56 !important;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px) !important;
+  padding: 1.5px !important;
+  display: block !important;
+  transition: background-color 0.2s ease;
+}
+
+.button-primary-text {
+  background-color: #192A56 !important;
+  color: #FFFFFF !important;
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px) !important;
+  padding: 0.65rem 1.4rem !important;
+  font-family: 'RobotoMono', monospace !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0px !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.button-primary:hover .button-primary-border {
+  background-color: #0E1A38 !important;
+}
+
+.button-primary:hover .button-primary-text {
+  background-color: #0E1A38 !important;
+  color: #FFFFFF !important;
+}
+
+/* FAQ Accordion Styling: Strictly Navy & Cream (Zero Blue #2563EB & Zero Orange) */
+.product-menu-icon-dot {
+  background-color: #192A56 !important;
+}
+
+.faq-accordion-btn-inner,
+.faq-item .accordion-button-inner {
+  background-color: rgba(25, 42, 86, 0.22) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.faq-accordion-btn-frame,
+.faq-item .accordion-button-frame {
+  background-color: #FFFFFF !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.faq-accordion-icon,
+.faq-item .accordion-toggle-icon {
+  filter: none;
+  transition: transform 0.25s ease, filter 0.22s ease !important;
+}
+
+/* Hover and Active/Open States: Solid Deep Navy Frame & Inverted White Icon */
+.accordion-toggle:hover .faq-accordion-btn-inner,
+.accordion-toggle:hover .accordion-button-inner,
+.accordion-button:hover .faq-accordion-btn-inner,
+.accordion-button:hover .accordion-button-inner,
+.faq-accordion-btn-inner.is-active,
+.accordion.w--open .faq-accordion-btn-inner,
+.accordion.w--open .accordion-button-inner {
+  background-color: #192A56 !important;
+}
+
+.accordion-toggle:hover .faq-accordion-btn-frame,
+.accordion-toggle:hover .accordion-button-frame,
+.accordion-button:hover .faq-accordion-btn-frame,
+.accordion-button:hover .accordion-button-frame,
+.faq-accordion-btn-frame:hover,
+.accordion-button-frame:hover,
+.faq-accordion-btn-frame.is-active,
+.accordion.w--open .faq-accordion-btn-frame,
+.accordion.w--open .accordion-button-frame {
+  background-color: #192A56 !important;
+}
+
+.accordion-toggle:hover .faq-accordion-icon,
+.accordion-toggle:hover .accordion-toggle-icon,
+.accordion-button:hover .faq-accordion-icon,
+.accordion-button:hover .accordion-toggle-icon,
+.faq-accordion-icon.is-active,
+.accordion.w--open .faq-accordion-icon,
+.accordion.w--open .accordion-toggle-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* Active ScrollSpy Corner Brackets: Hanya Kanan Atas dan Kiri Bawah (Sesuai Permintaan) */
+.header-menu-link-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+}
+
+.nav-corner {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Kanan Atas (Top-Right) */
+.nav-corner-tr {
+  top: 0px;
+  right: 0px;
+  border-top: 2px solid #192A56;
+  border-right: 2px solid #192A56;
+  transform: translate(2px, -2px);
+}
+
+/* Kiri Bawah (Bottom-Left) */
+.nav-corner-bl {
+  bottom: 0px;
+  left: 0px;
+  border-bottom: 2px solid #192A56;
+  border-left: 2px solid #192A56;
+  transform: translate(-2px, 2px);
+}
+
+/* When Hovered or Active Section, snap into place */
+.header-menu-link:hover .nav-corner,
+.header-menu-link.is-active .nav-corner {
+  opacity: 1 !important;
+  transform: translate(0, 0) !important;
+}
+
+.header-menu-link.is-active .header-menu-link-text {
+  color: #192A56 !important;
+  font-weight: 700 !important;
+}
+
+/* Marquee Running Text Animation for AICREW */
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marqueeScroll 110s linear infinite !important;
+}
+
+/* Hide root scrollbar completely on desktop while keeping smooth scrolling active */
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+}
+
+html, body {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Any internal container scrollbar must strictly be sleek Navy & Cream (Zero Orange) */
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+*::-webkit-scrollbar-track {
+  background: #FFFFFF !important;
+}
+*::-webkit-scrollbar-thumb {
+  background: #192A56 !important;
+  border-radius: 0px !important;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #0E1A38 !important;
+}
+
+/* Scroll Animation Keyframes & Classes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes floatWave {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: floatWave 4s ease-in-out infinite;
+}
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hero Robot Descent & Conduit Seamless Overflow */
+.hero-section {
+  overflow: visible !important;
+}
+.hero-wrapper, .hero-top, .hero-top-content {
+  overflow: visible !important;
+}
+
+/* Zero Orange Artifacts: Eliminate any stray orange squares near Hero or Navbar */
+.hero-square {
+  background-color: #192A56 !important;
+}
+
+/* Ensure clean layout for Hero info and partners */
+.hero-main {
+  min-height: auto !important;
+}
+.hero-partners {
+  background-color: transparent !important;
+}
+
+/* Vertical Conduit Hydro-Bubbles */
+.capital-incubation-chain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.capital-incubation-bubbles {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes bubbleRise {
+  0% {
+    transform: translateY(105vh) scale(0.65);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.6;
+  }
+  85% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-10vh) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), rgba(25, 42, 86, 0.3));
+  box-shadow: 0 0 6px rgba(25, 42, 86, 0.15);
+  animation-name: bubbleRise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* ========================================================================= */
+/* 1. BUTTON & ACCENT UTILITIES                                              */
+/* ========================================================================= */
+.btn-navy {
+  background-color: #192A56;
+  color: #FFFFFF;
+}
+.btn-navy:hover {
+  background-color: #0E1A38;
+}
+
+.btn-orange {
+  background-color: #FF5B00;
+  color: #0A0E1A;
+}
+.btn-orange:hover {
+  background-color: #E04F00;
+}
+
+/* ========================================================================= */
+/* 2. CONTINUOUS UNBROKEN 4-COLUMN ARCHITECTURAL BLUEPRINT GRID (Top to Bottom) */
+/* ========================================================================= */
+.body-lines-wrap {
+  z-index: 10;
+  pointer-events: none;
+  display: block;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2.75rem;
+  right: 2.75rem;
+}
+
+@media screen and (min-width: 1440px) {
+  .body-lines-wrap {
+    left: 3.75rem !important;
+    right: 3.75rem !important;
+  }
+}
+@media screen and (max-width: 991px) {
+  .body-lines-wrap {
+    left: 2.75rem !important;
+    right: 2.75rem !important;
+  }
+}
+@media screen and (max-width: 767px) {
+  .body-lines-wrap {
+    left: 1.42rem !important;
+    right: 1.42rem !important;
+  }
+}
+@media screen and (max-width: 479px) {
+  .body-lines-wrap {
+    left: 1.2rem !important;
+    right: 1.2rem !important;
+  }
+}
+
+.body-line {
+  background-color: rgba(25, 42, 86, 0.22) !important;
+  width: 1px !important;
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  display: block !important;
+}
+
+/* Pastikan semua 5 garis (membentuk 4 kotak sejajar) SELALU TAMPIL di SEMUA viewport */
+.body-line.left {
+  left: 0% !important;
+  display: block !important;
+}
+.body-line.left-middle {
+  left: 25% !important;
+  display: block !important;
+}
+.body-line.center {
+  left: 50% !important;
+  display: block !important;
+}
+.body-line.right-middle {
+  left: 75% !important;
+  right: auto !important;
+  display: block !important;
+}
+.body-line.right {
+  left: 100% !important;
+  right: auto !important;
+  display: block !important;
+}
+
+/* Team AI Corner Decors: Menggantikan warna orange menjadi Deep Navy #192A56 */
+.team-card-decor,
+.team-card-decor.tcd-right,
+.team-popup-decory,
+.team-popup-decor-top-left,
+.team-popup-decor-top-right,
+.team-popup-decor-bottom-left,
+.team-popup-decor-bottom-right {
+  border-color: #192A56 !important;
+}
+
+/* ========================================================================= */
+/* PRIMARY BLUE (#192A56) THEME & HEADINGS STYLING                              */
+/* ========================================================================= */
+.capital-title-h2,
+.incubation-title .h2,
+.testimonials-title .h2,
+.st-our-team .h2,
+.h2.capital-title-h2 {
+  color: #192A56 !important;
+}
+
+/* Portfolio Card Hover: Do NOT invert to black */
+.portfolio-item-link:hover {
+  filter: none !important;
+  background-color: #192A56 !important;
+}
+
+.portfolio-item-link:hover svg path {
+  fill: #FFFFFF !important;
+}
+
+/* Force pure white on graphic boxes requested by user */
+.graphic-block,
+.graphic-block.graphic-block-alt,
+.graphic-block.graphic-block-dark,
+.graphic-block.incubation-graphic-big,
+.capital-graphic-big,
+.capital-graphic-small,
+.graphic-image.capital-graphic-image,
+.graphic-image.incubation-graphic-image,
+.testimonials-graphic,
+.testimonials-slider-row,
+.testimonials-item,
+.testimonials-social-col,
+.team-graphic,
+.section-heading-illustration,
+.faq-wrapper,
+.faq-listing {
+  background-color: #FFFFFF !important;
+}
+
+/* Subtle architectural title backgrounds so title text never disappears */
+.capital-title,
+.incubation-title,
+.testimonials-title,
+.st-our-team {
+  background-color: #F6F6F6 !important;
+}
+
+/* Custom Sleek Scrollbar for Office Drawers & Lists */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #94A3B8;
+  border-radius: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #192A56;
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #94A3B8 #F1F5F9;
+}
+
+
+
+
+
+
+
+
