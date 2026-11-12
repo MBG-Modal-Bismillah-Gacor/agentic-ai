@@ -12,8 +12,10 @@ from pydantic import BaseModel
 
 try:
     from backend.engine_pdf import generate_spk_pdf, hitung_simulasi_kredit, hitung_angsuran_bulanan, OUTPUT_DIR
+    from backend import agentic_swarm
 except ImportError:
     from engine_pdf import generate_spk_pdf, hitung_simulasi_kredit, hitung_angsuran_bulanan, OUTPUT_DIR
+    import agentic_swarm
 
 app = FastAPI(title="Agentic Sales Hub Core API - MSI Cubi NUC", version="1.1.0")
 
@@ -501,3 +503,45 @@ def api_simulasi_kredit(req: SimulasiKreditRequest):
         nominal_dp=req.nominal_dp,
         bunga_tahunan=req.bunga_tahunan or 0.08
     )
+
+# ==============================================================================
+# AUTONOMOUS SWARM & SUPPLIER DELIBERATION ENDPOINTS
+# ==============================================================================
+
+@app.on_event("startup")
+def on_app_startup():
+    agentic_swarm.set_external_logger(add_log)
+    agentic_swarm.start_swarm_background(interval=30)
+
+@app.on_event("shutdown")
+def on_app_shutdown():
+    agentic_swarm.stop_swarm_background()
+
+@app.get("/api/v1/swarm/telemetry")
+def get_swarm_telemetry_endpoint():
+    return agentic_swarm.get_swarm_telemetry()
+
+class SwarmToggleRequest(BaseModel):
+    enabled: bool
+    interval_seconds: Optional[int] = 30
+
+@app.post("/api/v1/swarm/toggle")
+def toggle_swarm_endpoint(req: SwarmToggleRequest):
+    if req.enabled:
+        agentic_swarm.start_swarm_background(interval=req.interval_seconds or 30)
+    else:
+        agentic_swarm.stop_swarm_background()
+    return {"status": "ok", "telemetry": agentic_swarm.get_swarm_telemetry()}
+
+@app.post("/api/v1/swarm/run-cycle")
+def run_swarm_cycle_endpoint():
+    result = agentic_swarm.run_swarm_cycle(trigger_source="manual_api")
+    return {"status": "ok", "result": result, "telemetry": agentic_swarm.get_swarm_telemetry()}
+
+@app.get("/api/v1/swarm/deliberations")
+def get_swarm_deliberations_endpoint():
+    telemetry = agentic_swarm.get_swarm_telemetry()
+    return {
+        "total": len(telemetry["recent_deliberations"]),
+        "deliberations": telemetry["recent_deliberations"]
+    }

@@ -40,7 +40,7 @@ def run_tests():
     print("=" * 65)
 
     passed = 0
-    total = 6
+    total = 7
 
     # 1. Health & Appliance Check
     print("\n[TEST 1/6] System Health & Appliance Telemetry...")
@@ -196,12 +196,45 @@ def run_tests():
     except Exception as e:
         print(f"  ❌ GAGAL: {e}")
 
+    # 7. Autonomous Agentic Swarm & Supplier Deliberation
+    print("\n[TEST 7/7] Autonomous Agentic Swarm & Supplier Deliberation Engine...")
+    stok_file = os.path.join(BASE_DIR, "backend", "workspace", "stok_cabang.csv")
+    with open(stok_file, "rb") as f:
+        original_stok_content = f.read()
+
+    try:
+        from backend import agentic_swarm
+        gaps = agentic_swarm.audit_stock_and_demand()
+        assert len(gaps) > 0, "Gagal mendeteksi supply gap di stok cabang"
+        
+        cycle = agentic_swarm.run_swarm_cycle(trigger_source="integration_test")
+        assert cycle["gaps_detected"] > 0
+        assert len(cycle["deliberations_executed"]) > 0
+        assert len(cycle["restocks_performed"]) > 0
+
+        delib = cycle["deliberations_executed"][0]
+        assert any(t["speaker"] == "Cubi Supply" for t in delib["turns"])
+        assert any("Pemasok" in t["speaker"] or "Astra" in t["speaker"] for t in delib["turns"])
+        assert any(t["speaker"] == "Cubi Gate" for t in delib["turns"])
+
+        telemetry = agentic_swarm.get_swarm_telemetry()
+        assert telemetry["cycles_completed"] > 0
+
+        print(f"  ✅ Autonomous Swarm OK: {len(cycle['deliberations_executed'])} sesi tanya-jawab otonom ke Pemasok Astra disepakati.")
+        print(f"     -> Restock fisik berhasil dicatat ke CSV untuk unit: {cycle['restocks_performed'][0]['produk']}.")
+        passed += 1
+    except Exception as e:
+        print(f"  ❌ GAGAL: {e}")
+    finally:
+        with open(stok_file, "wb") as f:
+            f.write(original_stok_content)
+
     print("\n" + "=" * 65)
     print(f"🏁 HASIL AKHIR: {passed}/{total} Pengujian Integrasi Berhasil.")
     print("=" * 65)
 
     if passed == total:
-        print("🎉 Semua modul (Backend, Data Ingestion, Financial, SPK Engine) 100% SIAP!")
+        print("🎉 Semua modul (Backend, Data Ingestion, Financial, SPK, dan Autonomous Swarm) 100% SIAP!")
         return 0
     else:
         print("⚠️ Ditemukan kegagalan pada pengujian integrasi.")
