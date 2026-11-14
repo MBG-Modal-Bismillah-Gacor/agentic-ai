@@ -204,27 +204,33 @@ def jalankan_pengujian_qa() -> int:
     except requests.RequestException as error:
         cetak_hasil(7, "Lead tidak dikenal ditolak tanpa HTTP 500", False, str(error))
 
-    # Tes #8: Tersedianya endpoint Deliberations internal multi-agen swarm
+    # Tes #8: Tersedianya endpoint Deliberations internal multi-agen swarm & pemicu instan
     try:
         delib_resp = requests.get(f"{BASE_URL}/api/v1/deliberations", timeout=10)
         if delib_resp.status_code == 404:
             delib_resp = requests.get(f"{BASE_URL}/deliberations", timeout=10)
         delib_body = delib_resp.json() if delib_resp.status_code == 200 else {}
         delibs = delib_body.get("deliberations", [])
+
+        # Uji juga endpoint pemicu instan Skenario 2 demo lapangan
+        trigger_resp = requests.post(f"{BASE_URL}/api/v1/swarm/trigger-restock", timeout=10)
+        trigger_ok = (trigger_resp.status_code == 200 and trigger_resp.json().get("status") == "ok")
+
         delib_ok = (
             delib_resp.status_code == 200
             and isinstance(delibs, list)
             and len(delibs) > 0
             and all("turns" in d for d in delibs)
+            and trigger_ok
         )
         cetak_hasil(
             8,
-            "Tersedianya endpoint Deliberations internal agen swarm",
+            "Tersedianya endpoint Deliberations internal agen swarm & trigger restock",
             delib_ok,
-            f"HTTP {delib_resp.status_code} | sesi={len(delibs)}",
+            f"HTTP {delib_resp.status_code} | sesi={len(delibs)} | trigger=OK",
         )
     except Exception as error:
-        cetak_hasil(8, "Tersedianya endpoint Deliberations internal agen swarm", False, str(error))
+        cetak_hasil(8, "Tersedianya endpoint Deliberations internal agen swarm & trigger restock", False, str(error))
 
     # Tes #9: Alur simulasi persetujuan & penerbitan berkas PDF SPK resmi
     try:

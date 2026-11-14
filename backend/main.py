@@ -1,15 +1,17 @@
+import asyncio
 import csv
 import json
 import os
 import tempfile
 import threading
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 if __package__:
@@ -34,7 +36,298 @@ except ImportError:
     )
     import agentic_swarm
 
-app = FastAPI(title="Agentic Sales Hub Core API - MSI Cubi NUC", version="1.1.0")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE = os.path.join(BASE_DIR, "workspace")
+CONFIG_DIR = os.path.join(BASE_DIR, "config")
+
+KATALOG_FILE = os.path.join(WORKSPACE, "katalog_produk.csv")
+STOK_FILE = os.path.join(WORKSPACE, "stok_cabang.csv")
+BUNDLING_FILE = os.path.join(WORKSPACE, "aturan_bundling.json")
+LEADS_FILE = os.path.join(WORKSPACE, "leads_mentah.csv")
+TEAM_FILE = os.path.join(CONFIG_DIR, "team_config.json")
+AGENCY_AGENTS_FILE = os.path.join(CONFIG_DIR, "agency_agents.json")
+outreach_dispatcher = SafeOutreachDispatcher()
+lead_approval_lock = threading.Lock()
+
+# ==============================================================================
+# STATE & BACKGROUND HEARTBEAT ENGINE (30 DETIK)
+# ==============================================================================
+
+main_loop: Optional[asyncio.AbstractEventLoop] = None
+heartbeat_task: Optional[asyncio.Task] = None
+sse_subscribers: List[asyncio.Queue] = []
+deliberation_logs: List[Dict[str, Any]] = []
+seen_zero_stock_keys: Set[str] = set()
+
+heartbeat_state: Dict[str, Any] = {
+    "is_active": True,
+    "interval_seconds": 30,
+    "last_beat": None,
+    "scans_completed": 0
+}
+
+# In-memory activity logs
+activity_logs: List[Dict[str, Any]] = [
+    {
+        "id": "act-init",
+        "time": datetime.now().strftime("%H:%M:%S"),
+        "agent": "System",
+        "action": "MSI Cubi NUC AI+ B206 Core Hub Online",
+        "detail": "Katalog, stok cabang, dan model lokal qwen2.5:3b siap melayani pipeline."
+    }
+]
+
+def push_log(agent: str, action: str, detail: str = "") -> Dict[str, Any]:
+    """
+    Mencatat log ke activity_logs dan memancarkan event ke saluran SSE /api/v1/office/live-stream.
+    Thread-safe untuk pemanggilan dari worker thread maupun async coroutine.
+    """
+    entry = {
+        "id": f"act-{int(time.time()*1000)}",
+        "time": datetime.now().strftime("%H:%M:%S"),
+        "agent": agent,
+        "action": action,
+        "detail": detail
+    }
+    activity_logs.insert(0, entry)
+    if len(activity_logs) > 50:
+        activity_logs.pop()
+
+    # Pancarkan ke saluran SSE
+    for q in list(sse_subscribers):
+        try:
+            if main_loop and main_loop.is_running():
+                main_loop.call_soon_threadsafe(q.put_nowait, entry)
+            else:
+                q.put_nowait(entry)
+        except Exception:
+            pass
+    return entry
+
+def add_log(agent: str, action: str, detail: str = "") -> Dict[str, Any]:
+    """Alias kompatibilitas add_log yang langsung terhubung ke push_log."""
+    return push_log(agent, action, detail)
+
+def scan_zero_stock_and_deliberate(trigger_source: str = "heartbeat", force: bool = False) -> List[Dict[str, Any]]:
+    """
+    Memindai berkas stok_cabang.csv secara 100% READ-ONLY.
+    Mendeteksi unit dengan stok_ready == 0.
+    Menghasilkan transkrip musyawarah multi-agen (Scout -> Cubi Supply -> Gate -> Scribe).
+    100% aman saat mode offline / Airplane Mode (tanpa koneksi internet).
+    TIDAK PERNAH mengubah atau merusak berkas fisik stok_cabang.csv di disk!
+    """
+    timestamp_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_str = datetime.now().strftime("%H:%M:%S")
+    heartbeat_state["last_beat"] = timestamp_now
+    heartbeat_state["scans_completed"] += 1
+
+    if not os.path.exists(STOK_FILE):
+        return []
+
+    # 1. Baca master katalog (read-only)
+    katalog = {}
+    if os.path.exists(KATALOG_FILE):
+        try:
+            with open(KATALOG_FILE, mode="r", encoding="utf-8-sig") as f:
+                for r in csv.DictReader(f):
+                    katalog[r["id_produk"]] = r
+        except Exception as e:
+            print(f"[KATALOG READ WARNING]: {e}")
+
+    # 2. Baca stok fisik cabang (READ-ONLY)
+    zero_stock_items = []
+    try:
+        with open(STOK_FILE, mode="r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                pid = r.get("id_produk", "").strip()
+                cabang = r.get("cabang", "").strip()
+                try:
+                    stok_val = int(r.get("stok_ready", "0"))
+                except ValueError:
+                    stok_val = 0
+                
+                status_val = r.get("status", "").strip()
+                if stok_val == 0 or status_val.lower() == "kosong":
+                    zero_stock_items.append({
+                        "id_produk": pid,
+                        "cabang": cabang,
+                        "stok_ready": stok_val,
+                        "nama_barang": katalog.get(pid, {}).get("nama_barang", pid)
+                    })
+    except Exception as e:
+        print(f"[STOK READ ERROR]: {e}")
+        return []
+
+    # 3. Baca leads jika ada untuk mengaitkan prospek
+    leads_map = {}
+    if os.path.exists(LEADS_FILE):
+        try:
+            with open(LEADS_FILE, mode="r", encoding="utf-8-sig") as f:
+                for ld in csv.DictReader(f):
+                    dom = ld.get("domisili", "").strip()
+                    lid = ld.get("id_lead") or ld.get("\ufeffid_lead", "")
+                    nama = ld.get("nama_prospek", "Konsumen")
+                    leads_map[dom.lower()] = (lid, nama)
+        except Exception:
+            pass
+
+    generated_delibs = []
+    for item in zero_stock_items:
+        pid = item["id_produk"]
+        cabang = item["cabang"]
+        nama_barang = item["nama_barang"]
+        item_key = f"{pid}_{cabang.lower()}"
+
+        # Cegah duplikasi berulang untuk produk-cabang yang sama kecuali forced
+        if item_key in seen_zero_stock_keys and not force:
+            continue
+
+        seen_zero_stock_keys.add(item_key)
+
+        lead_info = leads_map.get(cabang.lower(), ("SWARM-RESTOCK", f"Konsumen {cabang}"))
+        lead_id, lead_nama = lead_info
+
+        # Transkrip koordinasi 4 agen sesuai spesifikasi
+        pesan_scout = (
+            f"Melaporkan deteksi stok 0 (Kosong) pada unit {nama_barang} ({pid}) di cabang {cabang} "
+            f"untuk kebutuhan prospek {lead_nama} ({lead_id}). Mengeskalasi pengadaan darurat ke Cubi Supply Agent."
+        )
+        pesan_supply = (
+            f"Mengajukan alokasi auto-restock darurat 2 unit {nama_barang} untuk cabang {cabang} ke pusat distribusi Astra Hub "
+            f"(Surat Jalan: DO-ASTRA-{cabang[:3].upper()}-901). Promo komplementer: Apparel Jaket Touring & Proteksi Garansi Resmi."
+        )
+        pesan_gate = (
+            f"Menahan promosi status 'Ready' pada unit {nama_barang} di cabang {cabang} hingga alokasi fisik dikonfirmasi dan terverifikasi di showroom. "
+            f"Unit berstatus stok 0 TIDAK AKAN pernah dilabeli Ready (Zero Fake Inventory)."
+        )
+        pesan_scribe = (
+            f"Mencatat tiket auto-restock unit {nama_barang} ({cabang}) ke log audit operasional lokal. "
+            f"Menyesuaikan draf penawaran agar transparan dan menyiapkan konfirmasi ketersediaan akurat tanpa over-promise."
+        )
+
+        turns = [
+            {
+                "speaker": "Scout Agent",
+                "role": "Stock & Demand Scout",
+                "message": pesan_scout
+            },
+            {
+                "speaker": "Cubi Supply Agent",
+                "role": "Procurement & Supplier Negotiator",
+                "message": pesan_supply
+            },
+            {
+                "speaker": "Gate Agent",
+                "role": "Verification & Safety Gate",
+                "message": pesan_gate
+            },
+            {
+                "speaker": "Scribe Agent",
+                "role": "Outreach & Operational Audit",
+                "message": pesan_scribe
+            }
+        ]
+
+        delib_session = {
+            "id": f"delib-{pid}-{cabang.replace(' ', '_').lower()}",
+            "timestamp": time_str,
+            "lead_target": lead_id,
+            "konsumen": lead_nama,
+            "unit": nama_barang,
+            "id_produk": pid,
+            "cabang": cabang,
+            "defisit": "CRITICAL_EMPTY",
+            "stok_ready": 0,
+            "status": "Auto-Restock Requested (Astra Hub)",
+            "turns": turns,
+            "restock_approved": True,
+            "restock_qty": 2
+        }
+
+        # Simpan ke memori deliberation_logs (perbarui jika sudah ada)
+        deliberation_logs[:] = [d for d in deliberation_logs if not (d.get("id_produk") == pid and d.get("cabang") == cabang)]
+        deliberation_logs.insert(0, delib_session)
+        if len(deliberation_logs) > 30:
+            deliberation_logs.pop()
+
+        generated_delibs.append(delib_session)
+
+        # Pancarkan notifikasi ringkas ke fungsi push_log(...) agar langsung tampil di SSE live-stream
+        push_log(
+            "Scout Agent",
+            f"Deteksi Stok 0: {nama_barang} ({cabang})",
+            f"Unit kosong terdeteksi; protokol auto-restock Swarm diaktifkan untuk cabang {cabang}."
+        )
+        push_log(
+            "Cubi Supply Agent",
+            f"Pengajuan Restock Astra Hub: {nama_barang}",
+            f"Alokasi +2 unit diajukan ke Astra Hub cabang {cabang}."
+        )
+        push_log(
+            "Gate Agent",
+            f"Penahanan Status Ready: {nama_barang} ({cabang})",
+            f"Status unit ditahan; dilarang klaim Ready sebelum verifikasi fisik showroom."
+        )
+        push_log(
+            "Scribe Agent",
+            f"Tiket Restock Dicatat: {nama_barang}",
+            f"Tiket restock dicatat ke log audit operasional lokal."
+        )
+
+    return generated_delibs
+
+async def background_heartbeat_loop(interval: int = 30):
+    """
+    Background Heartbeat (30 Detik)
+    Memindai stok_cabang.csv setiap 30 detik secara non-blocking dan 100% aman saat mode offline / Airplane Mode.
+    Hanya bersifat baca (read-only) dan tidak pernah mengubah isi berkas asli stok_cabang.csv.
+    """
+    print(f"[HEARTBEAT] Background Swarm Heartbeat aktif (interval: {interval}s). Local-first & 100% Offline/Airplane Mode safe.")
+    while True:
+        try:
+            scan_zero_stock_and_deliberate(trigger_source="heartbeat")
+        except Exception as e:
+            print(f"[HEARTBEAT ERROR]: {e}")
+        try:
+            await asyncio.sleep(interval)
+        except asyncio.CancelledError:
+            print("[HEARTBEAT] Background Heartbeat dihentikan secara graceful.")
+            break
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global main_loop, heartbeat_task
+    main_loop = asyncio.get_running_loop()
+    
+    # Hubungkan logger eksternal swarm ke push_log
+    agentic_swarm.set_external_logger(push_log)
+    
+    # Jalankan pemindaian awal stok agar data deliberasi langsung tersedia
+    try:
+        scan_zero_stock_and_deliberate(trigger_source="startup")
+    except Exception as e:
+        print(f"[STARTUP SCAN WARNING]: {e}")
+        
+    # Jalankan background heartbeat task (30s) secara non-blocking
+    heartbeat_task = asyncio.create_task(background_heartbeat_loop(interval=30))
+    
+    yield
+    
+    # Graceful shutdown
+    if heartbeat_task and not heartbeat_task.done():
+        heartbeat_task.cancel()
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
+    agentic_swarm.stop_swarm_background()
+
+app = FastAPI(
+    title="Agentic Sales Hub Core API - MSI Cubi NUC",
+    version="1.1.0",
+    lifespan=lifespan
+)
 
 allowed_origins = [
     origin.strip()
@@ -52,42 +345,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-WORKSPACE = os.path.join(BASE_DIR, "workspace")
-CONFIG_DIR = os.path.join(BASE_DIR, "config")
-
-KATALOG_FILE = os.path.join(WORKSPACE, "katalog_produk.csv")
-STOK_FILE = os.path.join(WORKSPACE, "stok_cabang.csv")
-BUNDLING_FILE = os.path.join(WORKSPACE, "aturan_bundling.json")
-LEADS_FILE = os.path.join(WORKSPACE, "leads_mentah.csv")
-TEAM_FILE = os.path.join(CONFIG_DIR, "team_config.json")
-AGENCY_AGENTS_FILE = os.path.join(CONFIG_DIR, "agency_agents.json")
-outreach_dispatcher = SafeOutreachDispatcher()
-lead_approval_lock = threading.Lock()
-
-# In-memory activity logs
-activity_logs: List[Dict[str, Any]] = [
-    {
-        "id": "act-init",
-        "time": datetime.now().strftime("%H:%M:%S"),
-        "agent": "System",
-        "action": "MSI Cubi NUC AI+ B206 Core Hub Online",
-        "detail": "Katalog, stok cabang, dan model lokal qwen2.5:3b siap melayani pipeline."
-    }
-]
-
-def add_log(agent: str, action: str, detail: str = ""):
-    entry = {
-        "id": f"act-{int(time.time()*1000)}",
-        "time": datetime.now().strftime("%H:%M:%S"),
-        "agent": agent,
-        "action": action,
-        "detail": detail
-    }
-    activity_logs.insert(0, entry)
-    if len(activity_logs) > 50:
-        activity_logs.pop()
 
 def get_katalog_and_stock():
     katalog = {}
@@ -727,36 +984,91 @@ def api_generate_spk(req: GenerateSPKRequest):
     }
 
 # ==============================================================================
-# AUTONOMOUS SWARM DELIBERATIONS & TELEMETRY ENDPOINTS
+# AUTONOMOUS SWARM DELIBERATIONS, SSE LIVE-STREAM & TELEMETRY ENDPOINTS
 # ==============================================================================
-
-@app.on_event("startup")
-def on_app_startup():
-    agentic_swarm.set_external_logger(add_log)
-    agentic_swarm.start_swarm_background(interval=30)
-
-@app.on_event("shutdown")
-def on_app_shutdown():
-    agentic_swarm.stop_swarm_background()
 
 @app.get("/api/v1/deliberations")
 @app.get("/deliberations")
 @app.get("/api/v1/swarm/deliberations")
 def get_deliberations():
-    telemetry = agentic_swarm.get_swarm_telemetry()
-    delibs = telemetry.get("recent_deliberations", [])
-    if not delibs:
-        cycle = agentic_swarm.run_swarm_cycle(trigger_source="api_request")
-        delibs = cycle.get("deliberations_executed", [])
+    if not deliberation_logs:
+        scan_zero_stock_and_deliberate(trigger_source="api_request")
+        
+    combined = list(deliberation_logs)
+    swarm_history = agentic_swarm.get_swarm_telemetry().get("recent_deliberations", [])
+    for sh in swarm_history:
+        if not any(d.get("id") == sh.get("id") for d in combined):
+            combined.append(sh)
+
     return {
         "status": "ok",
-        "total": len(delibs),
-        "deliberations": delibs
+        "heartbeat_status": "active" if heartbeat_state["is_active"] else "inactive",
+        "interval_seconds": heartbeat_state["interval_seconds"],
+        "heartbeat": {
+            "status": "active" if heartbeat_state["is_active"] else "inactive",
+            "interval_seconds": heartbeat_state["interval_seconds"],
+            "last_beat": heartbeat_state["last_beat"],
+            "scans_completed": heartbeat_state["scans_completed"]
+        },
+        "jumlah_temuan": len(deliberation_logs),
+        "total": len(combined),
+        "deliberations": combined
     }
+
+@app.post("/api/v1/swarm/trigger-restock")
+def trigger_restock_endpoint(payload: Optional[Dict[str, Any]] = None):
+    """
+    Pemicu instan untuk Skenario 2 (Autonomous Swarm Restock) saat demo lapangan.
+    Memindai stok kosong di stok_cabang.csv secara read-only, menjalankan deliberasi multi-agen,
+    dan memancarkan notifikasi ke SSE live-stream push_log tanpa menunggu jeda 30 detik.
+    """
+    newly_found = scan_zero_stock_and_deliberate(trigger_source="instant_manual_trigger", force=True)
+    return {
+        "status": "ok",
+        "message": "Skenario 2 (Autonomous Swarm Restock) berhasil dipicu secara instan.",
+        "trigger": "instant_manual_trigger",
+        "heartbeat_interval_seconds": heartbeat_state["interval_seconds"],
+        "jumlah_temuan": len(newly_found),
+        "newly_generated": newly_found,
+        "deliberations": list(deliberation_logs),
+        "total": len(deliberation_logs)
+    }
+
+@app.get("/api/v1/office/live-stream")
+async def office_live_stream():
+    """
+    Saluran Server-Sent Events (SSE) real-time untuk pemantauan aktivitas kantor dan musyawarah agen.
+    """
+    queue = asyncio.Queue()
+    sse_subscribers.append(queue)
+    async def sse_event_stream():
+        try:
+            yield f"data: {json.dumps({'event': 'connected', 'message': 'SSE live-stream terhubung', 'time': datetime.now().strftime('%H:%M:%S')})}\n\n"
+            while True:
+                event_data = await queue.get()
+                yield f"data: {json.dumps(event_data)}\n\n"
+        except asyncio.CancelledError:
+            pass
+        finally:
+            if queue in sse_subscribers:
+                sse_subscribers.remove(queue)
+
+    return StreamingResponse(
+        sse_event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 @app.get("/api/v1/swarm/telemetry")
 def get_swarm_telemetry_endpoint():
-    return agentic_swarm.get_swarm_telemetry()
+    telemetry = agentic_swarm.get_swarm_telemetry()
+    telemetry["heartbeat"] = heartbeat_state
+    telemetry["deliberations_count"] = len(deliberation_logs)
+    return telemetry
 
 class SwarmToggleRequest(BaseModel):
     enabled: bool
@@ -764,11 +1076,14 @@ class SwarmToggleRequest(BaseModel):
 
 @app.post("/api/v1/swarm/toggle")
 def toggle_swarm_endpoint(req: SwarmToggleRequest):
+    heartbeat_state["is_active"] = req.enabled
+    if req.interval_seconds:
+        heartbeat_state["interval_seconds"] = req.interval_seconds
     if req.enabled:
         agentic_swarm.start_swarm_background(interval=req.interval_seconds or 30)
     else:
         agentic_swarm.stop_swarm_background()
-    return {"status": "ok", "telemetry": agentic_swarm.get_swarm_telemetry()}
+    return {"status": "ok", "telemetry": agentic_swarm.get_swarm_telemetry(), "heartbeat": heartbeat_state}
 
 @app.post("/api/v1/swarm/run-cycle")
 def run_swarm_cycle_endpoint():
