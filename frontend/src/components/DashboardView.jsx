@@ -37,7 +37,10 @@ import {
   Zap,
   Binary,
   Hash,
-  Server
+  Server,
+  Bot,
+  FileText,
+  FileDown
 } from 'lucide-react'
 
 export function DashboardView({
@@ -48,6 +51,9 @@ export function DashboardView({
   agents = {},
   leads = [],
   activities = [],
+  deliberations = [],
+  spkModalData = null,
+  onCloseSpkModal = null,
   onSelectLead,
   onApprovePitch,
   onRefresh,
@@ -240,7 +246,7 @@ export function DashboardView({
               <line x1="0" y1="28" x2="28" y2="0" stroke="rgba(25, 42, 86, 0.3)" strokeWidth="1.5" />
             </svg>
 
-            {/* Brand Wrap: AICREW + Robot Face Badge */}
+            {/* Brand Wrap: StelAgent + Robot Face Badge */}
             <div className="flex items-center gap-4 relative z-20 shrink-0">
               <a
                 href="/"
@@ -250,7 +256,7 @@ export function DashboardView({
                 }}
                 className="flex items-center gap-3 no-underline cursor-pointer select-none"
               >
-                {/* Typography: AICREW */}
+                {/* Typography: StelAgent */}
                 <div className="flex items-center leading-none select-none">
                   <span 
                     className="font-extrabold text-2xl sm:text-3xl tracking-wider text-[#192A56] uppercase"
@@ -259,7 +265,7 @@ export function DashboardView({
                       letterSpacing: '0.04em'
                     }}
                   >
-                    AICREW
+                    STELAGENT
                   </span>
                   <span className="text-[#192A56]/50 ml-2 hidden lg:inline text-xs font-mono font-bold">// PUSAT_KONTROL</span>
                 </div>
@@ -1144,6 +1150,76 @@ export function DashboardView({
             </div>
           </form>
         </section>
+
+        {/* MODAL PENERBITAN BERKAS PDF SPK RESMI */}
+        {spkModalData && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 font-mono">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-[#192A56]">
+                    Persetujuan Selesai: PDF SPK Resmi Terbit
+                  </h3>
+                  <p className="text-xs text-[#576574]">
+                    {spkModalData.status === 'simulated'
+                      ? 'Status: Simulasi Terverifikasi (Pesan aman, tidak dikirim ke nomor riil)'
+                      : 'Status: Terkirim Riil ke WhatsApp Gateway'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="my-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Berkas Dokumen:</span>
+                  <span className="font-bold text-[#192A56] truncate max-w-[260px]">{spkModalData.pdf_filename}</span>
+                </div>
+                {spkModalData.rincian && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Konsumen:</span>
+                      <span className="font-bold text-[#192A56]">{spkModalData.rincian.nama_konsumen}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Unit Pesanan:</span>
+                      <span className="font-bold text-[#192A56]">{spkModalData.rincian.unit_barang}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Harga OTR:</span>
+                      <span className="font-bold text-[#192A56]">Rp {spkModalData.rincian.harga_otr?.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Cicilan Tenor {spkModalData.rincian.tenor_bulan}x:</span>
+                      <span className="font-bold text-emerald-700">Rp {spkModalData.rincian.angsuran_per_bulan?.toLocaleString()} / bln</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={onCloseSpkModal}
+                  className="px-4 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Tutup
+                </button>
+                <a
+                  href={spkModalData.pdf_url ? `http://127.0.0.1:8000${spkModalData.pdf_url}` : '#'}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer border border-[#192A56]"
+                  style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
+                >
+                  <FileDown className="w-4 h-4 text-white" />
+                  <span>Unduh PDF SPK Resmi</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

@@ -360,7 +360,7 @@ html.lenis, html.lenis body {
   font-weight: 700 !important;
 }
 
-/* Marquee Running Text Animation for AICREW */
+/* Marquee Running Text Animation for StelAgent */
 @keyframes marqueeScroll {
   0% {
     transform: translateX(0%);

@@ -11,7 +11,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 WORKSPACE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(WORKSPACE_DIR, "config", "business_profile.json")
-OUTPUT_DIR = os.path.join(WORKSPACE_DIR, "output_dokumen")
+OUTPUT_DIR = os.path.join(WORKSPACE_DIR, "output")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -98,7 +98,10 @@ def generate_spk_pdf(
     tenor_bulan: int,
     angsuran_per_bulan: int,
     items_bundling: Optional[List[Dict[str, Any]]] = None,
-    nomor_spk: Optional[str] = None
+    nomor_spk: Optional[str] = None,
+    file_name: Optional[str] = None,
+    id_lead: Optional[str] = None,
+    output_dir: Optional[str] = None
 ) -> str:
     """
     Menghasilkan berkas fisik biner PDF SPK resmi dengan tata letak deterministik.
@@ -107,6 +110,9 @@ def generate_spk_pdf(
     if items_bundling is None:
         items_bundling = []
         
+    target_output_dir = output_dir or OUTPUT_DIR
+    os.makedirs(target_output_dir, exist_ok=True)
+
     if not nomor_spk:
         tanggal_str = datetime.now().strftime("%Y%m%d")
         nomor_spk = f"SPK/AIC/{tanggal_str}/{abs(hash(nama_konsumen)) % 10000:04d}"
@@ -128,8 +134,14 @@ def generate_spk_pdf(
 
     judul_dokumen = profil.get("judul_spk", "SURAT PESANAN KENDARAAN (SPK) RESMI")
 
-    file_name = f"SPK_{nama_konsumen.replace(' ', '_')}_{datetime.now().strftime('%H%M%S')}.pdf"
-    pdf_path = os.path.join(OUTPUT_DIR, file_name)
+    clean_name = nama_konsumen.replace(' ', '_').replace('/', '_')
+    if not file_name:
+        if id_lead:
+            file_name = f"SPK_{id_lead}_{clean_name}.pdf"
+        else:
+            file_name = f"SPK_{clean_name}_{datetime.now().strftime('%H%M%S')}.pdf"
+
+    pdf_path = os.path.join(target_output_dir, file_name)
 
     doc = SimpleDocTemplate(
         pdf_path,

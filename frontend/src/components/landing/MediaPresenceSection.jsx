@@ -168,7 +168,7 @@ export function MediaPresenceSection() {
                     }`}
                   >
                     
-                    {/* 4 Corner Bracket Markers - Berubah Biru Navy #192A56 (tema btn masuk ke aicrew) saat Hover / Klik */}
+                    {/* 4 Corner Bracket Markers - Berubah Biru Navy #192A56 (tema btn masuk ke stelagent) saat Hover / Klik */}
                     <span className={`absolute top-2.5 left-2.5 w-2.5 h-2.5 border-t-2 border-l-2 transition-all duration-200 ${isActive ? 'border-[#192A56]' : 'border-[#192A56]/30'}`} />
                     <span className={`absolute top-2.5 right-2.5 w-2.5 h-2.5 border-t-2 border-r-2 transition-all duration-200 ${isActive ? 'border-[#192A56]' : 'border-[#192A56]/30'}`} />
                     <span className={`absolute bottom-2.5 left-2.5 w-2.5 h-2.5 border-b-2 border-l-2 transition-all duration-200 ${isActive ? 'border-[#192A56]' : 'border-[#192A56]/30'}`} />
@@ -191,7 +191,7 @@ export function MediaPresenceSection() {
                         </svg>
                       </div>
 
-                      {/* Subtitle - Teks Berwarna Biru Navy #192A56 (Serasi dengan Tombol Masuk ke AICREW) */}
+                      {/* Subtitle - Teks Berwarna Biru Navy #192A56 (Serasi dengan Tombol Masuk ke StelAgent) */}
                       <div className="font-mono text-[11px] font-bold text-[#192A56] uppercase tracking-wider mb-3">
                         {adv.subtitle}
                       </div>

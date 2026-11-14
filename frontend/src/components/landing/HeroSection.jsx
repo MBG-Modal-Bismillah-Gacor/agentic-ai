@@ -147,11 +147,11 @@ export function HeroSection({ onNavigate }) {
               <div className="hero-square hero-square-top-right hero-square-mobile" style={{ backgroundColor: '#FF5B00' }} />
               <div className="hero-square hero-square-top-left hero-square-mobile" style={{ backgroundColor: '#FF5B00' }} />
 
-              {/* Teks AI AGENTIC :: AICREW - Diberi jarak nyaman di bawah marquee running text agar tidak menabrak */}
+              {/* Teks AI AGENTIC :: STELAGENT - Diberi jarak nyaman di bawah marquee running text agar tidak menabrak */}
               <div className="hero-backing" style={{ paddingLeft: '2.25rem', marginBottom: '1.25rem' }}>
                 <div id="w-node-_30e76485-ae6c-05d7-60f5-023e5c311de5-ef5b982d" className="w-layout-hflex hero-backing-text">
                   <div className="hero-backing-item font-mono font-bold text-xs uppercase tracking-widest text-[#192A56]">
-                    AI AGENTIC :: AICREW
+                    AI AGENTIC :: STELAGENT
                   </div>
                 </div>
                 <div id="w-node-bf49c4bc-c533-46a4-5e65-738d863c031d-ef5b982d" className="w-2.5 h-2.5 bg-[#192A56]" />

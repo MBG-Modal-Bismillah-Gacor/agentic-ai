@@ -8,7 +8,7 @@ export function FooterSection({ onNavigate }) {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2.5 h-2.5 bg-[#192A56]" />
-              <span className="font-bold text-sm text-[#192A56] tracking-tight">AICREW // ENTERPRISE LABS</span>
+              <span className="font-bold text-sm text-[#192A56] tracking-tight">STELAGENT // ENTERPRISE LABS</span>
             </div>
             <p className="text-[#576574] text-xs max-w-sm">
               Autonomous multi-agent orchestration for enterprise on-premise hardware. Zero cloud egress. 100% telemetry control.
@@ -38,13 +38,13 @@ export function FooterSection({ onNavigate }) {
               onClick={() => onNavigate?.('office')}
               className="text-[#192A56] underline cursor-pointer font-bold"
             >
-              Masuk AICREW →
+              Masuk StelAgent →
             </button>
           </div>
         </div>
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#576574]">
-          <div>© 2026 AICREW. ALL INTELLECTUAL RIGHTS RESERVED.</div>
+          <div>© 2026 StelAgent. ALL INTELLECTUAL RIGHTS RESERVED.</div>
           <div className="flex items-center gap-3">
             <span>INTEL NPU CORE 7</span>
             <span>•</span>
@@ -58,7 +58,7 @@ export function FooterSection({ onNavigate }) {
       {/* Giant Monolithic Watermark at bottom matching FSreferensi.png */}
       <div className="w-full overflow-hidden text-center select-none pt-8 pointer-events-none">
         <div className="font-display font-bold text-6xl sm:text-8xl md:text-[160px] leading-none text-[#192A56]/[0.08] tracking-[-4px] sm:tracking-[-8px] uppercase">
-          AICREW
+          STELAGENT
         </div>
       </div>
     </footer>

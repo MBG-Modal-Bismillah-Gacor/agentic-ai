@@ -339,6 +339,8 @@ export default function App() {
   const [isBackendConnected, setIsBackendConnected] = useState(false)
   const [leads, setLeads] = useState([])
   const [activities, setActivities] = useState([])
+  const [deliberations, setDeliberations] = useState([])
+  const [spkModalData, setSpkModalData] = useState(null)
   const [activeLead, setActiveLead] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [pitchResult, setPitchResult] = useState(null)
@@ -346,7 +348,7 @@ export default function App() {
   // Device Detection & Security Authentication State
   const [deviceProfile, setDeviceProfile] = useState(() => {
     try {
-      const saved = localStorage.getItem('aicrew_device_auth')
+      const saved = localStorage.getItem('stelagent_device_auth')
       return saved ? JSON.parse(saved) : null
     } catch {
       return null
@@ -354,7 +356,7 @@ export default function App() {
   })
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(() => {
     try {
-      const saved = localStorage.getItem('aicrew_device_auth')
+      const saved = localStorage.getItem('stelagent_device_auth')
       return !saved // Jika belum ada profil autentikasi di perangkat ini, buka modal setup di awal
     } catch {
       return true
@@ -362,7 +364,7 @@ export default function App() {
   })
   const [deviceModalMode, setDeviceModalMode] = useState(() => {
     try {
-      const saved = localStorage.getItem('aicrew_device_auth')
+      const saved = localStorage.getItem('stelagent_device_auth')
       return saved ? 'profile' : 'setup'
     } catch {
       return 'setup'
@@ -381,7 +383,7 @@ export default function App() {
   }, [deviceProfile])
 
   const handleSaveDeviceProfile = (newProfile) => {
-    localStorage.setItem('aicrew_device_auth', JSON.stringify(newProfile))
+    localStorage.setItem('stelagent_device_auth', JSON.stringify(newProfile))
     setDeviceProfile(newProfile)
     if (newProfile?.name) {
       setBossConfig((prev) => ({
@@ -393,7 +395,7 @@ export default function App() {
   }
 
   const handleResetDevice = () => {
-    localStorage.removeItem('aicrew_device_auth')
+    localStorage.removeItem('stelagent_device_auth')
     setDeviceProfile(null)
     setDeviceModalMode('setup')
     setIsDeviceModalOpen(true)
@@ -971,6 +973,17 @@ export default function App() {
         const actData = await actRes.json()
         setActivities(actData.activities || [])
       }
+
+      // 5. Deliberations Riil (Autonomous Swarm Deliberation)
+      try {
+        const delibRes = await fetch(`${API_BASE}/api/v1/deliberations`)
+        if (delibRes.ok) {
+          const delibData = await delibRes.json()
+          setDeliberations(delibData.deliberations || [])
+        }
+      } catch {
+        // Abaikan galat offline
+      }
     } catch {
       // Backend sedang Offline (Status Riil Disconnected)
       setIsBackendConnected(false)
@@ -1092,7 +1105,7 @@ export default function App() {
     setSelectedAgentId('boss')
     setBossConfig((prev) => ({
       ...prev,
-      statusText: `Menugaskan prospek ${lead.nama} ke tim AICREW`,
+      statusText: `Menugaskan prospek ${lead.nama} ke tim StelAgent`,
     }))
 
     // LANGKAH 2: Cubi Scout (Sales Engineer) memproses komputasi spesifikasi & stok dari Meja Kerja 01
@@ -1293,6 +1306,10 @@ export default function App() {
       statusText: outcomeText,
     }))
 
+    if (responseData?.pdf_url) {
+      setSpkModalData(responseData)
+    }
+
     // Kembalikan agen ke stasiun semula dengan hasil aktual dari backend.
     setTimeout(() => {
       fetchData()
@@ -1388,6 +1405,9 @@ export default function App() {
               agents={agents}
               leads={leads}
               activities={activities}
+              deliberations={deliberations}
+              spkModalData={spkModalData}
+              onCloseSpkModal={() => setSpkModalData(null)}
               onSelectLead={handleSelectLead}
               onApprovePitch={handleApprovePitch}
               onRefresh={fetchData}
@@ -1448,6 +1468,9 @@ export default function App() {
                   onSelectAgent={handleSelectAgent}
                   leads={leads}
                   activities={activities}
+                  deliberations={deliberations}
+                  spkModalData={spkModalData}
+                  onCloseSpkModal={() => setSpkModalData(null)}
                   systemInfo={systemInfo}
                   isBackendConnected={isBackendConnected}
                   activeLead={activeLead}

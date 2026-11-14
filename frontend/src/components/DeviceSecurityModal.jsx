@@ -43,10 +43,10 @@ export function DeviceSecurityModal({
       setUserRole(currentProfile?.role || 'Sales Director')
       
       // Ambil atau buat ID Perangkat Unik
-      let storedDeviceId = localStorage.getItem('aicrew_device_id')
+      let storedDeviceId = localStorage.getItem('stelagent_device_id')
       if (!storedDeviceId) {
         storedDeviceId = `MSI-CUBI-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`
-        localStorage.setItem('aicrew_device_id', storedDeviceId)
+        localStorage.setItem('stelagent_device_id', storedDeviceId)
       }
       setDeviceId(storedDeviceId)
       setErrorMsg('')

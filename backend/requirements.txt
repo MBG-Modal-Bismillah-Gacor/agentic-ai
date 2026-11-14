@@ -1,4 +1,4 @@
-﻿fastapi
+fastapi
 uvicorn
 requests
 reportlab
@@ -6,3 +6,4 @@ markdown
 duckduckgo_search
 youtube-transcript-api
 wikipedia
+psutil

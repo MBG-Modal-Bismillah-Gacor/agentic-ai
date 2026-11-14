@@ -153,7 +153,13 @@ def execute_supplier_negotiation(gap: Dict[str, Any]) -> Dict[str, Any]:
 
     timestamp = datetime.now().strftime("%H:%M:%S")
 
-    # Turn 1: Pertanyaan Inisiatif dari Cubi Supply ke Pemasok
+    # Turn 1: Deteksi dari Scout
+    pesan_scout = (
+        f"Deteksi unit berstatus stok {gap['current_stok']} (Kosong) di cabang {branch} untuk kebutuhan prospek {lead_name} "
+        f"({gap['lead_id']}). Mengeskalasi permintaan pengadaan unit {product_name} ke tim Cubi Supply."
+    )
+
+    # Turn 2: Pertanyaan Inisiatif dari Cubi Supply ke Pemasok
     pertanyaan_cubi = (
         f"Halo Pusat Distribusi Astra Motor, kami mendeteksi lonjakan minat di cabang {branch} "
         f"untuk unit {product_name} sementara stok fisik saat ini {gap['current_stok']} unit. "
@@ -192,10 +198,16 @@ Format: Jawaban langsung tanpa basa-basi."""
             f"Program promo aktif saat ini: Paket Bundling Apparel Touring & Proteksi Garansi Mesin Resmi."
         )
 
-    # Turn 2: Keputusan Otorisasi dari Cubi Gate
+    # Turn 4: Keputusan Otorisasi dari Cubi Gate
     keputusan_gate = (
-        f"Otorisasi Pengadaan Diterima: Memvalidasi alokasi {request_qty} unit {product_name} ke cabang {branch}. "
-        f"Memperbarui basis data stok lokal dan membuka blokir penawaran untuk {lead_name}."
+        f"Validasi pengadaan: Alokasi restock {request_qty} unit {product_name} dicatat di jalur logistik {branch}. "
+        f"Unit berstatus stok 0 atau tidak terverifikasi TIDAK AKAN pernah dilabeli 'Ready' sampai fisik unit tiba dan terverifikasi di showroom."
+    )
+
+    # Turn 5: Arahan ke Cubi Scribe
+    pesan_scribe = (
+        f"Menyesuaikan draft penawaran untuk {lead_name}: Menyiapkan konfirmasi pesanan transparan mengenai alokasi unit "
+        f"{product_name} tanpa klaim palsu status Ready."
     )
 
     dialogue_session = {
@@ -208,8 +220,13 @@ Format: Jawaban langsung tanpa basa-basi."""
         "defisit": gap["urgency"],
         "turns": [
             {
+                "speaker": "Scout",
+                "role": "Stock & Demand Scout",
+                "message": pesan_scout
+            },
+            {
                 "speaker": "Cubi Supply",
-                "role": "Procurement & Stock Negotiator",
+                "role": "Procurement & Supplier Negotiator",
                 "message": pertanyaan_cubi
             },
             {
@@ -219,8 +236,13 @@ Format: Jawaban langsung tanpa basa-basi."""
             },
             {
                 "speaker": "Cubi Gate",
-                "role": "Approval & Ingestion Gate",
+                "role": "Verification & Safety Gate",
                 "message": keputusan_gate
+            },
+            {
+                "speaker": "Scribe",
+                "role": "Outreach & Proposal Drafter",
+                "message": pesan_scribe
             }
         ],
         "restock_approved": True,
@@ -233,9 +255,10 @@ Format: Jawaban langsung tanpa basa-basi."""
 # ACTION: UPDATE DETERMINISTIK STOK CABANG CSV & NOTIFIKASI
 # ==============================================================================
 
-def apply_restock_update(product_id: str, branch: str, added_qty: int) -> bool:
+def apply_restock_update(product_id: str, branch: str, added_qty: int, persist_to_disk: bool = False) -> bool:
     """
-    Memperbarui stok_cabang.csv secara fisik dan deterministik (utf-8-sig).
+    Memperbarui stok_cabang.csv secara fisik jika diminta (misal: pengujian integrasi),
+    atau simulasi memori agar CSV asli tetap aman & utuh.
     """
     if not os.path.exists(STOK_FILE):
         return False
@@ -266,10 +289,11 @@ def apply_restock_update(product_id: str, branch: str, added_qty: int) -> bool:
             "status": "Ready"
         })
 
-    with open(STOK_FILE, mode="w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+    if persist_to_disk:
+        with open(STOK_FILE, mode="w", encoding="utf-8-sig", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
 
     return True
 
@@ -306,8 +330,9 @@ def run_swarm_cycle(trigger_source: str = "auto") -> Dict[str, Any]:
             if len(deliberation_history) > 30:
                 deliberation_history.pop()
 
-            # Terapkan update stok fisik
-            success = apply_restock_update(gap["id_produk"], gap["domisili"], dialogue["restock_qty"])
+            # Terapkan update stok fisik (hanya persist ke file jika dipicu test integrasi)
+            should_persist = (trigger_source == "integration_test")
+            success = apply_restock_update(gap["id_produk"], gap["domisili"], dialogue["restock_qty"], persist_to_disk=should_persist)
             if success:
                 restock_info = {
                     "produk": gap["nama_barang"],
@@ -328,8 +353,8 @@ def run_swarm_cycle(trigger_source: str = "auto") -> Dict[str, Any]:
                 )
                 log_swarm_event(
                     "Cubi Gate",
-                    f"Restock Masuk: {gap['nama_barang']} Ready di {gap['domisili']}",
-                    f"Stok fisik cabang berhasil disinkronisasi ke CSV."
+                    f"Alokasi Masuk: {gap['nama_barang']} di {gap['domisili']}",
+                    f"Unit dalam jalur pengiriman ekspres (status tidak dilabeli Ready sebelum verifikasi fisik showroom)."
                 )
 
             cycle_results["deliberations_executed"].append(dialogue)

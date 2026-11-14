@@ -9,12 +9,30 @@ from typing import Dict, Any, List, Optional
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 if __package__:
     from .dispatcher import SafeOutreachDispatcher
 else:
     from dispatcher import SafeOutreachDispatcher
+
+try:
+    from backend.engine_pdf import (
+        generate_spk_pdf,
+        hitung_simulasi_kredit,
+        hitung_angsuran_bulanan,
+        OUTPUT_DIR
+    )
+    from backend import agentic_swarm
+except ImportError:
+    from engine_pdf import (
+        generate_spk_pdf,
+        hitung_simulasi_kredit,
+        hitung_angsuran_bulanan,
+        OUTPUT_DIR
+    )
+    import agentic_swarm
 
 app = FastAPI(title="Agentic Sales Hub Core API - MSI Cubi NUC", version="1.1.0")
 
@@ -469,6 +487,7 @@ class ApprovalRequest(BaseModel):
     pesan_final: str
     approved_by: str = ""
     consent_confirmed: bool = False
+    nomor_wa: Optional[str] = None
 
 @app.post("/api/v1/leads/approve-and-send")
 def approve_outreach(req: ApprovalRequest):
@@ -525,17 +544,240 @@ def approve_outreach(req: ApprovalRequest):
         lead["status_kontak"] = status_kontak
         write_lead_rows(rows, fieldnames)
 
+        # Hitung deterministik rincian harga, opsi DP, dan skema cicilan (Zero-Hallucination)
+        katalog, _ = get_katalog_and_stock()
+        bundling_rules = get_bundling_rules()
+        minat_str = (lead.get("minat_kebutuhan") or "").lower()
+        matched_pid = "MTR-01"
+        if "sporty" in minat_str or "kencang" in minat_str or "tenaga" in minat_str:
+            matched_pid = "MTR-02"
+        elif "touring" in minat_str or "maxi" in minat_str or "jarak jauh" in minat_str:
+            matched_pid = "MTR-03"
+        elif "lincah" in minat_str or "hemat" in minat_str or "irit" in minat_str or "murah" in minat_str:
+            matched_pid = "MTR-01"
+        else:
+            best_sc = 0
+            for pid, itm in katalog.items():
+                if itm.get("kategori", "").lower().startswith("motor"):
+                    seg_w = itm.get("segmen_kebutuhan", "").lower()
+                    sc = sum(1 for w in minat_str.split() if w in seg_w)
+                    if sc > best_sc:
+                        best_sc = sc
+                        matched_pid = pid
+
+        matched_item = katalog.get(matched_pid, {
+            "id_produk": "MTR-01",
+            "nama_barang": "Beat Street",
+            "harga": "19300000"
+        })
+        harga_otr = int(matched_item.get("harga", 19300000))
+        try:
+            nominal_dp = int(lead.get("budget_dp", 0))
+        except (ValueError, TypeError):
+            nominal_dp = 2500000
+        
+        tenor_bulan = 24
+        angsuran = hitung_angsuran_bulanan(harga_otr, nominal_dp, tenor_bulan)
+
+        bundling_info = bundling_rules.get(matched_pid, {})
+        items_bundling = []
+        for bonus_id in bundling_info.get("cross_sell", []):
+            if bonus_id in katalog:
+                items_bundling.append({
+                    "nama": katalog[bonus_id].get("nama_barang", bonus_id),
+                    "kategori": katalog[bonus_id].get("kategori", "Aksesoris"),
+                    "biaya": "Termasuk Promo"
+                })
+        if not items_bundling:
+            items_bundling = [
+                {"nama": "Helm Eksklusif & Toolkit Resmi", "kategori": "Safety Apparel", "biaya": "Termasuk Promo"},
+                {"nama": "Garansi Extended Mesin 2 Tahun", "kategori": "Proteksi Servis", "biaya": "Termasuk Promo"}
+            ]
+
+        konsumen_nama = lead.get("nama_prospek") or lead.get("nama") or "Konsumen"
+        konsumen_clean = konsumen_nama.replace(" ", "_").replace("/", "_")
+        pdf_filename = f"SPK_{req.id_lead}_{konsumen_clean}.pdf"
+
+        try:
+            pdf_path = generate_spk_pdf(
+                nama_konsumen=konsumen_nama,
+                domisili=lead.get("domisili", "Banyumas"),
+                unit_barang=matched_item["nama_barang"],
+                harga_otr=harga_otr,
+                nominal_dp=nominal_dp,
+                tenor_bulan=tenor_bulan,
+                angsuran_per_bulan=angsuran,
+                items_bundling=items_bundling,
+                id_lead=req.id_lead,
+                file_name=pdf_filename,
+                output_dir=OUTPUT_DIR
+            )
+        except Exception as pdf_err:
+            print(f"[PDF GENERATION WARNING]: {pdf_err}")
+            pdf_filename = f"SPK_{req.id_lead}_{konsumen_clean}.pdf"
+
     add_log(
         "Cubi Gate",
         f"Outreach {status_kontak} untuk prospek {req.id_lead}",
-        f"Disetujui oleh {req.approved_by.strip()}; consent dikonfirmasi.",
+        f"Disetujui oleh {req.approved_by.strip()}; consent dikonfirmasi; SPK diterbitkan ({pdf_filename}).",
     )
     return {
         "status": status_kontak,
         "lead_id": req.id_lead,
+        "pdf_filename": pdf_filename,
+        "pdf_url": f"/api/v1/documents/{pdf_filename}",
+        "download_url": f"/api/v1/documents/{pdf_filename}",
+        "rincian": {
+            "nama_konsumen": konsumen_nama,
+            "domisili": lead.get("domisili", "Banyumas"),
+            "unit_barang": matched_item["nama_barang"],
+            "harga_otr": harga_otr,
+            "nominal_dp": nominal_dp,
+            "tenor_bulan": tenor_bulan,
+            "angsuran_per_bulan": angsuran,
+        },
         "dispatch": dispatch_result,
         "dispatched_to_gateway": dispatch_status == "terkirim_live_wa",
     }
+
+# ==============================================================================
+# DOCUMENT DOWNLOAD ENDPOINTS
+# ==============================================================================
+
+@app.get("/api/v1/documents/{filename}")
+def download_document(filename: str):
+    candidate_dirs = [
+        OUTPUT_DIR,
+        os.path.join(BASE_DIR, "output"),
+        os.path.join(BASE_DIR, "output_dokumen")
+    ]
+    for c_dir in candidate_dirs:
+        file_path = os.path.join(c_dir, filename)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path, media_type="application/pdf", filename=filename)
+    raise HTTPException(status_code=404, detail="Berkas SPK / dokumen tidak ditemukan.")
+
+@app.get("/api/v1/sales/download-spk/{filename}")
+def download_spk(filename: str):
+    return download_document(filename)
+
+# ==============================================================================
+# SALES SIMULASI & SPK API ENDPOINTS
+# ==============================================================================
+
+class SimulasiKreditRequest(BaseModel):
+    harga_otr: int
+    nominal_dp: int
+    bunga_tahunan: Optional[float] = 0.08
+
+@app.post("/api/v1/sales/simulasi-kredit")
+def api_simulasi_kredit(req: SimulasiKreditRequest):
+    return hitung_simulasi_kredit(
+        harga_otr=req.harga_otr,
+        nominal_dp=req.nominal_dp,
+        bunga_tahunan=req.bunga_tahunan or 0.08
+    )
+
+class GenerateSPKRequest(BaseModel):
+    nama_konsumen: str
+    domisili: str
+    unit_barang: str
+    harga_otr: int
+    nominal_dp: int
+    tenor_bulan: int
+    bunga_tahunan: Optional[float] = 0.08
+    items_bundling: Optional[List[Dict[str, Any]]] = None
+
+@app.post("/api/v1/sales/generate-spk")
+def api_generate_spk(req: GenerateSPKRequest):
+    angsuran = hitung_angsuran_bulanan(
+        req.harga_otr,
+        req.nominal_dp,
+        req.tenor_bulan,
+        req.bunga_tahunan or 0.08
+    )
+    pdf_path = generate_spk_pdf(
+        nama_konsumen=req.nama_konsumen,
+        domisili=req.domisili,
+        unit_barang=req.unit_barang,
+        harga_otr=req.harga_otr,
+        nominal_dp=req.nominal_dp,
+        tenor_bulan=req.tenor_bulan,
+        angsuran_per_bulan=angsuran,
+        items_bundling=req.items_bundling or [],
+        output_dir=OUTPUT_DIR
+    )
+    fname = os.path.basename(pdf_path)
+    return {
+        "status": "success",
+        "file_name": fname,
+        "pdf_filename": fname,
+        "pdf_path": pdf_path,
+        "pdf_url": f"/api/v1/documents/{fname}",
+        "download_url": f"/api/v1/sales/download-spk/{fname}",
+        "rincian": {
+            "nama_konsumen": req.nama_konsumen,
+            "domisili": req.domisili,
+            "unit_barang": req.unit_barang,
+            "harga_otr": req.harga_otr,
+            "nominal_dp": req.nominal_dp,
+            "tenor_bulan": req.tenor_bulan,
+            "angsuran_per_bulan": angsuran
+        }
+    }
+
+# ==============================================================================
+# AUTONOMOUS SWARM DELIBERATIONS & TELEMETRY ENDPOINTS
+# ==============================================================================
+
+@app.on_event("startup")
+def on_app_startup():
+    agentic_swarm.set_external_logger(add_log)
+    agentic_swarm.start_swarm_background(interval=30)
+
+@app.on_event("shutdown")
+def on_app_shutdown():
+    agentic_swarm.stop_swarm_background()
+
+@app.get("/api/v1/deliberations")
+@app.get("/deliberations")
+@app.get("/api/v1/swarm/deliberations")
+def get_deliberations():
+    telemetry = agentic_swarm.get_swarm_telemetry()
+    delibs = telemetry.get("recent_deliberations", [])
+    if not delibs:
+        cycle = agentic_swarm.run_swarm_cycle(trigger_source="api_request")
+        delibs = cycle.get("deliberations_executed", [])
+    return {
+        "status": "ok",
+        "total": len(delibs),
+        "deliberations": delibs
+    }
+
+@app.get("/api/v1/swarm/telemetry")
+def get_swarm_telemetry_endpoint():
+    return agentic_swarm.get_swarm_telemetry()
+
+class SwarmToggleRequest(BaseModel):
+    enabled: bool
+    interval_seconds: Optional[int] = 30
+
+@app.post("/api/v1/swarm/toggle")
+def toggle_swarm_endpoint(req: SwarmToggleRequest):
+    if req.enabled:
+        agentic_swarm.start_swarm_background(interval=req.interval_seconds or 30)
+    else:
+        agentic_swarm.stop_swarm_background()
+    return {"status": "ok", "telemetry": agentic_swarm.get_swarm_telemetry()}
+
+@app.post("/api/v1/swarm/run-cycle")
+def run_swarm_cycle_endpoint():
+    result = agentic_swarm.run_swarm_cycle(trigger_source="manual_api")
+    return {"status": "ok", "result": result, "telemetry": agentic_swarm.get_swarm_telemetry()}
+
+# ==============================================================================
+# SYSTEM ACTIVITIES & ACTIVITY LOG
+# ==============================================================================
 
 @app.get("/api/v1/system/activities")
 def get_activities():
@@ -550,55 +792,3 @@ class ActivityCreateRequest(BaseModel):
 def post_activity(req: ActivityCreateRequest):
     add_log(req.agent, req.action, req.detail or "")
     return {"status": "ok"}
-
-TEAM_CONFIG_FILE = os.path.join(WORKSPACE, "team_config.json")
-ACTIVITIES_FILE = os.path.join(WORKSPACE, "activities.json")
-
-@app.get("/api/v1/team/config")
-def get_team_config():
-    if os.path.exists(TEAM_CONFIG_FILE):
-        try:
-            with open(TEAM_CONFIG_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
-
-@app.post("/api/v1/team/config")
-def save_team_config(config: dict):
-    os.makedirs(WORKSPACE, exist_ok=True)
-    with open(TEAM_CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2, ensure_ascii=False)
-    return {"status": "saved", "message": "Konfigurasi tim berhasil disimpan."}
-
-@app.post("/api/v1/leads/create")
-def create_lead(lead: dict):
-    os.makedirs(WORKSPACE, exist_ok=True)
-    file_exists = os.path.exists(LEADS_FILE)
-    fieldnames = ["id_lead", "nama_prospek", "nomor_wa", "minat_kebutuhan", "budget_dp", "domisili", "status_kontak"]
-    
-    with open(LEADS_FILE, mode="a", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        if not file_exists:
-            writer.writeheader()
-        clean_row = {k: str(lead.get(k, "")) for k in fieldnames}
-        writer.writerow(clean_row)
-    return {"status": "created", "lead": clean_row}
-
-@app.get("/api/v1/system/activities")
-def get_system_activities():
-    if os.path.exists(ACTIVITIES_FILE):
-        try:
-            with open(ACTIVITIES_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    # Log aktivitas real-time default dari sistem multi-agen on-premise
-    return {
-        "activities": [
-            {"agent": "Cubi Gate", "action": "WhatsApp Gateway siap menerima trafik prospek", "time": "Baru saja", "type": "info"},
-            {"agent": "Cubi Scout", "action": "Sinkronisasi stok katalog unit motor Honda lokal selesai", "time": "1m lalu", "type": "success"},
-            {"agent": "Cubi Scribe", "action": "Model Qwen 2.5 3B siap menyusun penawaran deal otonom", "time": "2m lalu", "type": "ai"},
-            {"agent": "Cubi Vault", "action": "Database CSV lokal terverifikasi aman tanpa egress cloud", "time": "5m lalu", "type": "security"}
-        ]
-    }

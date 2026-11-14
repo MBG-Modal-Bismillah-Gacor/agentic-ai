@@ -28,7 +28,7 @@ export function FoundersSection({ onNavigate }) {
       model: 'Qwen 2.5 3B Sovereign',
       network: 'LAN 1 (2.5GbE) Port 8000',
       egress: '0 Byte (Air-Gapped)',
-      bio: 'Pimpinan tertinggi swarm AICREW. Bertanggung jawab atas supervisi pipeline penjualan motor Honda, otorisasi deal penawaran akhir, dan tata kelola swarm multi-agen lokal berkeamanan tinggi.',
+      bio: 'Pimpinan tertinggi swarm StelAgent (Agentic AI). Bertanggung jawab atas supervisi pipeline penjualan motor Honda, otorisasi deal penawaran akhir, dan tata kelola swarm multi-agen lokal berkeamanan tinggi.',
       capabilities: [
         'Supervisi dan orkestrasi seluruh swarm agen lokal',
         'Turnstile Human-in-the-Loop approval gatekeeper',

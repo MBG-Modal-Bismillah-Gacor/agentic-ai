@@ -160,7 +160,7 @@ export function ProgramsSection({ onNavigate }) {
                 >
                   <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
                     <div className="button-primary-text font-bold" style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}>
-                      MASUK KE AICREW
+                      MASUK KE STELAGENT
                     </div>
                   </div>
                 </a>
@@ -413,7 +413,7 @@ export function ProgramsSection({ onNavigate }) {
                 >
                   <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
                     <div className="button-primary-text font-bold" style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}>
-                      MASUK KE AICREW
+                      MASUK KE STELAGENT
                     </div>
                   </div>
                 </a>

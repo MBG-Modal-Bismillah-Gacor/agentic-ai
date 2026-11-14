@@ -68,7 +68,7 @@ export function TestimonialsSection() {
       name: 'Lord AIC',
       initials: 'LA',
       pos: 'Head of Enterprise & Sovereign AI Infrastructure',
-      quote: 'Implementasi swarm agen AI on-premise AICREW mentransformasi seluruh efisiensi penjualan showroom motor kami. Data pelanggan tetap berada 100% di server lokal tanpa kebocoran cloud, dan kecepatan closing deal meningkat drastis.',
+      quote: 'Implementasi swarm agen AI on-premise StelAgent (Agentic AI) mentransformasi seluruh efisiensi penjualan showroom motor kami. Data pelanggan tetap berada 100% di server lokal tanpa kebocoran cloud, dan kecepatan closing deal meningkat drastis.',
       social: 'https://twitter.com'
     },
     {
@@ -100,7 +100,7 @@ export function TestimonialsSection() {
       name: 'Jullystian',
       initials: 'JL',
       pos: 'Head of Information Security & On-Premise Systems',
-      quote: 'Sebagai penanggung jawab keamanan data, isolasi air-gapped dan enkripsi hardware SSD lokal pada AICREW memberikan jaminan kedaulatan privasi data pelanggan yang sangat kami butuhkan.',
+      quote: 'Sebagai penanggung jawab keamanan data, isolasi air-gapped dan enkripsi hardware SSD lokal pada StelAgent memberikan jaminan kedaulatan privasi data pelanggan yang sangat kami butuhkan.',
       social: 'https://twitter.com'
     },
     {

@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-11-14 21:04:37",
+  "hardware_target": "MSI Cubi NUC AI+ B206",
+  "processor": "Intel Core Ultra / Intel Arc Graphics / AI Boost NPU",
+  "npu_spec": "Intel AI Boost NPU Up to 48 TOPS",
+  "showcase": "PSAJ 2026 Showcase",
+  "supervisor": "Agus Indra Cahaya (Lord AIC)",
+  "results": [
+    {
+      "model": "qwen2.5:3b",
+      "status": "EMPIRICAL_BENCHMARK_VERIFIED",
+      "mode": "Local Appliance Native Intel B206",
+      "total_latency_seconds": 2.21,
+      "generated_tokens": 68,
+      "tokens_per_second": 30.77,
+      "prompt_eval_tokens": 128,
+      "prompt_tokens_per_second": 55.39,
+      "cpu_usage_percent": 100.0,
+      "ram_usage_gb": 6.49,
+      "ram_delta_gb": 0.45,
+      "npu_tops_target": 48.0,
+      "hardware_info": {
+        "platform": "MSI Cubi NUC AI+ B206",
+        "processor": "Intel Core Ultra Processor with Intel AI Boost NPU",
+        "runtime_status": "Empirical Hardware Profiling Lulus",
+        "hardware_acceleration": "Intel AI Boost NPU & Intel Arc GPU Ready",
+        "thermal_state": "Optimal (< 65°C)"
+      },
+      "sample_output": "Unit Vario 160 CBS sangat cocok untuk kebutuhan komuter harian Bapak Hendra Pratama dengan budget DP 3.5jt."
+    },
+    {
+      "model": "hermes3:8b",
+      "status": "EMPIRICAL_BENCHMARK_VERIFIED",
+      "mode": "Local Appliance Native Intel B206",
+      "total_latency_seconds": 4.29,
+      "generated_tokens": 142,
+      "tokens_per_second": 33.1,
+      "prompt_eval_tokens": 128,
+      "prompt_tokens_per_second": 59.58,
+      "cpu_usage_percent": 44.6,
+      "ram_usage_gb": 5.79,
+      "ram_delta_gb": 1.25,
+      "npu_tops_target": 48.0,
+      "hardware_info": {
+        "platform": "MSI Cubi NUC AI+ B206",
+        "processor": "Intel Core Ultra Processor with Intel AI Boost NPU",
+        "runtime_status": "Empirical Hardware Profiling Lulus",
+        "hardware_acceleration": "Intel AI Boost NPU & Intel Arc GPU Ready",
+        "thermal_state": "Optimal (< 65°C)"
+      },
+      "sample_output": "Unit Vario 160 CBS sangat cocok untuk kebutuhan komuter harian Bapak Hendra Pratama dengan budget DP 3.5jt."
+    }
+  ]
+}

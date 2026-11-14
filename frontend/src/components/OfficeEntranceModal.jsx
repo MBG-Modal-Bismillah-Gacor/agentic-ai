@@ -133,7 +133,7 @@ export function OfficeEntranceModal({
             </div>
             <div>
               <span className="text-[10px] font-bold tracking-wider text-[#192A56]/70 uppercase block font-mono">
-                AICREW // VIRTUAL OFFICE
+                STELAGENT // VIRTUAL OFFICE
               </span>
               <h2 className="text-sm sm:text-base font-extrabold text-[#192A56] leading-tight uppercase font-mono">
                 KONFIGURASI KANTOR AI

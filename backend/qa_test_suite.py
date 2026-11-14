@@ -9,6 +9,7 @@ import requests
 BASE_URL = os.getenv("QA_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 STOK_CSV_PATH = os.path.join(BACKEND_DIR, "workspace", "stok_cabang.csv")
+LEADS_CSV_PATH = os.path.join(BACKEND_DIR, "workspace", "leads_mentah.csv")
 failures = 0
 
 
@@ -28,6 +29,23 @@ def jalankan_pengujian_qa() -> int:
     print("=" * 68)
     print("AUTOMATED QA — AGENTIC SALES HUB (READ-ONLY / NO LIVE DISPATCH)")
     print("=" * 68)
+
+    # Backup isi file CSV asli agar tidak rusak selama pengujian
+    orig_leads_content = None
+    if os.path.isfile(LEADS_CSV_PATH):
+        try:
+            with open(LEADS_CSV_PATH, "rb") as f:
+                orig_leads_content = f.read()
+        except OSError:
+            pass
+
+    orig_stok_content = None
+    if os.path.isfile(STOK_CSV_PATH):
+        try:
+            with open(STOK_CSV_PATH, "rb") as f:
+                orig_stok_content = f.read()
+        except OSError:
+            pass
 
     try:
         health_response = requests.get(f"{BASE_URL}/api/v1/system/health", timeout=5)
@@ -186,8 +204,91 @@ def jalankan_pengujian_qa() -> int:
     except requests.RequestException as error:
         cetak_hasil(7, "Lead tidak dikenal ditolak tanpa HTTP 500", False, str(error))
 
+    # Tes #8: Tersedianya endpoint Deliberations internal multi-agen swarm
+    try:
+        delib_resp = requests.get(f"{BASE_URL}/api/v1/deliberations", timeout=10)
+        if delib_resp.status_code == 404:
+            delib_resp = requests.get(f"{BASE_URL}/deliberations", timeout=10)
+        delib_body = delib_resp.json() if delib_resp.status_code == 200 else {}
+        delibs = delib_body.get("deliberations", [])
+        delib_ok = (
+            delib_resp.status_code == 200
+            and isinstance(delibs, list)
+            and len(delibs) > 0
+            and all("turns" in d for d in delibs)
+        )
+        cetak_hasil(
+            8,
+            "Tersedianya endpoint Deliberations internal agen swarm",
+            delib_ok,
+            f"HTTP {delib_resp.status_code} | sesi={len(delibs)}",
+        )
+    except Exception as error:
+        cetak_hasil(8, "Tersedianya endpoint Deliberations internal agen swarm", False, str(error))
+
+    # Tes #9: Alur simulasi persetujuan & penerbitan berkas PDF SPK resmi
+    try:
+        pending_lead = next(
+            (l for l in leads if l.get("status_kontak") not in ["dispatched", "approved"]),
+            None,
+        )
+        target_lead = pending_lead or (leads[1] if len(leads) > 1 else (leads[0] if leads else {}))
+        target_lead_id = target_lead.get("id_lead", "LD-002")
+        target_name = target_lead.get("nama", "Hendra Pratama")
+
+        sim_appr_resp = requests.post(
+            f"{BASE_URL}/api/v1/leads/approve-and-send",
+            json={
+                "id_lead": target_lead_id,
+                "pesan_final": f"Halo Bapak {target_name}, simulasi penawaran SPK resmi Anda telah disetujui.",
+                "approved_by": "QA Director",
+                "consent_confirmed": True,
+            },
+            timeout=15,
+        )
+        sim_body = sim_appr_resp.json() if sim_appr_resp.status_code == 200 else {}
+        pdf_file = sim_body.get("pdf_filename", "")
+        pdf_url = sim_body.get("pdf_url", "")
+
+        pdf_download_ok = False
+        if pdf_url:
+            doc_resp = requests.get(f"{BASE_URL}{pdf_url}", timeout=10)
+            pdf_download_ok = (
+                doc_resp.status_code == 200
+                and doc_resp.content.startswith(b"%PDF-")
+            )
+
+        spk_ok = (
+            sim_appr_resp.status_code == 200
+            and sim_body.get("status") in ["simulated", "dispatched"]
+            and bool(pdf_file)
+            and pdf_download_ok
+        )
+        cetak_hasil(
+            9,
+            "Alur simulasi persetujuan & penerbitan PDF SPK resmi",
+            spk_ok,
+            f"HTTP {sim_appr_resp.status_code} | file={pdf_file} | download_ok={pdf_download_ok}",
+        )
+    except Exception as error:
+        cetak_hasil(9, "Alur simulasi persetujuan & penerbitan PDF SPK resmi", False, str(error))
+    finally:
+        # Pulihkan CSV asli secara deterministik agar data tetap 100% utuh & bersih
+        if orig_leads_content is not None:
+            try:
+                with open(LEADS_CSV_PATH, "wb") as f:
+                    f.write(orig_leads_content)
+            except OSError:
+                pass
+        if orig_stok_content is not None:
+            try:
+                with open(STOK_CSV_PATH, "wb") as f:
+                    f.write(orig_stok_content)
+            except OSError:
+                pass
+
     print("=" * 68)
-    print(f"QA selesai: {7 - failures}/7 lulus.")
+    print(f"QA selesai: {9 - failures}/9 lulus.")
     return 1 if failures else 0
 
 

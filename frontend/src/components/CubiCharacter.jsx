@@ -4,7 +4,7 @@ import { Billboard, RoundedBox, Text } from '@react-three/drei'
 import * as THREE from 'three'
 
 /**
- * CubiCharacter: Karakter Robot Maskot 3D AICREW yang Identik dengan Landing Page
+ * CubiCharacter: Karakter Robot Maskot 3D StelAgent yang Identik dengan Landing Page
  * Menggunakan proporsi rounded monitor-head, face bezel warna aksen, digital glowing eyes,
  * spherical neck joint, dan white ceramic chassis halus.
  */
@@ -622,7 +622,7 @@ export function CubiCharacter({
         <meshBasicMaterial color="#192A56" transparent opacity={0.18} />
       </mesh>
 
-      {/* Bodi Utama Karakter Robot Maskot AICREW */}
+      {/* Bodi Utama Karakter Robot Maskot StelAgent */}
       <group ref={bodyRef} position={[0, 0.52, 0]}>
         
         {/* ========================================================= */}

@@ -72,7 +72,7 @@ export function Navbar({ onNavigate }) {
             <line x1="0" y1="28" x2="28" y2="0" stroke="rgba(25, 42, 86, 0.3)" strokeWidth="1.5" />
           </svg>
 
-          {/* Brand Wrap: AICREW (Flawless Rendering, No Clipping, No Glitch) */}
+          {/* Brand Wrap: StelAgent (Flawless Rendering, No Clipping, No Glitch) */}
           <div className="flex items-center relative z-20 shrink-0">
             <a
               href="/"
@@ -85,7 +85,7 @@ export function Navbar({ onNavigate }) {
               style={{ overflow: 'visible', width: 'auto', maxWidth: 'none', textDecoration: 'none' }}
             >
               <div className="flex items-center gap-3">
-                {/* Typography: AICREW (Using Space Grotesk Bold, 100% Crisp & Fully Visible W) */}
+                {/* Typography: StelAgent (Using Space Grotesk Bold, 100% Crisp & Fully Visible W) */}
                 <div className="flex items-center leading-none select-none">
                   <span 
                     className="font-extrabold text-2xl sm:text-3xl tracking-wider text-[#192A56] uppercase"
@@ -94,7 +94,7 @@ export function Navbar({ onNavigate }) {
                       letterSpacing: '0.04em'
                     }}
                   >
-                    AICREW
+                    STELAGENT
                   </span>
                 </div>
               </div>
@@ -193,7 +193,7 @@ export function Navbar({ onNavigate }) {
             </nav>
           </div>
 
-          {/* Right Header Actions: Ecosystem, Login, and Masuk ke AICREW */}
+          {/* Right Header Actions: Ecosystem, Login, and Masuk ke StelAgent */}
           <div className="header-actions flex items-center gap-3 sm:gap-4">
             
             {/* Ecosystem Dropdown */}
@@ -236,7 +236,7 @@ export function Navbar({ onNavigate }) {
                       >
                         <div className="product-menu-link-box">
                           <div className="product-menu-item-logo-area">
-                            <span className="font-bold text-xs text-[#192A56]">AICREW OFFICE</span>
+                            <span className="font-bold text-xs text-[#192A56]">STELAGENT OFFICE</span>
                           </div>
                           <div className="product-menu-link-text">VIRTUAL 3D SHOWROOM</div>
                         </div>
@@ -265,7 +265,7 @@ export function Navbar({ onNavigate }) {
               )}
             </div>
 
-            {/* Primary Action Button: Masuk ke AICREW (#192A56 Chamfer) */}
+            {/* Primary Action Button: Masuk ke StelAgent (#192A56 Chamfer) */}
             <a
               href="/office"
               onClick={(e) => {
@@ -276,7 +276,7 @@ export function Navbar({ onNavigate }) {
             >
               <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
                 <div className="button-primary-text font-bold" style={{ padding: '0.75rem 1.6rem', backgroundColor: '#192A56', color: '#FFFFFF' }}>
-                  MASUK KE AICREW
+                  MASUK KE STELAGENT
                 </div>
               </div>
             </a>

@@ -39,7 +39,12 @@ import {
   Columns3,
   Lock,
   LayoutDashboard,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Bot,
+  FileText,
+  FileDown,
+  ShieldAlert,
+  Info
 } from 'lucide-react'
 
 export function DashboardOverlay({
@@ -55,6 +60,9 @@ export function DashboardOverlay({
   isGenerating,
   pitchResult,
   activities = [],
+  deliberations = [],
+  spkModalData = null,
+  onCloseSpkModal = null,
   onSelectLead,
   onApprovePitch,
   onRefresh,
@@ -272,7 +280,7 @@ export function DashboardOverlay({
             <div className="h-5 w-px bg-slate-200 hidden md:block mx-0.5" />
 
             <span className="font-extrabold text-sm tracking-tight text-[#192A56] uppercase font-mono hidden md:inline">
-              AICREW
+              STELAGENT
             </span>
           </div>
 
@@ -525,7 +533,7 @@ export function DashboardOverlay({
                     </button>
                     <button
                       onClick={() => setActiveTab('activity')}
-                      className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer border ${
+                      className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-xl transition cursor-pointer border ${
                         activeTab === 'activity'
                           ? 'bg-[#192A56] text-white border-[#192A56] shadow-xs'
                           : 'bg-slate-50 text-[#192A56] border-slate-200 hover:bg-slate-100'
@@ -534,6 +542,18 @@ export function DashboardOverlay({
                     >
                       <Activity className="w-3.5 h-3.5 shrink-0" style={{ color: activeTab === 'activity' ? '#FFFFFF' : '#192A56' }} />
                       <span className="font-bold" style={{ color: activeTab === 'activity' ? '#FFFFFF' : '#192A56' }}>Log ({activities.length})</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('deliberations')}
+                      className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-xl transition cursor-pointer border ${
+                        activeTab === 'deliberations'
+                          ? 'bg-[#192A56] text-white border-[#192A56] shadow-xs'
+                          : 'bg-slate-50 text-[#192A56] border-slate-200 hover:bg-slate-100'
+                      }`}
+                      style={activeTab === 'deliberations' ? { backgroundColor: '#192A56', color: '#FFFFFF' } : { color: '#192A56' }}
+                    >
+                      <Bot className="w-3.5 h-3.5 shrink-0" style={{ color: activeTab === 'deliberations' ? '#FFFFFF' : '#192A56' }} />
+                      <span className="font-bold" style={{ color: activeTab === 'deliberations' ? '#FFFFFF' : '#192A56' }}>Rapat ({deliberations.length})</span>
                     </button>
                   </div>
                 ) : (
@@ -668,6 +688,51 @@ export function DashboardOverlay({
                           <span className="text-[10px] text-[#576574] font-mono">{act.time || 'NOW'}</span>
                         </div>
                         <div className="text-[#192A56] text-xs leading-relaxed">{act.detail || act.action}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Konten Tab Deliberasi Swarm (Autonomous Swarm Deliberation) */}
+              {isSidebarOpen && activeTab === 'deliberations' && (
+                <div className="flex flex-col flex-1 min-h-0 font-mono overflow-y-auto space-y-2.5 pr-1">
+                  {deliberations.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-[#576574]">
+                      <Bot className="w-8 h-8 mx-auto mb-2 text-slate-400 opacity-60" />
+                      <p className="font-bold">Belum ada sesi rapat internal</p>
+                      <p className="text-[11px] mt-1 text-slate-500">
+                        Swarm berdetak setiap 30s memindai defisit stok unit &amp; negosiasi ke Astra Hub.
+                      </p>
+                    </div>
+                  ) : (
+                    deliberations.map((delib, idx) => (
+                      <div key={delib.id || idx} className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-2">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                          <span className="font-bold text-[#192A56] text-[11px] flex items-center gap-1">
+                            <ShieldAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            {delib.unit} • {delib.cabang}
+                          </span>
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">
+                            {delib.defisit === 'CRITICAL_EMPTY' ? 'Stok 0 (Kosong)' : 'Defisit'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-sans">
+                          Prospek: <b className="text-slate-800">{delib.konsumen}</b> ({delib.lead_target})
+                        </p>
+                        <div className="space-y-1.5 pt-1">
+                          {(delib.turns || []).map((t, tidx) => (
+                            <div key={tidx} className="bg-white p-2 rounded-lg border border-slate-200 text-[11px]">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="font-bold text-[#192A56] text-[10px] uppercase">
+                                  {t.speaker}
+                                </span>
+                                <span className="text-[9px] text-slate-400 font-sans">{t.role}</span>
+                              </div>
+                              <p className="text-slate-700 text-[11px] leading-relaxed font-sans">{t.message}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))
                   )}
@@ -1112,6 +1177,17 @@ export function DashboardOverlay({
               </span>
             </div>
 
+            {/* Indikator Status Mode Simulasi vs Nyata */}
+            <div className="mt-3.5 p-2.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2 text-sky-900 text-[11px]">
+              <Info className="w-4 h-4 text-sky-600 shrink-0" />
+              <div>
+                <span className="font-bold uppercase tracking-wider text-[10px] bg-sky-200/80 px-1.5 py-0.5 rounded mr-1.5 text-sky-900">
+                  Mode: Simulasi Aman (Default)
+                </span>
+                <span>Pesan divalidasi lokal &amp; SPK resmi diterbitkan; nomor WhatsApp riil tidak menerima broadcast nyata.</span>
+              </div>
+            </div>
+
             <div className="my-4 space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                 <div>
@@ -1205,6 +1281,78 @@ export function DashboardOverlay({
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 5. MODAL PENERBITAN BERKAS PDF SPK RESMI (Zero-Hallucination)              */}
+      {/* ========================================================================= */}
+      {spkModalData && (
+        <div className="pointer-events-auto fixed inset-0 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 font-mono">
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-[#192A56]">
+                  Persetujuan Selesai: PDF SPK Resmi Terbit
+                </h3>
+                <p className="text-xs text-[#576574]">
+                  {spkModalData.status === 'simulated'
+                    ? 'Status: Simulasi Terverifikasi (Pesan aman, tidak dikirim ke nomor riil)'
+                    : 'Status: Terkirim Riil ke WhatsApp Gateway'}
+                </p>
+              </div>
+            </div>
+
+            <div className="my-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Berkas Dokumen:</span>
+                <span className="font-bold text-[#192A56] truncate max-w-[260px]">{spkModalData.pdf_filename}</span>
+              </div>
+              {spkModalData.rincian && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Konsumen:</span>
+                    <span className="font-bold text-[#192A56]">{spkModalData.rincian.nama_konsumen}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Unit Pesanan:</span>
+                    <span className="font-bold text-[#192A56]">{spkModalData.rincian.unit_barang}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Harga OTR:</span>
+                    <span className="font-bold text-[#192A56]">Rp {spkModalData.rincian.harga_otr?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Cicilan Tenor {spkModalData.rincian.tenor_bulan}x:</span>
+                    <span className="font-bold text-emerald-700">Rp {spkModalData.rincian.angsuran_per_bulan?.toLocaleString()} / bln</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={onCloseSpkModal}
+                className="px-4 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Tutup
+              </button>
+              <a
+                href={spkModalData.pdf_url ? `http://127.0.0.1:8000${spkModalData.pdf_url}` : '#'}
+                target="_blank"
+                rel="noreferrer"
+                className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer border border-[#192A56]"
+                style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
+              >
+                <FileDown className="w-4 h-4 text-white" />
+                <span>Unduh PDF SPK Resmi</span>
+              </a>
+            </div>
           </div>
         </div>
       )}
