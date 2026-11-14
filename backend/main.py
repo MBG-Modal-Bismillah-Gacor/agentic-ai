@@ -9,12 +9,25 @@ from typing import Dict, Any, List, Optional
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 if __package__:
     from .dispatcher import SafeOutreachDispatcher
+    from .engine_pdf import (
+        OUTPUT_DIR,
+        generate_spk_pdf,
+        hitung_simulasi_kredit,
+    )
+    from . import agentic_swarm
 else:
     from dispatcher import SafeOutreachDispatcher
+    from engine_pdf import (
+        OUTPUT_DIR,
+        generate_spk_pdf,
+        hitung_simulasi_kredit,
+    )
+    import agentic_swarm
 
 app = FastAPI(title="Agentic Sales Hub Core API - MSI Cubi NUC", version="1.1.0")
 
@@ -47,6 +60,10 @@ TEAM_FILE = os.path.join(CONFIG_DIR, "team_config.json")
 AGENCY_AGENTS_FILE = os.path.join(CONFIG_DIR, "agency_agents.json")
 outreach_dispatcher = SafeOutreachDispatcher()
 lead_approval_lock = threading.Lock()
+SWARM_SIMULATED_RESTOCK_ENABLED = (
+    os.getenv("SWARM_SIMULATED_RESTOCK_ENABLED", "").strip().lower() == "true"
+)
+SWARM_AUTO_START = os.getenv("SWARM_AUTO_START", "").strip().lower() == "true"
 
 # In-memory activity logs
 activity_logs: List[Dict[str, Any]] = [
@@ -412,20 +429,18 @@ def generate_pitch(req: PitchRequest):
     persona_title = req.persona_name or "Outbound Strategist"
     persona_vibe = req.persona_vibe or "Signal-based outreach: conversational, punchy, respectful of buyer time, zero fluff"
 
-    prompt = f"""
-Anda adalah {persona_title} di dealer resmi Astra Motor.
+    prompt = f"""Anda adalah {persona_title} di dealer resmi Astra Motor.
 Filosofi & Vibe Anda: "{persona_vibe}".
-Buatkan 1 pesan draf WhatsApp pendek (maksimal 3 kalimat) untuk calon pembeli.
-Nama Calon Konsumen: {req.nama}
-Kebutuhan/Minat: {req.minat}
-Unit yang Pas: {target_unit}
-Stok Cabang: {stok_status}
-Bonus Bundling: {bundling_text}
+Buat satu draf WhatsApp pendek (maksimal 3 kalimat).
+Nama: {req.nama}
+Kebutuhan: {req.minat}
+Unit yang cocok: {target_unit}
+Status stok faktual: {stok_status}
+Bundling: {bundling_text}
+Domisili: {req.domisili}
 
-Aturan Penulisan:
-Sapa secara ramah dan personal. Gunakan hanya fakta stok di atas; jangan menyebut unit ready bila stok kosong atau belum terverifikasi. Jika stok kosong/belum terverifikasi, jelaskan statusnya dan tawarkan pengecekan cabang lain atau alternatif tanpa mengarang diskon. Jika ready, sebutkan bundling yang tercatat. Akhiri dengan CTA santai untuk konsultasi atau test drive.
-Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
-"""
+Sapa konsumen secara personal dan gunakan hanya fakta di atas. Jangan menyebut unit ready jika stok kosong atau belum terverifikasi; tawarkan pengecekan cabang lain atau alternatif. Jangan mengarang diskon. Jika stok ready, sebutkan bundling yang tercatat. Akhiri dengan CTA santai untuk konsultasi atau test drive.
+Berikan hanya isi pesan, tanpa pengantar atau tanda petik."""
     payload = {
         "model": "qwen2.5:3b",
         "prompt": prompt,
@@ -551,54 +566,155 @@ def post_activity(req: ActivityCreateRequest):
     add_log(req.agent, req.action, req.detail or "")
     return {"status": "ok"}
 
-TEAM_CONFIG_FILE = os.path.join(WORKSPACE, "team_config.json")
-ACTIVITIES_FILE = os.path.join(WORKSPACE, "activities.json")
 
-@app.get("/api/v1/team/config")
-def get_team_config():
-    if os.path.exists(TEAM_CONFIG_FILE):
-        try:
-            with open(TEAM_CONFIG_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
+class SimulasiKreditRequest(BaseModel):
+    harga_otr: int
+    nominal_dp: int
+    bunga_tahunan: Optional[float] = 0.08
 
-@app.post("/api/v1/team/config")
-def save_team_config(config: dict):
-    os.makedirs(WORKSPACE, exist_ok=True)
-    with open(TEAM_CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2, ensure_ascii=False)
-    return {"status": "saved", "message": "Konfigurasi tim berhasil disimpan."}
 
-@app.post("/api/v1/leads/create")
-def create_lead(lead: dict):
-    os.makedirs(WORKSPACE, exist_ok=True)
-    file_exists = os.path.exists(LEADS_FILE)
-    fieldnames = ["id_lead", "nama_prospek", "nomor_wa", "minat_kebutuhan", "budget_dp", "domisili", "status_kontak"]
-    
-    with open(LEADS_FILE, mode="a", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        if not file_exists:
-            writer.writeheader()
-        clean_row = {k: str(lead.get(k, "")) for k in fieldnames}
-        writer.writerow(clean_row)
-    return {"status": "created", "lead": clean_row}
+@app.post("/api/v1/sales/simulasi-kredit")
+def api_simulasi_kredit(req: SimulasiKreditRequest):
+    if req.harga_otr <= 0 or req.nominal_dp < 0 or req.nominal_dp > req.harga_otr:
+        raise HTTPException(status_code=422, detail="Nilai OTR dan DP tidak valid.")
+    bunga_tahunan = req.bunga_tahunan if req.bunga_tahunan is not None else 0.08
+    if not 0 <= bunga_tahunan <= 1:
+        raise HTTPException(status_code=422, detail="Bunga tahunan harus berada di antara 0 dan 1.")
+    return hitung_simulasi_kredit(
+        harga_otr=req.harga_otr,
+        nominal_dp=req.nominal_dp,
+        bunga_tahunan=bunga_tahunan,
+    )
 
-@app.get("/api/v1/system/activities")
-def get_system_activities():
-    if os.path.exists(ACTIVITIES_FILE):
-        try:
-            with open(ACTIVITIES_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    # Log aktivitas real-time default dari sistem multi-agen on-premise
+
+class GenerateSPKRequest(BaseModel):
+    nama_konsumen: str
+    domisili: str
+    unit_barang: str
+    harga_otr: int
+    nominal_dp: int
+    tenor_bulan: int
+    bunga_tahunan: Optional[float] = 0.08
+    items_bundling: Optional[List[Dict[str, Any]]] = None
+    nomor_spk: Optional[str] = None
+
+
+@app.post("/api/v1/sales/generate-spk")
+def api_generate_spk(req: GenerateSPKRequest):
+    if not req.nama_konsumen.strip() or not req.domisili.strip() or not req.unit_barang.strip():
+        raise HTTPException(status_code=422, detail="Nama, domisili, dan unit wajib diisi.")
+    if req.harga_otr <= 0 or req.nominal_dp < 0 or req.nominal_dp > req.harga_otr:
+        raise HTTPException(status_code=422, detail="Nilai OTR dan DP tidak valid.")
+    if req.tenor_bulan not in (12, 24, 36):
+        raise HTTPException(status_code=422, detail="Tenor harus 12, 24, atau 36 bulan.")
+
+    bunga_tahunan = req.bunga_tahunan if req.bunga_tahunan is not None else 0.08
+    if not 0 <= bunga_tahunan <= 1:
+        raise HTTPException(status_code=422, detail="Bunga tahunan harus berada di antara 0 dan 1.")
+    simulasi = hitung_simulasi_kredit(
+        harga_otr=req.harga_otr,
+        nominal_dp=req.nominal_dp,
+        bunga_tahunan=bunga_tahunan,
+    )
+    if not simulasi["dp_valid"]:
+        raise HTTPException(
+            status_code=422,
+            detail=f"DP minimum yang direkomendasikan adalah Rp {simulasi['dp_minimal_rekomendasi']}.",
+        )
+
+    tenor_key = f"tenor_{req.tenor_bulan}_bulan"
+    pdf_path = generate_spk_pdf(
+        nama_konsumen=req.nama_konsumen.strip(),
+        domisili=req.domisili.strip(),
+        unit_barang=req.unit_barang.strip(),
+        harga_otr=req.harga_otr,
+        nominal_dp=req.nominal_dp,
+        tenor_bulan=req.tenor_bulan,
+        angsuran_per_bulan=simulasi["skema_tenor"][tenor_key]["angsuran_per_bulan"],
+        items_bundling=req.items_bundling,
+        nomor_spk=req.nomor_spk,
+    )
+    file_name = os.path.basename(pdf_path)
+    add_log("Sales", "Dokumen SPK dibuat", f"SPK untuk {req.nama_konsumen.strip()}: {file_name}")
     return {
-        "activities": [
-            {"agent": "Cubi Gate", "action": "WhatsApp Gateway siap menerima trafik prospek", "time": "Baru saja", "type": "info"},
-            {"agent": "Cubi Scout", "action": "Sinkronisasi stok katalog unit motor Honda lokal selesai", "time": "1m lalu", "type": "success"},
-            {"agent": "Cubi Scribe", "action": "Model Qwen 2.5 3B siap menyusun penawaran deal otonom", "time": "2m lalu", "type": "ai"},
-            {"agent": "Cubi Vault", "action": "Database CSV lokal terverifikasi aman tanpa egress cloud", "time": "5m lalu", "type": "security"}
-        ]
+        "status": "success",
+        "file_name": file_name,
+        "download_url": f"/api/v1/sales/download-spk/{file_name}",
+        "simulasi": simulasi,
+    }
+
+@app.get("/api/v1/sales/download-spk/{filename}")
+def download_spk(filename: str):
+    output_root = os.path.realpath(OUTPUT_DIR)
+    if filename != os.path.basename(filename) or not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=404, detail="Berkas SPK tidak ditemukan.")
+    file_path = os.path.realpath(os.path.join(output_root, filename))
+    if os.path.commonpath((output_root, file_path)) != output_root or not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="Berkas SPK tidak ditemukan.")
+    return FileResponse(file_path, media_type="application/pdf", filename=filename)
+
+
+# ==============================================================================
+# AUTONOMOUS SWARM & SUPPLIER DELIBERATION ENDPOINTS
+# ==============================================================================
+
+@app.on_event("startup")
+def on_app_startup():
+    agentic_swarm.set_external_logger(add_log)
+    if SWARM_AUTO_START and SWARM_SIMULATED_RESTOCK_ENABLED:
+        agentic_swarm.start_swarm_background(interval=30)
+
+@app.on_event("shutdown")
+def on_app_shutdown():
+    agentic_swarm.stop_swarm_background()
+
+@app.get("/api/v1/swarm/telemetry")
+def get_swarm_telemetry_endpoint():
+    return agentic_swarm.get_swarm_telemetry()
+
+class SwarmToggleRequest(BaseModel):
+    enabled: bool
+    interval_seconds: Optional[int] = 30
+
+@app.post("/api/v1/swarm/toggle")
+def toggle_swarm_endpoint(req: SwarmToggleRequest):
+    if not req.enabled:
+        agentic_swarm.stop_swarm_background()
+        return {"status": "ok", "telemetry": agentic_swarm.get_swarm_telemetry()}
+    if not SWARM_SIMULATED_RESTOCK_ENABLED:
+        raise HTTPException(
+            status_code=409,
+            detail="Swarm dinonaktifkan: simulasi restock belum diizinkan melalui konfigurasi.",
+        )
+    interval = req.interval_seconds if req.interval_seconds is not None else 30
+    if not 5 <= interval <= 3600:
+        raise HTTPException(status_code=422, detail="Interval harus antara 5 dan 3600 detik.")
+    agentic_swarm.start_swarm_background(interval=interval)
+    return {
+        "status": "ok",
+        "mode": "simulated",
+        "telemetry": agentic_swarm.get_swarm_telemetry(),
+    }
+
+@app.post("/api/v1/swarm/run-cycle")
+def run_swarm_cycle_endpoint():
+    if not SWARM_SIMULATED_RESTOCK_ENABLED:
+        raise HTTPException(
+            status_code=409,
+            detail="Cycle swarm diblokir: modul hanya mensimulasikan persetujuan pemasok dan dapat mengubah CSV stok.",
+        )
+    result = agentic_swarm.run_swarm_cycle(trigger_source="manual_api")
+    return {
+        "status": "ok",
+        "mode": "simulated",
+        "result": result,
+        "telemetry": agentic_swarm.get_swarm_telemetry(),
+    }
+
+@app.get("/api/v1/swarm/deliberations")
+def get_swarm_deliberations_endpoint():
+    telemetry = agentic_swarm.get_swarm_telemetry()
+    return {
+        "total": len(telemetry["recent_deliberations"]),
+        "deliberations": telemetry["recent_deliberations"]
     }

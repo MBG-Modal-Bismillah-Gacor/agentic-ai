@@ -4,7 +4,12 @@
     "role": "Sales Director",
     "color": "#f59e0b",
     "badge": "DIRECTOR",
-    "station": "boss_desk"
+    "station": "boss_desk",
+    "pos": [
+      -8.36,
+      0.33,
+      0.36
+    ]
   },
   "agents": {
     "blue-agent": {
@@ -13,18 +18,18 @@
       "role": "Compute & Stock Analyzer",
       "color": "#0284c7",
       "status": "Active Compute",
-      "station": "desk",
+      "station": "Workstation 01",
       "pos": [
-        -2.8,
-        0.18,
-        1.65
+        -5.32,
+        0.33,
+        3.39
       ],
       "targetPos": [
-        -2.8,
-        0.18,
-        1.65
+        -5.32,
+        0.33,
+        3.39
       ],
-      "rotationY": 3.141592653589793,
+      "rotationY": 0,
       "isWalking": false,
       "isTyping": true,
       "isScanning": false,
@@ -36,20 +41,20 @@
       "role": "AI Pitch Drafter",
       "color": "#9333ea",
       "status": "Task Ready",
-      "station": "kanban",
+      "station": "Workstation 02",
       "pos": [
-        4,
-        0.18,
-        -2.6
+        -4.09,
+        0.33,
+        5.42
       ],
       "targetPos": [
-        4,
-        0.18,
-        -2.6
+        -4.09,
+        0.33,
+        5.42
       ],
       "rotationY": 3.141592653589793,
       "isWalking": false,
-      "isTyping": false,
+      "isTyping": true,
       "isScanning": false,
       "statusText": "Sprint Task Ready"
     },
@@ -59,18 +64,18 @@
       "role": "Approval & Dispatch",
       "color": "#16a34a",
       "status": "Access Control",
-      "station": "gate",
+      "station": "Meja Resepsionis",
       "pos": [
-        2,
-        0.18,
-        1.5
+        -0.69,
+        0.33,
+        4.87
       ],
       "targetPos": [
-        2,
-        0.18,
-        1.5
+        -0.69,
+        0.33,
+        4.87
       ],
-      "rotationY": -1.0471975511965976,
+      "rotationY": -1.5707963267948966,
       "isWalking": false,
       "isTyping": false,
       "isScanning": false,
@@ -82,18 +87,18 @@
       "role": "Data & Deal Archivist",
       "color": "#ea580c",
       "status": "Vault Storage",
-      "station": "vault",
+      "station": "Server Vault & Data Archive",
       "pos": [
-        -4.2,
-        0.18,
-        -3.8
+        -5.06,
+        0.33,
+        0.45
       ],
       "targetPos": [
-        -4.2,
-        0.18,
-        -3.8
+        -5.06,
+        0.33,
+        0.45
       ],
-      "rotationY": 0.7853981633974483,
+      "rotationY": 0,
       "isWalking": false,
       "isTyping": false,
       "isScanning": false,

@@ -5,6 +5,13 @@ __pycache__/
 *.so
 .Python
 env/
+venv/
+.venv/
+
+# Generated Documents
+backend/output_dokumen/*.pdf
+!backend/output_dokumen/.gitkeep
+
 build/
 develop-eggs/
 dist/
@@ -20,8 +27,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.venv
-venv/
 ENV/
 
 # Node / Frontend
