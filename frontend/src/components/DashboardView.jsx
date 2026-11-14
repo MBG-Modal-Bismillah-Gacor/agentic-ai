@@ -40,7 +40,8 @@ import {
   Server,
   Bot,
   FileText,
-  FileDown
+  FileDown,
+  Info
 } from 'lucide-react'
 
 export function DashboardView({
@@ -88,6 +89,21 @@ export function DashboardView({
 
     return () => clearInterval(tokenInterval)
   }, [])
+
+  // Approval Gate & Pitch Result State (Sales Approval Gate)
+  const [editedPitch, setEditedPitch] = useState('')
+  const [consentConfirmed, setConsentConfirmed] = useState(false)
+  const [waNumber, setWaNumber] = useState('081234567890')
+
+  useEffect(() => {
+    if (pitchResult?.draft_pitch) {
+      setEditedPitch(pitchResult.draft_pitch)
+    }
+    if (pitchResult?.prospek?.nomor_wa) {
+      setWaNumber(pitchResult.prospek.nomor_wa)
+    }
+    setConsentConfirmed(false)
+  }, [pitchResult])
 
   // Interactive Command Prompt State
   const [commandInput, setCommandInput] = useState('')
@@ -1151,6 +1167,204 @@ export function DashboardView({
           </form>
         </section>
 
+        {/* MODAL APPROVAL GATE: REVIEW PENAWARAN SALES */}
+        {pitchResult && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <div className="bg-white border border-slate-200 rounded-2xl max-w-xl w-full p-6 sm:p-7 shadow-2xl animate-in fade-in zoom-in-95 duration-200 font-mono">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#192A56] text-white flex items-center justify-center shadow-xs">
+                    <ShieldCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-[#192A56]">
+                      Approval Gate: Review Penawaran Sales
+                    </h3>
+                    <p className="text-xs text-[#576574]">
+                      Otorisasi direktur sebelum didispatch ke WhatsApp konsumen
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] uppercase font-bold px-2.5 py-1 bg-slate-100 text-[#192A56] rounded-full border border-slate-200">
+                  Otorisasi Direktur
+                </span>
+              </div>
+
+              {/* Status Mode Simulasi vs Nyata */}
+              <div className="mt-3.5 p-2.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2 text-sky-900 text-[11px]">
+                <Info className="w-4 h-4 text-sky-600 shrink-0" />
+                <div>
+                  <span className="font-bold uppercase tracking-wider text-[10px] bg-sky-200/80 px-1.5 py-0.5 rounded mr-1.5 text-sky-900">
+                    Mode: Simulasi Aman (Default)
+                  </span>
+                  <span>Pesan divalidasi lokal &amp; SPK resmi diterbitkan; nomor WhatsApp riil tidak menerima broadcast nyata.</span>
+                </div>
+              </div>
+
+              <div className="my-4 space-y-3.5 text-xs">
+                <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <div>
+                    <span className="text-[#576574] block text-[11px] mb-0.5">Calon Konsumen:</span>
+                    <span className="font-bold text-sm text-[#192A56] block">{pitchResult.prospek?.nama || 'Konsumen'}</span>
+                    <span className="text-xs text-[#576574] block truncate">{pitchResult.prospek?.domisili || 'Banyumas'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#576574] block text-[11px] mb-0.5">Unit Rekomendasi (Cubi Scout):</span>
+                    <span className="font-bold text-sm text-[#192A56] flex items-center gap-1">
+                      <Cpu className="w-3.5 h-3.5 text-[#192A56]" />
+                      {pitchResult.cubi_scout_output?.unit_rekomendasi || pitchResult.unit_rekomendasi}
+                    </span>
+                    <span className="text-xs text-emerald-700 font-semibold block truncate">
+                      {pitchResult.cubi_scout_output?.status_stok
+                        ? `${pitchResult.cubi_scout_output.status_stok} (${pitchResult.cubi_scout_output.sisa_unit} unit @ ${pitchResult.cubi_scout_output.cabang_terdekat})`
+                        : pitchResult.stok_info || 'Stok Ready di Showroom'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Rincian Finansial Deterministik (Cubi Scribe) */}
+                {pitchResult.cubi_scribe_output && (
+                  <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl text-xs space-y-1.5 font-mono">
+                    <div className="flex items-center justify-between text-indigo-950 font-bold text-[11px] border-b border-indigo-200/60 pb-1">
+                      <span>KALKULASI KREDIT DETERMINISTIK (ZERO-HALLUCINATION)</span>
+                      <span className="text-[10px] bg-indigo-200/80 px-1.5 py-0.5 rounded text-indigo-900">DP Min 15% Terpenuhi</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Harga OTR:</span>
+                        <strong className="text-slate-800">Rp {(pitchResult.cubi_scout_output?.harga_otr || 0).toLocaleString('id-ID')}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">DP Disetujui ({pitchResult.cubi_scribe_output.persentase_dp}%):</span>
+                        <strong className="text-indigo-700">Rp {pitchResult.cubi_scribe_output.dp_disetujui.toLocaleString('id-ID')}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Pokok Hutang:</span>
+                        <strong className="text-slate-800">Rp {pitchResult.cubi_scribe_output.pokok_hutang.toLocaleString('id-ID')}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Cicilan Tenor {pitchResult.cubi_scribe_output.tenor_bulan}x:</span>
+                        <strong className="text-emerald-700 font-bold">Rp {pitchResult.cubi_scribe_output.estimasi_cicilan_bulanan.toLocaleString('id-ID')}/bln</strong>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {pitchResult.bundling_promo && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2.5 text-[#192A56] text-xs">
+                    <PackageCheck className="w-4 h-4 text-[#192A56] shrink-0" />
+                    <div>
+                      <span className="font-bold">Paket Promo &amp; Bundling: </span>
+                      <span>{pitchResult.bundling_promo}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Draft WhatsApp Preview */}
+                <div>
+                  <label className="text-xs font-bold text-[#192A56] block mb-1.5">
+                    Draf Pesan WhatsApp (Dihasilkan oleh Qwen 2.5 Local):
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editedPitch}
+                    onChange={(e) => setEditedPitch(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#192A56] focus:border-[#192A56] focus:bg-white outline-none leading-relaxed transition"
+                  />
+                </div>
+
+                {/* Target Nomor WhatsApp */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#576574] shrink-0">Kirim ke WA:</span>
+                  <input
+                    type="text"
+                    value={waNumber}
+                    readOnly
+                    placeholder="081234567890"
+                    className="flex-1 p-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-[#192A56] font-mono font-bold outline-none"
+                  />
+                </div>
+                <label className="flex items-start gap-2 text-[11px] leading-relaxed text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={consentConfirmed}
+                    onChange={(event) => setConsentConfirmed(event.target.checked)}
+                    className="mt-0.5 accent-[#192A56]"
+                  />
+                  <span>Saya mengonfirmasi prospek telah menyetujui dihubungi melalui WhatsApp (consent_verified).</span>
+                </label>
+              </div>
+
+              {/* Aksi Persetujuan Direktur */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => onApprovePitch && onApprovePitch(null)}
+                  className="px-4 py-2 border border-slate-200 bg-slate-50 text-[#576574] hover:bg-slate-100 hover:text-[#192A56] rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Tolak / Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!onApprovePitch || !pitchResult) return
+                    const scoutOutput = pitchResult.cubi_scout_output || {
+                      id_produk: 'MTR-01',
+                      unit_rekomendasi: pitchResult.unit_rekomendasi || 'Beat Street',
+                      kategori: 'Motor Matic',
+                      cabang_terdekat: pitchResult.prospek?.domisili || 'Banyumas',
+                      status_stok: pitchResult.stok_info || 'Ready',
+                      sisa_unit: 1,
+                      harga_otr: 19300000,
+                      bundling_rekomendasi: []
+                    }
+                    const scribeOutput = pitchResult.cubi_scribe_output || {
+                      dp_disetujui: Math.round(scoutOutput.harga_otr * 0.15),
+                      persentase_dp: 15.0,
+                      pokok_hutang: scoutOutput.harga_otr - Math.round(scoutOutput.harga_otr * 0.15),
+                      tenor_bulan: 36,
+                      estimasi_cicilan_bulanan: 620000,
+                      total_investasi_paket: scoutOutput.harga_otr,
+                      draft_pesan_wa: editedPitch,
+                      dokumen_spk: {
+                        pdf_filename: `SPK_${pitchResult.id_lead}.pdf`,
+                        pdf_url: `/api/v1/documents/SPK_${pitchResult.id_lead}.pdf`
+                      }
+                    }
+                    const payloadToSend = {
+                      request_id: `REQ-${Date.now()}`,
+                      id_lead: pitchResult.id_lead,
+                      consent_verified: consentConfirmed,
+                      consent_confirmed: consentConfirmed,
+                      mode_simulasi: true,
+                      approved_by: bossConfig?.name || 'Sales Director',
+                      pesan_final: editedPitch,
+                      prospek: pitchResult.prospek || {
+                        nama: 'Konsumen',
+                        nomor_wa: waNumber,
+                        domisili: 'Banyumas',
+                        skor_prioritas: 'Warm'
+                      },
+                      cubi_scout_output: scoutOutput,
+                      cubi_scribe_output: {
+                        ...scribeOutput,
+                        draft_pesan_wa: editedPitch
+                      }
+                    }
+                    onApprovePitch(payloadToSend)
+                  }}
+                  disabled={!consentConfirmed || !waNumber.trim() || !editedPitch.trim()}
+                  className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-[#192A56]"
+                  style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
+                >
+                  <Send className="w-3.5 h-3.5 text-white shrink-0" style={{ color: '#FFFFFF' }} />
+                  <span className="text-white font-bold" style={{ color: '#FFFFFF' }}>Setujui &amp; Kirim</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* MODAL PENERBITAN BERKAS PDF SPK RESMI */}
         {spkModalData && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4 z-50">
@@ -1207,7 +1421,7 @@ export function DashboardView({
                   Tutup
                 </button>
                 <a
-                  href={spkModalData.pdf_url ? `http://127.0.0.1:8000${spkModalData.pdf_url}` : '#'}
+                  href={spkModalData.pdf_url ? `${typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? `http://${window.location.hostname}:8000` : 'http://127.0.0.1:8000'}${spkModalData.pdf_url}` : '#'}
                   target="_blank"
                   rel="noreferrer"
                   className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer border border-[#192A56]"

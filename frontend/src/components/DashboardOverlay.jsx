@@ -175,7 +175,12 @@ export function DashboardOverlay({
     if (pitchResult?.draft_pitch) {
       setEditedPitch(pitchResult.draft_pitch)
     }
-  }, [pitchResult])
+    if (pitchResult?.prospek?.nomor_wa) {
+      setWaNumber(pitchResult.prospek.nomor_wa)
+    } else if (activeLead?.nomor_wa) {
+      setWaNumber(activeLead.nomor_wa)
+    }
+  }, [pitchResult, activeLead])
 
   useEffect(() => {
     if (activeLead?.nomor_wa) {
@@ -1192,26 +1197,56 @@ export function DashboardOverlay({
               <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                 <div>
                   <span className="text-[#576574] block text-[11px] mb-0.5">Calon Konsumen:</span>
-                  <span className="font-bold text-sm text-[#192A56] block">{activeLead?.nama}</span>
-                  <span className="text-xs text-[#576574] block truncate">{activeLead?.domisili}</span>
+                  <span className="font-bold text-sm text-[#192A56] block">{activeLead?.nama || pitchResult.prospek?.nama}</span>
+                  <span className="text-xs text-[#576574] block truncate">{activeLead?.domisili || pitchResult.prospek?.domisili}</span>
                 </div>
                 <div>
-                  <span className="text-[#576574] block text-[11px] mb-0.5">Unit Rekomendasi:</span>
+                  <span className="text-[#576574] block text-[11px] mb-0.5">Unit Rekomendasi (Cubi Scout):</span>
                   <span className="font-bold text-sm text-[#192A56] flex items-center gap-1">
                     <Cpu className="w-3.5 h-3.5 text-[#192A56]" />
-                    {pitchResult.unit_rekomendasi}
+                    {pitchResult.cubi_scout_output?.unit_rekomendasi || pitchResult.unit_rekomendasi}
                   </span>
                   <span className="text-xs text-emerald-700 font-semibold block truncate">
-                    {pitchResult.stok_info || 'Stok Ready di Showroom'}
+                    {pitchResult.cubi_scout_output?.status_stok
+                      ? `${pitchResult.cubi_scout_output.status_stok} (${pitchResult.cubi_scout_output.sisa_unit} unit @ ${pitchResult.cubi_scout_output.cabang_terdekat})`
+                      : pitchResult.stok_info || 'Stok Ready di Showroom'}
                   </span>
                 </div>
               </div>
+
+              {/* Rincian Finansial Deterministik (Cubi Scribe Zero-Hallucination) */}
+              {pitchResult.cubi_scribe_output && (
+                <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl text-xs space-y-1.5 font-mono">
+                  <div className="flex items-center justify-between text-indigo-950 font-bold text-[11px] border-b border-indigo-200/60 pb-1">
+                    <span>KALKULASI KREDIT DETERMINISTIK (ZERO-HALLUCINATION)</span>
+                    <span className="text-[10px] bg-indigo-200/80 px-1.5 py-0.5 rounded text-indigo-900">DP Min 15% Terpenuhi</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Harga OTR:</span>
+                      <strong className="text-slate-800">Rp {(pitchResult.cubi_scout_output?.harga_otr || 0).toLocaleString('id-ID')}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">DP Disetujui ({pitchResult.cubi_scribe_output.persentase_dp}%):</span>
+                      <strong className="text-indigo-700">Rp {pitchResult.cubi_scribe_output.dp_disetujui.toLocaleString('id-ID')}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Pokok Hutang:</span>
+                      <strong className="text-slate-800">Rp {pitchResult.cubi_scribe_output.pokok_hutang.toLocaleString('id-ID')}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Cicilan Tenor {pitchResult.cubi_scribe_output.tenor_bulan}x:</span>
+                      <strong className="text-emerald-700 font-bold">Rp {pitchResult.cubi_scribe_output.estimasi_cicilan_bulanan.toLocaleString('id-ID')}/bln</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {pitchResult.bundling_promo && (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2.5 text-[#192A56] text-xs">
                   <PackageCheck className="w-4 h-4 text-[#192A56] shrink-0" />
                   <div>
-                    <span className="font-bold">Paket Promo: </span>
+                    <span className="font-bold">Paket Promo &amp; Bundling: </span>
                     <span>{pitchResult.bundling_promo}</span>
                   </div>
                 </div>
@@ -1248,7 +1283,7 @@ export function DashboardOverlay({
                   onChange={(event) => setConsentConfirmed(event.target.checked)}
                   className="mt-0.5 accent-[#192A56]"
                 />
-                <span>Saya mengonfirmasi prospek telah menyetujui dihubungi melalui WhatsApp.</span>
+                <span>Saya mengonfirmasi prospek telah menyetujui dihubungi melalui WhatsApp (consent_verified).</span>
               </label>
             </div>
 
@@ -1263,21 +1298,59 @@ export function DashboardOverlay({
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  onApprovePitch &&
-                  onApprovePitch({
+                onClick={() => {
+                  if (!onApprovePitch || !pitchResult) return
+                  const scoutOutput = pitchResult.cubi_scout_output || {
+                    id_produk: 'MTR-01',
+                    unit_rekomendasi: pitchResult.unit_rekomendasi || 'Beat Street',
+                    kategori: 'Motor Matic',
+                    cabang_terdekat: activeLead?.domisili || 'Banyumas',
+                    status_stok: pitchResult.stok_info || 'Ready',
+                    sisa_unit: 1,
+                    harga_otr: 19300000,
+                    bundling_rekomendasi: []
+                  }
+                  const scribeOutput = pitchResult.cubi_scribe_output || {
+                    dp_disetujui: Math.round(scoutOutput.harga_otr * 0.15),
+                    persentase_dp: 15.0,
+                    pokok_hutang: scoutOutput.harga_otr - Math.round(scoutOutput.harga_otr * 0.15),
+                    tenor_bulan: 36,
+                    estimasi_cicilan_bulanan: 620000,
+                    total_investasi_paket: scoutOutput.harga_otr,
+                    draft_pesan_wa: editedPitch,
+                    dokumen_spk: {
+                      pdf_filename: `SPK_${pitchResult.id_lead}.pdf`,
+                      pdf_url: `/api/v1/documents/SPK_${pitchResult.id_lead}.pdf`
+                    }
+                  }
+                  const payloadToSend = {
+                    request_id: `REQ-${Date.now()}`,
                     id_lead: pitchResult.id_lead,
-                    pesan_final: editedPitch,
-                    approved_by: bossConfig?.name || 'Sales',
+                    consent_verified: consentConfirmed,
                     consent_confirmed: consentConfirmed,
-                  })
-                }
+                    mode_simulasi: true,
+                    approved_by: bossConfig?.name || 'Sales Director',
+                    pesan_final: editedPitch,
+                    prospek: pitchResult.prospek || {
+                      nama: activeLead?.nama || 'Konsumen',
+                      nomor_wa: waNumber,
+                      domisili: activeLead?.domisili || 'Banyumas',
+                      skor_prioritas: activeLead?.score_priority || 'Warm'
+                    },
+                    cubi_scout_output: scoutOutput,
+                    cubi_scribe_output: {
+                      ...scribeOutput,
+                      draft_pesan_wa: editedPitch
+                    }
+                  }
+                  onApprovePitch(payloadToSend)
+                }}
                 disabled={!consentConfirmed || !waNumber.trim() || !editedPitch.trim()}
                 className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-[#192A56]"
                 style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
               >
                 <Send className="w-3.5 h-3.5 text-white shrink-0" style={{ color: '#FFFFFF' }} />
-                <span className="text-white font-bold" style={{ color: '#FFFFFF' }}>Otorisasi &amp; Dispatch WA</span>
+                <span className="text-white font-bold" style={{ color: '#FFFFFF' }}>Setujui &amp; Kirim</span>
               </button>
             </div>
 
@@ -1343,7 +1416,7 @@ export function DashboardOverlay({
                 Tutup
               </button>
               <a
-                href={spkModalData.pdf_url ? `http://127.0.0.1:8000${spkModalData.pdf_url}` : '#'}
+                href={spkModalData.pdf_url ? `${typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? `http://${window.location.hostname}:8000` : 'http://127.0.0.1:8000'}${spkModalData.pdf_url}` : '#'}
                 target="_blank"
                 rel="noreferrer"
                 className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer border border-[#192A56]"

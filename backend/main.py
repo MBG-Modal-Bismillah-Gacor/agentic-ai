@@ -629,6 +629,43 @@ def create_lead(req: NewLeadRequest):
     add_log("System", f"Lead Baru Terdaftar: {req.nama} ({next_id})", f"Minat: {req.minat}, Domisili: {req.domisili}")
     return {"status": "created", "lead": new_row}
 
+class BundlingItem(BaseModel):
+    id_produk: str
+    nama: str
+    kategori: str
+    harga: int = 0
+    tipe: str = "Termasuk Promo"
+
+class CubiScoutOutput(BaseModel):
+    id_produk: str
+    unit_rekomendasi: str
+    kategori: str
+    cabang_terdekat: str
+    status_stok: str
+    sisa_unit: int
+    harga_otr: int
+    bundling_rekomendasi: List[Dict[str, Any]] = []
+
+class DokumenSPK(BaseModel):
+    pdf_filename: str
+    pdf_url: str
+
+class CubiScribeOutput(BaseModel):
+    dp_disetujui: int
+    persentase_dp: float
+    pokok_hutang: int
+    tenor_bulan: int
+    estimasi_cicilan_bulanan: int
+    total_investasi_paket: int
+    draft_pesan_wa: str
+    dokumen_spk: Optional[DokumenSPK] = None
+
+class ProspekData(BaseModel):
+    nama: str
+    nomor_wa: str
+    domisili: str
+    skor_prioritas: Optional[str] = "Warm"
+
 class PitchRequest(BaseModel):
     id_lead: str
     nama: str
@@ -651,7 +688,11 @@ def get_personas():
 @app.post("/api/v1/leads/generate-pitch")
 def generate_pitch(req: PitchRequest):
     lead_rows, _ = read_lead_rows()
-    if not any((row.get("id_lead") or row.get("\ufeffid_lead", "")) == req.id_lead for row in lead_rows):
+    target_lead_row = next(
+        (row for row in lead_rows if (row.get("id_lead") or row.get("\ufeffid_lead", "")) == req.id_lead),
+        None
+    )
+    if not target_lead_row:
         raise HTTPException(status_code=404, detail="Prospek tidak ditemukan.")
 
     katalog, stok = get_katalog_and_stock()
@@ -672,17 +713,76 @@ def generate_pitch(req: PitchRequest):
                 target_unit = item["nama_barang"]
                 target_pid = pid
 
+    matched_item = katalog.get(target_pid, {})
+    harga_otr = int(matched_item.get("harga", 19300000))
+    target_kategori = matched_item.get("kategori", "Motor Matic")
+
     # 2. Periksa Bundling Cross-Sell
     bundling_info = bundling_rules.get(target_pid, {})
-    bonus_items = []
+    bundling_rekomendasi = []
+    bonus_item_names = []
     for bonus_id in bundling_info.get("cross_sell", []):
         if bonus_id in katalog:
-            bonus_items.append(katalog[bonus_id]["nama_barang"])
+            b_item = katalog[bonus_id]
+            bonus_item_names.append(b_item["nama_barang"])
+            bundling_rekomendasi.append({
+                "id_produk": bonus_id,
+                "nama": b_item["nama_barang"],
+                "kategori": b_item.get("kategori", "Aksesoris"),
+                "harga": int(b_item.get("harga", 0)),
+                "tipe": "Termasuk Promo"
+            })
     
-    bundling_text = ", ".join(bonus_items) if bonus_items else "Helm Eksklusif & Garansi Resmi"
+    bundling_text = ", ".join(bonus_item_names) if bonus_item_names else "Helm Eksklusif & Garansi Resmi"
 
-    # 3. Periksa ketersediaan stok di cabang domisili
+    # 3. Periksa ketersediaan stok di cabang domisili (Cubi Scout)
     stok_status = get_stock_status(target_pid, req.domisili, stok)
+    sisa_unit = 0
+    product_rows = stok.get(target_pid, [])
+    normalized_loc = req.domisili.strip().casefold()
+    for row in product_rows:
+        if row.get("cabang", "").strip().casefold() == normalized_loc:
+            try:
+                sisa_unit = int(row.get("stok_ready", 0))
+            except ValueError:
+                sisa_unit = 0
+            break
+
+    status_stok_label = "Ready" if sisa_unit > 0 else "Out of Stock / Lead Time Order"
+
+    # Bangun objek CubiScoutOutput
+    cubi_scout_output = CubiScoutOutput(
+        id_produk=target_pid,
+        unit_rekomendasi=target_unit,
+        kategori=target_kategori,
+        cabang_terdekat=req.domisili,
+        status_stok=status_stok_label,
+        sisa_unit=sisa_unit,
+        harga_otr=harga_otr,
+        bundling_rekomendasi=bundling_rekomendasi
+    )
+
+    # 4. Kalkulasi Finansial Deterministik (Cubi Scribe Zero-Hallucination)
+    try:
+        lead_dp_raw = int(target_lead_row.get("budget_dp", 0))
+    except (ValueError, TypeError):
+        lead_dp_raw = 0
+
+    dp_min_15persen = int(harga_otr * 0.15)
+    dp_disetujui = max(lead_dp_raw, dp_min_15persen)
+    persentase_dp = round((dp_disetujui / harga_otr) * 100, 1) if harga_otr > 0 else 15.0
+    pokok_hutang = max(0, harga_otr - dp_disetujui)
+    tenor_bulan = 36
+    estimasi_cicilan_bulanan = hitung_angsuran_bulanan(harga_otr, dp_disetujui, tenor_bulan=36)
+    total_investasi_paket = harga_otr + sum(b.get("harga", 0) for b in bundling_rekomendasi)
+
+    # Siapkan draft SPK filename & url
+    konsumen_clean = req.nama.replace(" ", "_").replace("/", "_")
+    spk_filename = f"SPK_{req.id_lead}_{konsumen_clean}.pdf"
+    dokumen_spk = DokumenSPK(
+        pdf_filename=spk_filename,
+        pdf_url=f"/api/v1/documents/{spk_filename}"
+    )
 
     persona_title = req.persona_name or "Outbound Strategist"
     persona_vibe = req.persona_vibe or "Signal-based outreach: conversational, punchy, respectful of buyer time, zero fluff"
@@ -693,7 +793,7 @@ Filosofi & Vibe Anda: "{persona_vibe}".
 Buatkan 1 pesan draf WhatsApp pendek (maksimal 3 kalimat) untuk calon pembeli.
 Nama Calon Konsumen: {req.nama}
 Kebutuhan/Minat: {req.minat}
-Unit yang Pas: {target_unit}
+Unit yang Pas: {target_unit} (OTR Rp {harga_otr:,}, Opsi DP Rp {dp_disetujui:,})
 Stok Cabang: {stok_status}
 Bonus Bundling: {bundling_text}
 
@@ -719,7 +819,7 @@ Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
     if not pitch_text:
         if stok_status.startswith("Ready"):
             pitch_text = (
-                f"Halo Kak {req.nama}, untuk kebutuhan {req.minat}, {target_unit} tersedia: {stok_status}. "
+                f"Halo Kak {req.nama}, untuk kebutuhan {req.minat}, unit {target_unit} tersedia: {stok_status}. "
                 f"Ada bundling {bundling_text}; apakah Kakak ingin menjadwalkan test drive atau konsultasi angsuran?"
             )
         else:
@@ -728,7 +828,21 @@ Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
                 "Apakah Kakak ingin saya cek cabang lain atau carikan alternatif yang sesuai?"
             )
 
-    add_log("Cubi Scribe", f"Draf Pitch Dibuat untuk {req.nama}", f"Unit: {target_unit} • {stok_status}")
+    cubi_scribe_output = CubiScribeOutput(
+        dp_disetujui=dp_disetujui,
+        persentase_dp=persentase_dp,
+        pokok_hutang=pokok_hutang,
+        tenor_bulan=tenor_bulan,
+        estimasi_cicilan_bulanan=estimasi_cicilan_bulanan,
+        total_investasi_paket=total_investasi_paket,
+        draft_pesan_wa=pitch_text,
+        dokumen_spk=dokumen_spk
+    )
+
+    lead_score = "Hot" if dp_disetujui >= 3500000 else ("Warm" if dp_disetujui >= 2000000 else "Cold")
+    lead_wa = target_lead_row.get("nomor_wa", "6281234567890")
+
+    add_log("Cubi Scribe", f"Draf Pitch Dibuat untuk {req.nama}", f"Unit: {target_unit} • {status_stok_label}")
 
     return {
         "id_lead": req.id_lead,
@@ -736,23 +850,41 @@ Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
         "bundling_promo": bundling_text,
         "stok_info": stok_status,
         "draft_pitch": pitch_text,
-        "approval_required": True
+        "approval_required": True,
+        "prospek": {
+            "nama": req.nama,
+            "nomor_wa": lead_wa,
+            "domisili": req.domisili,
+            "skor_prioritas": lead_score
+        },
+        "cubi_scout_output": cubi_scout_output.model_dump(),
+        "cubi_scribe_output": cubi_scribe_output.model_dump()
     }
 
 class ApprovalRequest(BaseModel):
     id_lead: str
-    pesan_final: str
-    approved_by: str = ""
-    consent_confirmed: bool = False
+    request_id: Optional[str] = None
+    consent_verified: Optional[bool] = None
+    consent_confirmed: Optional[bool] = None
+    mode_simulasi: Optional[bool] = True
+    approved_by: Optional[str] = "Sales Director"
+    pesan_final: Optional[str] = ""
     nomor_wa: Optional[str] = None
+    prospek: Optional[ProspekData] = None
+    cubi_scout_output: Optional[CubiScoutOutput] = None
+    cubi_scribe_output: Optional[CubiScribeOutput] = None
 
 @app.post("/api/v1/leads/approve-and-send")
 def approve_outreach(req: ApprovalRequest):
-    if not req.consent_confirmed:
-        raise HTTPException(status_code=400, detail="Konfirmasi consent prospek diperlukan.")
-    if not req.approved_by.strip():
-        raise HTTPException(status_code=400, detail="Nama staf yang menyetujui wajib diisi.")
-    if not req.pesan_final.strip():
+    consent = req.consent_verified if req.consent_verified is not None else req.consent_confirmed
+    if not consent:
+        raise HTTPException(status_code=400, detail="Konfirmasi consent prospek diperlukan (consent_verified wajib True).")
+    
+    approved_by = (req.approved_by or "").strip() or "Sales Director"
+    pesan_final = (req.pesan_final or "").strip()
+    if not pesan_final and req.cubi_scribe_output:
+        pesan_final = (req.cubi_scribe_output.draft_pesan_wa or "").strip()
+    if not pesan_final:
         raise HTTPException(status_code=400, detail="Pesan final tidak boleh kosong.")
 
     with lead_approval_lock:
@@ -769,16 +901,24 @@ def approve_outreach(req: ApprovalRequest):
             raise HTTPException(status_code=404, detail="Prospek tidak ditemukan.")
         if lead.get("status_kontak") == "dispatched":
             raise HTTPException(status_code=409, detail="Pesan untuk prospek ini sudah terkirim.")
-        if not lead.get("nomor_wa", "").strip():
+        
+        target_phone = lead.get("nomor_wa", "").strip()
+        if not target_phone:
             raise HTTPException(status_code=400, detail="Nomor WhatsApp prospek belum tersedia.")
 
+        request_id = req.request_id or f"REQ-{int(time.time()*1000)}"
+        mode_simulasi = req.mode_simulasi if req.mode_simulasi is not None else True
+
         dispatch_result = outreach_dispatcher.kirim_whatsapp_aman(
-            nomor_tujuan=lead["nomor_wa"],
-            pesan=req.pesan_final,
+            nomor_tujuan=target_phone,
+            pesan=pesan_final,
             audit_context={
                 "lead_id": req.id_lead,
-                "approved_by": req.approved_by.strip(),
-                "consent_confirmed": req.consent_confirmed,
+                "request_id": request_id,
+                "approved_by": approved_by,
+                "consent_confirmed": True,
+                "consent_verified": True,
+                "mode_simulasi": mode_simulasi,
             },
         )
         dispatch_status = dispatch_result["status"]
@@ -794,7 +934,7 @@ def approve_outreach(req: ApprovalRequest):
             )
         if dispatch_status == "gagal_gateway":
             raise HTTPException(status_code=502, detail=dispatch_result["error"])
-        if dispatch_status != "terkirim_simulasi" and dispatch_status != "terkirim_live_wa":
+        if dispatch_status not in ["terkirim_simulasi", "terkirim_live_wa"]:
             raise HTTPException(status_code=422, detail=dispatch_result.get("error", "Dispatch ditolak."))
 
         status_kontak = "dispatched" if dispatch_status == "terkirim_live_wa" else "simulated"
@@ -804,62 +944,105 @@ def approve_outreach(req: ApprovalRequest):
         # Hitung deterministik rincian harga, opsi DP, dan skema cicilan (Zero-Hallucination)
         katalog, _ = get_katalog_and_stock()
         bundling_rules = get_bundling_rules()
-        minat_str = (lead.get("minat_kebutuhan") or "").lower()
-        matched_pid = "MTR-01"
-        if "sporty" in minat_str or "kencang" in minat_str or "tenaga" in minat_str:
-            matched_pid = "MTR-02"
-        elif "touring" in minat_str or "maxi" in minat_str or "jarak jauh" in minat_str:
-            matched_pid = "MTR-03"
-        elif "lincah" in minat_str or "hemat" in minat_str or "irit" in minat_str or "murah" in minat_str:
-            matched_pid = "MTR-01"
-        else:
-            best_sc = 0
-            for pid, itm in katalog.items():
-                if itm.get("kategori", "").lower().startswith("motor"):
-                    seg_w = itm.get("segmen_kebutuhan", "").lower()
-                    sc = sum(1 for w in minat_str.split() if w in seg_w)
-                    if sc > best_sc:
-                        best_sc = sc
-                        matched_pid = pid
-
-        matched_item = katalog.get(matched_pid, {
-            "id_produk": "MTR-01",
-            "nama_barang": "Beat Street",
-            "harga": "19300000"
-        })
-        harga_otr = int(matched_item.get("harga", 19300000))
-        try:
-            nominal_dp = int(lead.get("budget_dp", 0))
-        except (ValueError, TypeError):
-            nominal_dp = 2500000
         
-        tenor_bulan = 24
-        angsuran = hitung_angsuran_bulanan(harga_otr, nominal_dp, tenor_bulan)
+        # Ekstrak dari cubi_scout_output / cubi_scribe_output jika ada
+        if req.cubi_scout_output:
+            scout_dict = req.cubi_scout_output.model_dump()
+            matched_pid = scout_dict.get("id_produk", "MTR-01")
+            unit_barang = scout_dict.get("unit_rekomendasi", "Beat Street")
+            harga_otr = int(scout_dict.get("harga_otr", 19300000))
+            items_bundling = scout_dict.get("bundling_rekomendasi", [])
+        else:
+            minat_str = (lead.get("minat_kebutuhan") or "").lower()
+            matched_pid = "MTR-01"
+            if "sporty" in minat_str or "kencang" in minat_str or "tenaga" in minat_str:
+                matched_pid = "MTR-02"
+            elif "touring" in minat_str or "maxi" in minat_str or "jarak jauh" in minat_str:
+                matched_pid = "MTR-03"
+            elif "lincah" in minat_str or "hemat" in minat_str or "irit" in minat_str or "murah" in minat_str:
+                matched_pid = "MTR-01"
+            else:
+                best_sc = 0
+                for pid, itm in katalog.items():
+                    if itm.get("kategori", "").lower().startswith("motor"):
+                        seg_w = itm.get("segmen_kebutuhan", "").lower()
+                        sc = sum(1 for w in minat_str.split() if w in seg_w)
+                        if sc > best_sc:
+                            best_sc = sc
+                            matched_pid = pid
 
-        bundling_info = bundling_rules.get(matched_pid, {})
-        items_bundling = []
-        for bonus_id in bundling_info.get("cross_sell", []):
-            if bonus_id in katalog:
-                items_bundling.append({
-                    "nama": katalog[bonus_id].get("nama_barang", bonus_id),
-                    "kategori": katalog[bonus_id].get("kategori", "Aksesoris"),
-                    "biaya": "Termasuk Promo"
-                })
-        if not items_bundling:
-            items_bundling = [
-                {"nama": "Helm Eksklusif & Toolkit Resmi", "kategori": "Safety Apparel", "biaya": "Termasuk Promo"},
-                {"nama": "Garansi Extended Mesin 2 Tahun", "kategori": "Proteksi Servis", "biaya": "Termasuk Promo"}
-            ]
+            matched_item = katalog.get(matched_pid, {
+                "id_produk": "MTR-01",
+                "nama_barang": "Beat Street",
+                "harga": "19300000"
+            })
+            unit_barang = matched_item.get("nama_barang", "Beat Street")
+            harga_otr = int(matched_item.get("harga", 19300000))
+            bundling_info = bundling_rules.get(matched_pid, {})
+            items_bundling = []
+            for bonus_id in bundling_info.get("cross_sell", []):
+                if bonus_id in katalog:
+                    items_bundling.append({
+                        "nama": katalog[bonus_id].get("nama_barang", bonus_id),
+                        "kategori": katalog[bonus_id].get("kategori", "Aksesoris"),
+                        "biaya": "Termasuk Promo"
+                    })
+            if not items_bundling:
+                items_bundling = [
+                    {"nama": "Helm Eksklusif & Toolkit Resmi", "kategori": "Safety Apparel", "biaya": "Termasuk Promo"},
+                    {"nama": "Garansi Extended Mesin 2 Tahun", "kategori": "Proteksi Servis", "biaya": "Termasuk Promo"}
+                ]
+            scout_dict = {
+                "id_produk": matched_pid,
+                "unit_rekomendasi": unit_barang,
+                "kategori": katalog.get(matched_pid, {}).get("kategori", "Motor Matic"),
+                "cabang_terdekat": lead.get("domisili", "Banyumas"),
+                "status_stok": "Ready",
+                "sisa_unit": 1,
+                "harga_otr": harga_otr,
+                "bundling_rekomendasi": items_bundling
+            }
 
-        konsumen_nama = lead.get("nama_prospek") or lead.get("nama") or "Konsumen"
+        if req.cubi_scribe_output:
+            scribe_dict = req.cubi_scribe_output.model_dump()
+            nominal_dp = int(scribe_dict.get("dp_disetujui", int(harga_otr * 0.15)))
+            tenor_bulan = int(scribe_dict.get("tenor_bulan", 36))
+            angsuran = int(scribe_dict.get("estimasi_cicilan_bulanan", hitung_angsuran_bulanan(harga_otr, nominal_dp, tenor_bulan)))
+            persentase_dp = float(scribe_dict.get("persentase_dp", round((nominal_dp / harga_otr) * 100, 1)))
+            pokok_hutang = int(scribe_dict.get("pokok_hutang", harga_otr - nominal_dp))
+            total_investasi = int(scribe_dict.get("total_investasi_paket", harga_otr))
+        else:
+            try:
+                nominal_dp = int(lead.get("budget_dp", 0))
+            except (ValueError, TypeError):
+                nominal_dp = int(harga_otr * 0.15)
+            if nominal_dp < int(harga_otr * 0.15):
+                nominal_dp = int(harga_otr * 0.15)
+            tenor_bulan = 36
+            angsuran = hitung_angsuran_bulanan(harga_otr, nominal_dp, tenor_bulan)
+            persentase_dp = round((nominal_dp / harga_otr) * 100, 1) if harga_otr > 0 else 15.0
+            pokok_hutang = max(0, harga_otr - nominal_dp)
+            total_investasi = harga_otr
+            scribe_dict = {
+                "dp_disetujui": nominal_dp,
+                "persentase_dp": persentase_dp,
+                "pokok_hutang": pokok_hutang,
+                "tenor_bulan": tenor_bulan,
+                "estimasi_cicilan_bulanan": angsuran,
+                "total_investasi_paket": total_investasi,
+                "draft_pesan_wa": pesan_final,
+            }
+
+        konsumen_nama = (req.prospek and req.prospek.nama) or lead.get("nama_prospek") or lead.get("nama") or "Konsumen"
+        domisili = (req.prospek and req.prospek.domisili) or lead.get("domisili", "Banyumas")
         konsumen_clean = konsumen_nama.replace(" ", "_").replace("/", "_")
         pdf_filename = f"SPK_{req.id_lead}_{konsumen_clean}.pdf"
 
         try:
             pdf_path = generate_spk_pdf(
                 nama_konsumen=konsumen_nama,
-                domisili=lead.get("domisili", "Banyumas"),
-                unit_barang=matched_item["nama_barang"],
+                domisili=domisili,
+                unit_barang=unit_barang,
                 harga_otr=harga_otr,
                 nominal_dp=nominal_dp,
                 tenor_bulan=tenor_bulan,
@@ -873,21 +1056,42 @@ def approve_outreach(req: ApprovalRequest):
             print(f"[PDF GENERATION WARNING]: {pdf_err}")
             pdf_filename = f"SPK_{req.id_lead}_{konsumen_clean}.pdf"
 
+        pdf_url = f"/api/v1/documents/{pdf_filename}"
+        
+        # Sisipkan dokumen_spk ke dalam cubi_scribe_output
+        dokumen_spk_payload = {
+            "pdf_filename": pdf_filename,
+            "pdf_url": pdf_url
+        }
+        scribe_dict["dokumen_spk"] = dokumen_spk_payload
+
     add_log(
         "Cubi Gate",
         f"Outreach {status_kontak} untuk prospek {req.id_lead}",
-        f"Disetujui oleh {req.approved_by.strip()}; consent dikonfirmasi; SPK diterbitkan ({pdf_filename}).",
+        f"Disetujui oleh {approved_by}; consent_verified=True; SPK diterbitkan ({pdf_filename}).",
     )
     return {
-        "status": status_kontak,
+        "request_id": request_id,
+        "id_lead": req.id_lead,
         "lead_id": req.id_lead,
+        "status": status_kontak,
+        "consent_verified": True,
+        "mode_simulasi": mode_simulasi,
         "pdf_filename": pdf_filename,
-        "pdf_url": f"/api/v1/documents/{pdf_filename}",
-        "download_url": f"/api/v1/documents/{pdf_filename}",
+        "pdf_url": pdf_url,
+        "download_url": pdf_url,
+        "prospek": {
+            "nama": konsumen_nama,
+            "nomor_wa": target_phone,
+            "domisili": domisili,
+            "skor_prioritas": "Hot" if nominal_dp >= 3500000 else "Warm"
+        },
+        "cubi_scout_output": scout_dict,
+        "cubi_scribe_output": scribe_dict,
         "rincian": {
             "nama_konsumen": konsumen_nama,
-            "domisili": lead.get("domisili", "Banyumas"),
-            "unit_barang": matched_item["nama_barang"],
+            "domisili": domisili,
+            "unit_barang": unit_barang,
             "harga_otr": harga_otr,
             "nominal_dp": nominal_dp,
             "tenor_bulan": tenor_bulan,
