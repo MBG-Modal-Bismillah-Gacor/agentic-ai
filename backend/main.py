@@ -337,7 +337,6 @@ Aturan Penulisan:
 3. Berikan Call-To-Action (CTA) santai untuk jadwalkan test drive atau simulasi angsuran.
 
 Format Output: HANYA berikan isi draf pesan WhatsApp tanpa basa-basi pengantar atau tanda petik.
-"""
 Kebutuhan/Minat: {req.minat}
 Unit yang Pas & Ready: {target_unit}
 Bonus Bundling Spesial: {bundling_text}
