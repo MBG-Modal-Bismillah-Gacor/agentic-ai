@@ -6,3 +6,4 @@ markdown
 duckduckgo_search
 youtube-transcript-api
 wikipedia
+psutil
