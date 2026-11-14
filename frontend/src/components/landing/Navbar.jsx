@@ -1,9 +1,24 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { ChevronDown, LayoutGrid, Building2, MonitorDot, Terminal, Sparkles, ExternalLink } from 'lucide-react'
 
 export function Navbar({ onNavigate }) {
   const [ecosystemOpen, setEcosystemOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('')
+  const ecosystemRef = useRef(null)
+
+  // Tutup dropdown saat klik di luar
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ecosystemRef.current && !ecosystemRef.current.contains(e.target)) {
+        setEcosystemOpen(false)
+      }
+    }
+    if (ecosystemOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [ecosystemOpen])
 
   // ScrollSpy untuk animasi indikator aktif (ai/navbaractive.png)
   useEffect(() => {
@@ -193,75 +208,110 @@ export function Navbar({ onNavigate }) {
             </nav>
           </div>
 
-          {/* Right Header Actions: Ecosystem, Login, and Masuk ke StelAgent */}
-          <div className="header-actions flex items-center gap-3 sm:gap-4">
+          {/* Right Header Actions: Ecosystem Dropdown & Masuk ke StelAgent */}
+          <div className="header-actions flex items-center gap-2.5 sm:gap-3.5">
             
-            {/* Ecosystem Dropdown */}
-            <div
-              className={`product-menu w-dropdown ${ecosystemOpen ? 'w--open' : ''}`}
-              onClick={() => setEcosystemOpen(!ecosystemOpen)}
-              style={{ cursor: 'pointer', position: 'relative' }}
-            >
-              <div className="product-menu-toggle w-dropdown-toggle">
-                <div className="product-menu-icon-wrapper">
-                  <div className="product-menu-icon">
-                    <div className="product-menu-icon-dot pos-top-left" style={{ backgroundColor: '#192A56' }} />
-                    <div className="product-menu-icon-dot pos-top-right" style={{ backgroundColor: '#192A56' }} />
-                    <div className="product-menu-icon-dot pos-bottom-left" style={{ backgroundColor: '#192A56' }} />
-                    <div className="product-menu-icon-dot pos-bottom-right" style={{ backgroundColor: '#192A56' }} />
+            {/* User-Friendly Ecosystem & Hub Dropdown */}
+            <div className="relative" ref={ecosystemRef}>
+              <button
+                type="button"
+                onClick={() => setEcosystemOpen(!ecosystemOpen)}
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-bold transition-all border select-none cursor-pointer ${
+                  ecosystemOpen
+                    ? 'bg-[#192A56] text-white border-[#192A56] shadow-md shadow-[#192A56]/20'
+                    : 'bg-white hover:bg-slate-50 text-[#192A56] border-slate-300 hover:border-[#192A56]/60 shadow-xs'
+                }`}
+                title="Buka Navigasi Ekosistem StelAgent"
+              >
+                <LayoutGrid className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-transform duration-200 ${ecosystemOpen ? 'text-white rotate-90' : 'text-[#192A56]'}`} />
+                <span className="tracking-wide">Our Ecosystem</span>
+                <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${ecosystemOpen ? 'rotate-180 text-white' : 'text-[#192A56]/70'}`} />
+              </button>
+
+              {/* Dropdown Menu Popover (Modern, Clean, User-Friendly) */}
+              {ecosystemOpen && (
+                <div
+                  className="absolute right-0 mt-2 w-72 sm:w-80 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-2xl p-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 font-sans"
+                  style={{
+                    boxShadow: '0 20px 40px -15px rgba(25, 42, 86, 0.25), 0 0 0 1px rgba(25, 42, 86, 0.08)'
+                  }}
+                >
+                  <div className="px-3 py-2 border-b border-slate-100 mb-1.5 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#192A56]/80 flex items-center gap-1.5">
+                      <Sparkles className="w-3 h-3 text-amber-500" /> Pusat Ekosistem StelAgent
+                    </span>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                      Local AI Ready
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    {/* Item 1: Virtual Office 3D */}
+                    <a
+                      href="/office"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setEcosystemOpen(false)
+                        onNavigate?.('office')
+                      }}
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-200/80 cursor-pointer text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-[#192A56]/10 text-[#192A56] flex items-center justify-center shrink-0 group-hover:bg-[#192A56] group-hover:text-white transition">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs text-[#192A56]">Virtual Office 3D</span>
+                          <span className="text-[9px] bg-blue-100 text-[#192A56] px-1.5 py-0.5 rounded font-bold">3D Scene</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate">Showroom interaktif kantor agen AI & CCTV</p>
+                      </div>
+                    </a>
+
+                    {/* Item 2: Command Hub / Pusat Kontrol */}
+                    <a
+                      href="/dashboard"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setEcosystemOpen(false)
+                        onNavigate?.('dashboard')
+                      }}
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-200/80 cursor-pointer text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition">
+                        <MonitorDot className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs text-[#192A56]">Pusat Kontrol (Command Hub)</span>
+                          <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Dashboard</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate">Pipeline prospek, SPK & telemetri hardware</p>
+                      </div>
+                    </a>
+
+                    {/* Item 3: Backend Swagger API Docs */}
+                    <a
+                      href="http://127.0.0.1:8000/docs"
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setEcosystemOpen(false)}
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-200/80 cursor-pointer text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 group-hover:bg-purple-600 group-hover:text-white transition">
+                        <Terminal className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs text-[#192A56]">API Docs (FastAPI)</span>
+                          <span className="text-[9px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-bold">Port 8000</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate">Dokumentasi REST API & schema Swagger</p>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#192A56] shrink-0" />
+                    </a>
                   </div>
                 </div>
-                <div className="product-menu-icon-placeholder" />
-                <div className="product-menu-toggle-text text-xs sm:text-[13px] text-[#192A56]">:: Our Ecosystem</div>
-                <img
-                  src="/assets/webflow/664753c2515af09bef5b9826/664867c607dc6853b6e435aa_arrow-down.svg"
-                  loading="lazy"
-                  alt=""
-                  className="header__icon-arrow"
-                />
-              </div>
-
-              {/* Dropdown Menu Items */}
-              {ecosystemOpen && (
-                <nav id="product-menu-list" className="product-menu-list w-dropdown-list w--open bg-white border border-[#192A56]/20 shadow-xl" style={{ display: 'block' }}>
-                  <div className="div-block-23">
-                    <div className="product-menu-item">
-                      <a
-                        href="/office"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          onNavigate?.('office')
-                        }}
-                        className="product-menu-link w-inline-block"
-                      >
-                        <div className="product-menu-link-box">
-                          <div className="product-menu-item-logo-area">
-                            <span className="font-bold text-xs text-[#192A56]">STELAGENT OFFICE</span>
-                          </div>
-                          <div className="product-menu-link-text">VIRTUAL 3D SHOWROOM</div>
-                        </div>
-                      </a>
-                    </div>
-
-                    <div className="product-menu-item">
-                      <a
-                        href="/dashboard"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          onNavigate?.('dashboard')
-                        }}
-                        className="product-menu-link w-inline-block"
-                      >
-                        <div className="product-menu-link-box">
-                          <div className="product-menu-item-logo-area">
-                            <span className="font-bold text-xs text-[#192A56]">COMMAND HUB</span>
-                          </div>
-                          <div className="product-menu-link-text">AI AGENT DASHBOARD</div>
-                        </div>
-                      </a>
-                    </div>
-                  </div>
-                </nav>
               )}
             </div>
 
@@ -302,6 +352,35 @@ export function Navbar({ onNavigate }) {
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-b border-[#192A56]/20 px-4 py-3 font-mono pointer-events-auto">
+          {/* Quick Ecosystem Shortcuts in Mobile */}
+          <div className="p-2 bg-slate-50 rounded-xl border border-slate-200 mb-2.5 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#192A56]/70 px-1 block">Navigasi Ekosistem Cepat</span>
+            <a
+              href="/office"
+              onClick={(e) => {
+                e.preventDefault()
+                setMobileMenuOpen(false)
+                onNavigate?.('office')
+              }}
+              className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 text-xs font-bold text-[#192A56]"
+            >
+              <Building2 className="w-4 h-4 text-[#192A56]" />
+              <span>Virtual Office 3D (Showroom)</span>
+            </a>
+            <a
+              href="/dashboard"
+              onClick={(e) => {
+                e.preventDefault()
+                setMobileMenuOpen(false)
+                onNavigate?.('dashboard')
+              }}
+              className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 text-xs font-bold text-emerald-800"
+            >
+              <MonitorDot className="w-4 h-4 text-emerald-600" />
+              <span>Pusat Kontrol (Command Hub)</span>
+            </a>
+          </div>
+
           <ul className="flex flex-col gap-2">
             <li>
               <a
@@ -309,7 +388,7 @@ export function Navbar({ onNavigate }) {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block py-1 text-xs text-[#192A56] font-bold"
               >
-                Ekosistem
+                Program Ekosistem
               </a>
             </li>
             <li>

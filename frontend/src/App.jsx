@@ -21,7 +21,16 @@ function RouteLoadingFallback() {
   )
 }
 
-const API_BASE = 'http://127.0.0.1:8000'
+export const getApiBase = () => {
+  if (typeof window === 'undefined') return 'http://127.0.0.1:8000'
+  const hostname = window.location.hostname
+  if (hostname) {
+    return `http://${hostname}:8000`
+  }
+  return 'http://127.0.0.1:8000'
+}
+
+const API_BASE = getApiBase()
 
 // Inisialisasi rute dari path URL browser
 function getInitialRoute() {
@@ -928,68 +937,26 @@ export default function App() {
 
   // Fetch data dari FastAPI Backend secara Riil
   const fetchData = async () => {
+    let connected = false
     try {
       // 1. Health Check Riil
-      const healthRes = await fetch(`${API_BASE}/api/v1/system/health`)
+      const healthRes = await fetch(`${API_BASE}/api/v1/system/health`, { cache: 'no-store' })
       if (healthRes.ok) {
         const data = await healthRes.json()
         setSystemInfo(data)
         setIsBackendConnected(true)
+        connected = true
       } else {
         setIsBackendConnected(false)
         setSystemInfo(null)
       }
-
-      // 2. Team Config Riil
-      const teamRes = await fetch(`${API_BASE}/api/v1/team/config`)
-      if (teamRes.ok) {
-        const teamData = await teamRes.json()
-        if (teamData.boss) {
-          setBossConfig((prev) => ({ ...prev, ...teamData.boss }))
-        }
-        if (teamData.agents) {
-          setAgents((prev) => {
-            const next = { ...prev }
-            for (const [k, v] of Object.entries(teamData.agents)) {
-              if (next[k]) {
-                next[k] = { ...next[k], ...v }
-              }
-            }
-            return next
-          })
-        }
-      }
-
-      // 3. Leads Riil dari workspace/leads_mentah.csv
-      const leadsRes = await fetch(`${API_BASE}/api/v1/leads/queue`)
-      if (leadsRes.ok) {
-        const leadsData = await leadsRes.json()
-        setLeads(leadsData.leads || [])
-      }
-
-      // 4. Activities Riil
-      const actRes = await fetch(`${API_BASE}/api/v1/system/activities`)
-      if (actRes.ok) {
-        const actData = await actRes.json()
-        setActivities(actData.activities || [])
-      }
-
-      // 5. Deliberations Riil (Autonomous Swarm Deliberation)
-      try {
-        const delibRes = await fetch(`${API_BASE}/api/v1/deliberations`)
-        if (delibRes.ok) {
-          const delibData = await delibRes.json()
-          setDeliberations(delibData.deliberations || [])
-        }
-      } catch {
-        // Abaikan galat offline
-      }
     } catch {
-      // Backend sedang Offline (Status Riil Disconnected)
       setIsBackendConnected(false)
       setSystemInfo(null)
+    }
 
-      // Hanya isi sampel awal jika daftar prospek masih kosong agar 3D scene tetap tampil
+    if (!connected) {
+      // Hanya isi sampel awal jika daftar prospek masih kosong agar 3D scene tetap tampil saat offline
       setLeads((prev) => {
         if (prev.length > 0) return prev
         return [
@@ -1025,6 +992,64 @@ export default function App() {
           },
         ]
       })
+      return
+    }
+
+    // 2. Team Config Riil (Terisolasi dari kegagalan parsial)
+    try {
+      const teamRes = await fetch(`${API_BASE}/api/v1/team/config`, { cache: 'no-store' })
+      if (teamRes.ok) {
+        const teamData = await teamRes.json()
+        if (teamData.boss) {
+          setBossConfig((prev) => ({ ...prev, ...teamData.boss }))
+        }
+        if (teamData.agents) {
+          setAgents((prev) => {
+            const next = { ...prev }
+            for (const [k, v] of Object.entries(teamData.agents)) {
+              if (next[k]) {
+                next[k] = { ...next[k], ...v }
+              }
+            }
+            return next
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('[SYNC WARNING] Team config fetch failed:', e)
+    }
+
+    // 3. Leads Riil dari workspace/leads_mentah.csv
+    try {
+      const leadsRes = await fetch(`${API_BASE}/api/v1/leads/queue`, { cache: 'no-store' })
+      if (leadsRes.ok) {
+        const leadsData = await leadsRes.json()
+        setLeads(leadsData.leads || [])
+      }
+    } catch (e) {
+      console.warn('[SYNC WARNING] Leads fetch failed:', e)
+    }
+
+    // 4. Activities Riil
+    try {
+      const actRes = await fetch(`${API_BASE}/api/v1/system/activities`, { cache: 'no-store' })
+      if (actRes.ok) {
+        const actData = await actRes.json()
+        setActivities(actData.activities || [])
+      }
+    } catch (e) {
+      console.warn('[SYNC WARNING] Activities fetch failed:', e)
+    }
+
+    // 5. Deliberations Riil (Autonomous Swarm Deliberation)
+    try {
+      const delibRes = await fetch(`${API_BASE}/api/v1/deliberations`, { cache: 'no-store' })
+      if (delibRes.ok) {
+        const delibData = await delibRes.json()
+        setDeliberations(delibData.deliberations || [])
+      }
+    } catch (e) {
+      console.warn('[SYNC WARNING] Deliberations fetch failed:', e)
     }
   }
 
