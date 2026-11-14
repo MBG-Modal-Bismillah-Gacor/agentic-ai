@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from engine_pdf import generate_spk_pdf
 
 if __package__:
     from .dispatcher import SafeOutreachDispatcher
@@ -545,6 +546,32 @@ def approve_outreach(req: ApprovalRequest):
         f"Outreach {status_kontak} untuk prospek {req.id_lead}",
         f"Disetujui oleh {req.approved_by.strip()}; consent dikonfirmasi.",
     )
+
+    # --- TAMBAHAN KODE TRIGGER PDF TIAN ---
+    try:
+        # Menyamakan persis dengan format parameter buatan Tian
+        generate_spk_pdf(
+            nama_konsumen=lead.get("nama_prospek", "Nama Tidak Diketahui"),
+            domisili=lead.get("domisili", "-"),
+            unit_barang=lead.get("unit", "-"),
+            # Casting ke integer biar sesuai sama test script Tian
+            harga_otr=int(lead.get("harga_otr") or 0),
+            nominal_dp=int(lead.get("nominal_dp") or 0),
+            tenor_bulan=int(lead.get("tenor_bulan") or 0),
+            angsuran_per_bulan=int(lead.get("angsuran_per_bulan") or 0),
+            # Lempar list kosong dulu kalau data bundling belum ditarik dari CSV
+            items_bundling=[] 
+        )
+
+        add_log(
+            "Cubi Vault", 
+            f"SPK Diterbitkan", 
+            f"Dokumen resmi untuk {req.id_lead} berhasil dicetak ke folder output."
+        )
+    except Exception as e:
+        print(f"❌ Gateway aman, tapi PDF gagal di-generate: {e}")
+    # --------------------------------------
+
     return {
         "status": status_kontak,
         "lead_id": req.id_lead,
