@@ -211,7 +211,7 @@ export function KanbanGlassBoard({
 
   const inProgressLeads = activeLead ? [activeLead] : []
   const doneLeads = leads
-    .filter((l) => l.status_kontak === 'dispatched' || l.status_kontak === 'approved')
+    .filter((l) => ['dispatched', 'approved', 'simulated'].includes(l.status_kontak))
     .slice(0, 2)
 
   return (

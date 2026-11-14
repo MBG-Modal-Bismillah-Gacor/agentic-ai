@@ -92,10 +92,10 @@ export function DashboardView({
   const totalLeads = leads.length
   const hotLeads = leads.filter((l) => l.score_priority === 'Hot').length
   const dispatchedLeads = leads.filter(
-    (l) => l.status_kontak === 'dispatched' || l.status_kontak === 'approved'
+    (l) => l.status_kontak === 'dispatched'
   ).length
   const pendingLeads = leads.filter(
-    (l) => l.status_kontak !== 'dispatched' && l.status_kontak !== 'approved'
+    (l) => !['dispatched', 'approved', 'simulated'].includes(l.status_kontak)
   ).length
 
   // Filter Leads
@@ -107,10 +107,10 @@ export function DashboardView({
       (l.domisili || '').toLowerCase().includes(q)
 
     if (statusFilter === 'pending') {
-      return matchesQuery && l.status_kontak !== 'dispatched' && l.status_kontak !== 'approved'
+      return matchesQuery && !['dispatched', 'approved', 'simulated'].includes(l.status_kontak)
     }
     if (statusFilter === 'dispatched') {
-      return matchesQuery && (l.status_kontak === 'dispatched' || l.status_kontak === 'approved')
+      return matchesQuery && ['dispatched', 'approved', 'simulated'].includes(l.status_kontak)
     }
     return matchesQuery
   })
@@ -938,8 +938,9 @@ export function DashboardView({
                       </tr>
                     ) : (
                       filteredLeads.map((lead) => {
-                        const isDispatched =
-                          lead.status_kontak === 'dispatched' || lead.status_kontak === 'approved'
+                        const isDispatched = ['dispatched', 'approved', 'simulated'].includes(
+                          lead.status_kontak
+                        )
                         const isHot = lead.score_priority === 'Hot'
 
                         return (
@@ -969,7 +970,13 @@ export function DashboardView({
                               {isDispatched ? (
                                 <span className="text-emerald-700 font-bold flex items-center gap-1 text-[11px]">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Terkirim</span>
+                                  <span>
+                                    {lead.status_kontak === 'simulated'
+                                      ? 'Simulasi - tidak terkirim'
+                                      : lead.status_kontak === 'dispatched'
+                                        ? 'Terkirim'
+                                        : 'Disetujui'}
+                                  </span>
                                 </span>
                               ) : (
                                 <span className="text-amber-700 font-semibold text-[11px]">

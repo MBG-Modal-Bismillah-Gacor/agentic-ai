@@ -80,6 +80,7 @@ export function DashboardOverlay({
   const [activeTab, setActiveTab] = useState('leads') // 'leads' | 'activity'
   const [editedPitch, setEditedPitch] = useState('')
   const [waNumber, setWaNumber] = useState('081234567890')
+  const [consentConfirmed, setConsentConfirmed] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isHudVisible, setIsHudVisible] = useState(true)
   const [commandText, setCommandText] = useState('')
@@ -172,7 +173,8 @@ export function DashboardOverlay({
     if (activeLead?.nomor_wa) {
       setWaNumber(activeLead.nomor_wa)
     }
-  }, [activeLead])
+    setConsentConfirmed(false)
+  }, [activeLead?.id_lead, activeLead?.nomor_wa])
 
   // Cari data agent yang sedang aktif dipilih
   const getSelectedData = () => {
@@ -572,7 +574,9 @@ export function DashboardOverlay({
                         const isHot = lead.score_priority === 'Hot'
                         const isWarm = lead.score_priority === 'Warm'
                         const isSelected = activeLead?.id_lead === lead.id_lead
-                        const isDispatched = lead.status_kontak === 'dispatched' || lead.status_kontak === 'approved'
+                        const isDispatched = ['dispatched', 'approved', 'simulated'].includes(
+                          lead.status_kontak
+                        )
 
                         return (
                           <div
@@ -1156,11 +1160,20 @@ export function DashboardOverlay({
                 <input
                   type="text"
                   value={waNumber}
-                  onChange={(e) => setWaNumber(e.target.value)}
+                  readOnly
                   placeholder="081234567890"
-                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#192A56] font-mono font-bold focus:border-[#192A56] focus:bg-white outline-none transition"
+                  className="flex-1 p-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-[#192A56] font-mono font-bold outline-none"
                 />
               </div>
+              <label className="flex items-start gap-2 text-[11px] leading-relaxed text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={consentConfirmed}
+                  onChange={(event) => setConsentConfirmed(event.target.checked)}
+                  className="mt-0.5 accent-[#192A56]"
+                />
+                <span>Saya mengonfirmasi prospek telah menyetujui dihubungi melalui WhatsApp.</span>
+              </label>
             </div>
 
             {/* Aksi Persetujuan Direktur */}
@@ -1178,12 +1191,13 @@ export function DashboardOverlay({
                   onApprovePitch &&
                   onApprovePitch({
                     id_lead: pitchResult.id_lead,
-                    nama: activeLead?.nama,
-                    nomor_wa: waNumber,
-                    pesan: editedPitch,
+                    pesan_final: editedPitch,
+                    approved_by: bossConfig?.name || 'Sales',
+                    consent_confirmed: consentConfirmed,
                   })
                 }
-                className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer border border-[#192A56]"
+                disabled={!consentConfirmed || !waNumber.trim() || !editedPitch.trim()}
+                className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-[#192A56]"
                 style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
               >
                 <Send className="w-3.5 h-3.5 text-white shrink-0" style={{ color: '#FFFFFF' }} />

@@ -1,6 +1,8 @@
 import csv
 import json
 import os
+import tempfile
+import threading
 import time
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -9,13 +11,26 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+if __package__:
+    from .dispatcher import SafeOutreachDispatcher
+else:
+    from dispatcher import SafeOutreachDispatcher
+
 app = FastAPI(title="Agentic Sales Hub Core API - MSI Cubi NUC", version="1.1.0")
 
-# Izinkan CORS agar Virtual Office dapat mengakses API secara mulus
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "APP_CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -30,6 +45,8 @@ BUNDLING_FILE = os.path.join(WORKSPACE, "aturan_bundling.json")
 LEADS_FILE = os.path.join(WORKSPACE, "leads_mentah.csv")
 TEAM_FILE = os.path.join(CONFIG_DIR, "team_config.json")
 AGENCY_AGENTS_FILE = os.path.join(CONFIG_DIR, "agency_agents.json")
+outreach_dispatcher = SafeOutreachDispatcher()
+lead_approval_lock = threading.Lock()
 
 # In-memory activity logs
 activity_logs: List[Dict[str, Any]] = [
@@ -69,6 +86,78 @@ def get_katalog_and_stock():
                 if pid:
                     stok.setdefault(pid, []).append(r)
     return katalog, stok
+
+def get_stock_status(product_id, domisili, stok):
+    normalized_location = domisili.strip().casefold()
+    if not normalized_location:
+        return "Stok belum terverifikasi karena cabang belum diisi"
+
+    product_rows = stok.get(product_id, [])
+    matches = [
+        row
+        for row in product_rows
+        if row.get("cabang", "").strip().casefold() == normalized_location
+    ]
+    if not matches:
+        matches = [
+            row
+            for row in product_rows
+            if normalized_location in row.get("cabang", "").strip().casefold()
+            or row.get("cabang", "").strip().casefold() in normalized_location
+        ]
+    if not matches:
+        matches = [
+            row
+            for row in product_rows
+            if row.get("cabang", "").strip().casefold() in ("semua cabang", "semua")
+        ]
+    if not matches:
+        return f"Stok belum terverifikasi di cabang {domisili}"
+
+    available_rows = []
+    for row in matches:
+        try:
+            quantity = int(row.get("stok_ready", "0"))
+        except (TypeError, ValueError):
+            quantity = 0
+        if row.get("status", "").strip().casefold() == "ready" and quantity > 0:
+            available_rows.append((row, quantity))
+
+    branches = ", ".join(sorted({row.get("cabang", "cabang") for row in matches}))
+    available_count = sum(quantity for _, quantity in available_rows)
+    if available_count:
+        return f"Ready ({available_count} unit) di {branches}"
+    return f"Kosong di {branches}"
+
+def read_lead_rows():
+    if not os.path.exists(LEADS_FILE):
+        return [], []
+    with open(LEADS_FILE, mode="r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        return list(reader), reader.fieldnames or []
+
+def write_lead_rows(rows, fieldnames):
+    if not fieldnames:
+        raise ValueError("Header CSV prospek tidak tersedia.")
+    os.makedirs(os.path.dirname(LEADS_FILE), exist_ok=True)
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="",
+            dir=os.path.dirname(LEADS_FILE),
+            delete=False,
+        ) as temp_file:
+            temp_path = temp_file.name
+            writer = csv.DictWriter(temp_file, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(rows)
+        os.replace(temp_path, LEADS_FILE)
+    except OSError:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise
 
 def get_bundling_rules():
     if os.path.exists(BUNDLING_FILE):
@@ -153,6 +242,7 @@ def health_check():
         "katalog_count": len(katalog),
         "total_leads": total_leads,
         "dispatched_leads": dispatched_leads,
+        "outreach_mode": "live" if outreach_dispatcher.live_enabled else "simulation",
         "timestamp": datetime.now().isoformat()
     }
 
@@ -285,21 +375,27 @@ def get_personas():
 
 @app.post("/api/v1/leads/generate-pitch")
 def generate_pitch(req: PitchRequest):
+    lead_rows, _ = read_lead_rows()
+    if not any((row.get("id_lead") or row.get("\ufeffid_lead", "")) == req.id_lead for row in lead_rows):
+        raise HTTPException(status_code=404, detail="Prospek tidak ditemukan.")
+
     katalog, stok = get_katalog_and_stock()
     bundling_rules = get_bundling_rules()
     
     # 1. Matching unit motor
     target_unit = "Beat Street"
     target_pid = "MTR-01"
-    minat_words = req.minat.lower().split()
+    minat_words = set(req.minat.casefold().split())
+    best_match_score = 0
     
     for pid, item in katalog.items():
         if item.get("kategori", "").lower().startswith("motor"):
-            segmen = item.get("segmen_kebutuhan", "").lower()
-            if any(w in segmen for w in minat_words):
+            segmen_words = set(item.get("segmen_kebutuhan", "").casefold().split())
+            score = len(minat_words & segmen_words)
+            if score > best_match_score:
+                best_match_score = score
                 target_unit = item["nama_barang"]
                 target_pid = pid
-                break
 
     # 2. Periksa Bundling Cross-Sell
     bundling_info = bundling_rules.get(target_pid, {})
@@ -311,12 +407,7 @@ def generate_pitch(req: PitchRequest):
     bundling_text = ", ".join(bonus_items) if bonus_items else "Helm Eksklusif & Garansi Resmi"
 
     # 3. Periksa ketersediaan stok di cabang domisili
-    stok_list = stok.get(target_pid, [])
-    stok_status = "Ready di cabang utama"
-    for s in stok_list:
-        if s.get("cabang", "").lower() in req.domisili.lower() or req.domisili.lower() in s.get("cabang", "").lower():
-            stok_status = f"Ready ({s.get('stok_ready', 1)} unit) di {s.get('cabang')}"
-            break
+    stok_status = get_stock_status(target_pid, req.domisili, stok)
 
     persona_title = req.persona_name or "Outbound Strategist"
     persona_vibe = req.persona_vibe or "Signal-based outreach: conversational, punchy, respectful of buyer time, zero fluff"
@@ -332,20 +423,8 @@ Stok Cabang: {stok_status}
 Bonus Bundling: {bundling_text}
 
 Aturan Penulisan:
-1. Sapa ramah secara personal menyebut nama Kak {req.nama}.
-2. Hubungkan langsung minat konsumen dengan keunggulan unit {target_unit} yang ready di {stok_status} dan bonus {bundling_text}.
-3. Berikan Call-To-Action (CTA) santai untuk jadwalkan test drive atau simulasi angsuran.
-
-Format Output: HANYA berikan isi draf pesan WhatsApp tanpa basa-basi pengantar atau tanda petik.
-Kebutuhan/Minat: {req.minat}
-Unit yang Pas & Ready: {target_unit}
-Bonus Bundling Spesial: {bundling_text}
-Domisili: {req.domisili} ({stok_status})
-
-Pesan harus:
-1. Menyapa secara ramah dan santun personal.
-2. Menginfokan bahwa {target_unit} sedang ready di {req.domisili} dengan paket bundling {bundling_text} + diskon DP menarik.
-3. Memberikan Call-To-Action santai untuk konfirmasi konsultasi atau pembuatan simulasi SPK.
+Sapa secara ramah dan personal. Gunakan hanya fakta stok di atas; jangan menyebut unit ready bila stok kosong atau belum terverifikasi. Jika stok kosong/belum terverifikasi, jelaskan statusnya dan tawarkan pengecekan cabang lain atau alternatif tanpa mengarang diskon. Jika ready, sebutkan bundling yang tercatat. Akhiri dengan CTA santai untuk konsultasi atau test drive.
+Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
 """
     payload = {
         "model": "qwen2.5:3b",
@@ -363,11 +442,16 @@ Pesan harus:
         pass
 
     if not pitch_text:
-        pitch_text = (
-            f"Halo Kak {req.nama}, salam hangat dari Astra Motor! Kami perhatikan Kakak sedang mencari kendaraan untuk {req.minat}. "
-            f"Kabar baiknya, unit {target_unit} sedang ready di cabang {req.domisili} lengkap dengan promo bundling {bundling_text} serta diskon DP spesial hari ini. "
-            f"Apakah berkenan kami kirimkan rincian simulasi angsuran dan jadwal test drive gratisnya?"
-        )
+        if stok_status.startswith("Ready"):
+            pitch_text = (
+                f"Halo Kak {req.nama}, untuk kebutuhan {req.minat}, {target_unit} tersedia: {stok_status}. "
+                f"Ada bundling {bundling_text}; apakah Kakak ingin menjadwalkan test drive atau konsultasi angsuran?"
+            )
+        else:
+            pitch_text = (
+                f"Halo Kak {req.nama}, untuk kebutuhan {req.minat}, stok {target_unit} saat ini {stok_status}. "
+                "Apakah Kakak ingin saya cek cabang lain atau carikan alternatif yang sesuai?"
+            )
 
     add_log("Cubi Scribe", f"Draf Pitch Dibuat untuk {req.nama}", f"Unit: {target_unit} • {stok_status}")
 
@@ -382,43 +466,75 @@ Pesan harus:
 
 class ApprovalRequest(BaseModel):
     id_lead: str
-    nomor_wa: str
     pesan_final: str
+    approved_by: str = ""
+    consent_confirmed: bool = False
 
 @app.post("/api/v1/leads/approve-and-send")
 def approve_outreach(req: ApprovalRequest):
-    # Update status lead di CSV menjadi dispatched
-    if os.path.exists(LEADS_FILE):
-        rows = []
-        fieldnames = ["id_lead", "nama_prospek", "nomor_wa", "minat_kebutuhan", "budget_dp", "domisili", "status_kontak"]
-        with open(LEADS_FILE, mode="r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            for r in reader:
-                lid = r.get("id_lead") or r.get("\ufeffid_lead", "")
-                row_dict = {
-                    "id_lead": lid,
-                    "nama_prospek": r.get("nama_prospek", ""),
-                    "nomor_wa": r.get("nomor_wa", ""),
-                    "minat_kebutuhan": r.get("minat_kebutuhan", ""),
-                    "budget_dp": r.get("budget_dp", "0"),
-                    "domisili": r.get("domisili", ""),
-                    "status_kontak": "dispatched" if lid == req.id_lead else r.get("status_kontak", "pending")
-                }
-                rows.append(row_dict)
-        
-        with open(LEADS_FILE, mode="w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(rows)
+    if not req.consent_confirmed:
+        raise HTTPException(status_code=400, detail="Konfirmasi consent prospek diperlukan.")
+    if not req.approved_by.strip():
+        raise HTTPException(status_code=400, detail="Nama staf yang menyetujui wajib diisi.")
+    if not req.pesan_final.strip():
+        raise HTTPException(status_code=400, detail="Pesan final tidak boleh kosong.")
 
-    add_log("Cubi Gate", f"Dispatched WA ke {req.nomor_wa} (Lead #{req.id_lead})", "Pesan sales disetujui Bos & dikirim via gateway.")
-    
+    with lead_approval_lock:
+        rows, fieldnames = read_lead_rows()
+        lead = next(
+            (
+                row
+                for row in rows
+                if (row.get("id_lead") or row.get("\ufeffid_lead", "")) == req.id_lead
+            ),
+            None,
+        )
+        if lead is None:
+            raise HTTPException(status_code=404, detail="Prospek tidak ditemukan.")
+        if lead.get("status_kontak") == "dispatched":
+            raise HTTPException(status_code=409, detail="Pesan untuk prospek ini sudah terkirim.")
+        if not lead.get("nomor_wa", "").strip():
+            raise HTTPException(status_code=400, detail="Nomor WhatsApp prospek belum tersedia.")
+
+        dispatch_result = outreach_dispatcher.kirim_whatsapp_aman(
+            nomor_tujuan=lead["nomor_wa"],
+            pesan=req.pesan_final,
+            audit_context={
+                "lead_id": req.id_lead,
+                "approved_by": req.approved_by.strip(),
+                "consent_confirmed": req.consent_confirmed,
+            },
+        )
+        dispatch_status = dispatch_result["status"]
+        if dispatch_status == "ditahan_approval_gate":
+            raise HTTPException(status_code=403, detail=dispatch_result["error"])
+        if dispatch_status == "ditahan_rate_limit":
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "message": dispatch_result["pesan"],
+                    "retry_after_seconds": dispatch_result["retry_after_seconds"],
+                },
+            )
+        if dispatch_status == "gagal_gateway":
+            raise HTTPException(status_code=502, detail=dispatch_result["error"])
+        if dispatch_status != "terkirim_simulasi" and dispatch_status != "terkirim_live_wa":
+            raise HTTPException(status_code=422, detail=dispatch_result.get("error", "Dispatch ditolak."))
+
+        status_kontak = "dispatched" if dispatch_status == "terkirim_live_wa" else "simulated"
+        lead["status_kontak"] = status_kontak
+        write_lead_rows(rows, fieldnames)
+
+    add_log(
+        "Cubi Gate",
+        f"Outreach {status_kontak} untuk prospek {req.id_lead}",
+        f"Disetujui oleh {req.approved_by.strip()}; consent dikonfirmasi.",
+    )
     return {
-        "status": "approved",
+        "status": status_kontak,
         "lead_id": req.id_lead,
-        "target_wa": req.nomor_wa,
-        "dispatched_to_gateway": True,
-        "notes": "Pesan berhasil masuk antrean pengiriman dengan delay anti-spam."
+        "dispatch": dispatch_result,
+        "dispatched_to_gateway": dispatch_status == "terkirim_live_wa",
     }
 
 @app.get("/api/v1/system/activities")

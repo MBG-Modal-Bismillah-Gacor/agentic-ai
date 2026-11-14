@@ -1249,26 +1249,53 @@ export default function App() {
       },
     }))
 
+    let responseData
     try {
-      await fetch(`${API_BASE}/api/v1/leads/approve-and-send`, {
+      const response = await fetch(`${API_BASE}/api/v1/leads/approve-and-send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-    } catch {
-      // offline
+      responseData = await response.json()
+      if (!response.ok) {
+        const detail = responseData.detail
+        throw new Error(typeof detail === 'string' ? detail : detail?.message || 'Persetujuan gagal diproses.')
+      }
+      if (!['simulated', 'dispatched'].includes(responseData.status)) {
+        throw new Error('Backend mengembalikan status dispatch yang tidak dikenal.')
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Backend tidak dapat dihubungi.'
+      setAgents((prev) => ({
+        ...prev,
+        'green-agent': {
+          ...prev['green-agent'],
+          isScanning: false,
+          statusText: `Dispatch gagal: ${message}`,
+        },
+        'orange-agent': {
+          ...prev['orange-agent'],
+          isScanning: false,
+          statusText: 'Data prospek belum diubah.',
+        },
+      }))
+      return
     }
 
+    const isSimulation = responseData.status === 'simulated'
+    const outcomeText = isSimulation
+      ? 'Simulasi tercatat; pesan tidak dikirim ke WhatsApp.'
+      : 'Pesan berhasil dikirim melalui WhatsApp Gateway.'
     setPitchResult(null)
     setActiveLead(null)
+    setBossConfig((prev) => ({
+      ...prev,
+      statusText: outcomeText,
+    }))
 
-    // Kembalikan semua agen ke stasiun semula dengan status sukses
+    // Kembalikan agen ke stasiun semula dengan hasil aktual dari backend.
     setTimeout(() => {
       fetchData()
-      setBossConfig((prev) => ({
-        ...prev,
-        statusText: `Deal prospek ${payload.id_lead} berhasil didispatch!`,
-      }))
       setAgents((prev) => ({
         ...prev,
         'green-agent': {
@@ -1277,7 +1304,7 @@ export default function App() {
           isScanning: false,
           targetPos: STATIONS.security_gate,
           rotationY: Math.PI * 0.8,
-          statusText: 'Pesan terkirim ke WhatsApp Gateway!',
+          statusText: outcomeText,
         },
         'orange-agent': {
           ...prev['orange-agent'],
@@ -1310,7 +1337,7 @@ export default function App() {
   // Otomatisasi Pipeline untuk Memproses Semua Antrean Leads yang Belum Dispatched
   const handleRunAutoPipeline = async () => {
     const pendingLeads = leads.filter(
-      (l) => l.status_kontak !== 'dispatched' && l.status_kontak !== 'approved'
+      (l) => !['dispatched', 'approved', 'simulated'].includes(l.status_kontak)
     )
     if (pendingLeads.length === 0) {
       alert('Semua prospek dalam antrean sudah selesai diproses!')
