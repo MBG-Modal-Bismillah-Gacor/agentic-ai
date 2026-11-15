@@ -1689,6 +1689,50 @@ async def telegram_webhook(update: Dict[str, Any]):
         return {"status": "ok", "reply": balasan}
     return {"status": "ignored"}
 
+@app.get("/api/v1/telegram/debug")
+def debug_telegram_status():
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip() or telegram_bot.TELEGRAM_BOT_TOKEN
+    users = telegram_bot.load_telegram_users()
+    bot_info = None
+    recent_updates = []
+    error = None
+
+    if token:
+        try:
+            me_resp = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=5)
+            if me_resp.status_code == 200:
+                bot_info = me_resp.json().get("result")
+            else:
+                error = f"getMe HTTP {me_resp.status_code}: {me_resp.text}"
+        except Exception as e:
+            error = f"getMe exception: {e}"
+
+        try:
+            upd_resp = requests.get(f"https://api.telegram.org/bot{token}/getUpdates", timeout=5)
+            if upd_resp.status_code == 200:
+                for upd in upd_resp.json().get("result", []):
+                    msg = upd.get("message") or upd.get("edited_message") or upd.get("channel_post") or {}
+                    chat = msg.get("chat", {})
+                    user_obj = msg.get("from", {})
+                    recent_updates.append({
+                        "update_id": upd.get("update_id"),
+                        "chat_id": chat.get("id"),
+                        "username": user_obj.get("username") or chat.get("username"),
+                        "first_name": user_obj.get("first_name") or chat.get("first_name"),
+                        "text": msg.get("text")
+                    })
+        except Exception as e:
+            if not error:
+                error = f"getUpdates exception: {e}"
+
+    return {
+        "has_token": bool(token),
+        "bot_info": bot_info,
+        "users_in_cache": users,
+        "recent_updates": recent_updates,
+        "error": error
+    }
+
 @app.get("/api/v1/telegram/target-user")
 def get_telegram_target_user():
     target = os.getenv("TELEGRAM_TARGET_USER", "@iiibays").strip()
