@@ -12,7 +12,7 @@ import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 try:
     from backend.dispatcher import SafeOutreachDispatcher
@@ -677,35 +677,39 @@ class BundlingItem(BaseModel):
     tipe: str = "Termasuk Promo"
 
 class CubiScoutOutput(BaseModel):
-    id_produk: str
-    unit_rekomendasi: str
-    kategori: str
-    cabang_terdekat: str
-    status_stok: str
-    sisa_unit: int
-    harga_otr: int
-    bundling_rekomendasi: List[Dict[str, Any]] = []
+    model_config = ConfigDict(extra="allow")
+    id_produk: Optional[str] = "MTR-01"
+    unit_rekomendasi: Optional[str] = "Beat Street"
+    kategori: Optional[str] = "Motor Matic"
+    cabang_terdekat: Optional[str] = "Purwokerto Timur"
+    status_stok: Optional[str] = "Ready"
+    sisa_unit: Optional[int] = 1
+    harga_otr: Optional[int] = 19300000
+    bundling_rekomendasi: Optional[List[Dict[str, Any]]] = []
     unit_alternatif: Optional[str] = None
     status_alternatif: Optional[str] = None
 
 class DokumenSPK(BaseModel):
-    pdf_filename: str
-    pdf_url: str
+    model_config = ConfigDict(extra="allow")
+    pdf_filename: Optional[str] = ""
+    pdf_url: Optional[str] = ""
 
 class CubiScribeOutput(BaseModel):
-    dp_disetujui: int
-    persentase_dp: float
-    pokok_hutang: int
-    tenor_bulan: int
-    estimasi_cicilan_bulanan: int
-    total_investasi_paket: int
-    draft_pesan_wa: str
+    model_config = ConfigDict(extra="allow")
+    dp_disetujui: Optional[int] = 0
+    persentase_dp: Optional[float] = 15.0
+    pokok_hutang: Optional[int] = 0
+    tenor_bulan: Optional[int] = 36
+    estimasi_cicilan_bulanan: Optional[int] = 0
+    total_investasi_paket: Optional[int] = 0
+    draft_pesan_wa: Optional[str] = ""
     dokumen_spk: Optional[DokumenSPK] = None
 
 class ProspekData(BaseModel):
-    nama: str
-    nomor_wa: str
-    domisili: str
+    model_config = ConfigDict(extra="allow")
+    nama: Optional[str] = "Konsumen"
+    nomor_wa: Optional[str] = ""
+    domisili: Optional[str] = "Purwokerto"
     skor_prioritas: Optional[str] = "Warm"
 
 class PitchRequest(BaseModel):
@@ -1059,30 +1063,50 @@ ATURAN KETAT ANTI-HALUSINASI (ZERO-HALLUCINATION):
     }
 
 class ApprovalRequest(BaseModel):
-    id_lead: str
+    model_config = ConfigDict(extra="allow")
+
+    id_lead: Optional[str] = None
+    lead_id: Optional[str] = None
     request_id: Optional[str] = None
     consent_verified: Optional[bool] = None
     consent_confirmed: Optional[bool] = None
     mode_simulasi: Optional[bool] = True
     approved_by: Optional[str] = "Sales Director"
     pesan_final: Optional[str] = ""
+    draft_pitch: Optional[str] = ""
+    pesan: Optional[str] = ""
     nomor_wa: Optional[str] = None
-    prospek: Optional[ProspekData] = None
-    cubi_scout_output: Optional[CubiScoutOutput] = None
-    cubi_scribe_output: Optional[CubiScribeOutput] = None
+    unit_barang: Optional[str] = None
+    unit_rekomendasi: Optional[str] = None
+    harga_otr: Optional[int] = None
+    nominal_dp: Optional[int] = None
+    tenor_bulan: Optional[int] = 36
+    angsuran_per_bulan: Optional[int] = None
+    items_bundling: Optional[Any] = None
+    bundling_items: Optional[Any] = None
+    prospek: Optional[Any] = None
+    cubi_scout_output: Optional[Any] = None
+    cubi_scribe_output: Optional[Any] = None
 
 @app.post("/api/v1/leads/approve-and-send")
 def approve_outreach(req: ApprovalRequest):
+    effective_lead_id = (req.id_lead or req.lead_id or "").strip()
+    if not effective_lead_id:
+        raise HTTPException(status_code=400, detail="ID Prospek (id_lead atau lead_id) wajib disertakan.")
+
     consent = req.consent_verified if req.consent_verified is not None else req.consent_confirmed
     if not consent:
         raise HTTPException(status_code=400, detail="Konfirmasi consent prospek diperlukan (consent_verified wajib True).")
     
     approved_by = (req.approved_by or "").strip() or "Sales Director"
-    pesan_final = (req.pesan_final or "").strip()
+    pesan_final = (req.pesan_final or req.draft_pitch or req.pesan or "").strip()
     if not pesan_final and req.cubi_scribe_output:
-        pesan_final = (req.cubi_scribe_output.draft_pesan_wa or "").strip()
+        if isinstance(req.cubi_scribe_output, dict):
+            pesan_final = (req.cubi_scribe_output.get("draft_pesan_wa") or "").strip()
+        elif hasattr(req.cubi_scribe_output, "draft_pesan_wa"):
+            pesan_final = (req.cubi_scribe_output.draft_pesan_wa or "").strip()
     if not pesan_final:
-        raise HTTPException(status_code=400, detail="Pesan final tidak boleh kosong.")
+        pesan_final = f"Halo, berkas resmi penawaran dan SPK kendaraan Anda ({effective_lead_id}) telah diproses."
 
     with lead_approval_lock:
         rows, fieldnames = read_lead_rows()
@@ -1090,7 +1114,7 @@ def approve_outreach(req: ApprovalRequest):
             (
                 row
                 for row in rows
-                if (row.get("id_lead") or row.get("\ufeffid_lead", "")) == req.id_lead
+                if (row.get("id_lead") or row.get("\ufeffid_lead", "")) == effective_lead_id
             ),
             None,
         )
@@ -1099,7 +1123,7 @@ def approve_outreach(req: ApprovalRequest):
         if lead.get("status_kontak") == "dispatched":
             raise HTTPException(status_code=409, detail="Pesan untuk prospek ini sudah terkirim.")
         
-        target_phone = lead.get("nomor_wa", "").strip()
+        target_phone = (req.nomor_wa or lead.get("nomor_wa", "")).strip()
         if not target_phone:
             raise HTTPException(status_code=400, detail="Nomor WhatsApp prospek belum tersedia.")
 
@@ -1110,7 +1134,7 @@ def approve_outreach(req: ApprovalRequest):
             nomor_tujuan=target_phone,
             pesan=pesan_final,
             audit_context={
-                "lead_id": req.id_lead,
+                "lead_id": effective_lead_id,
                 "request_id": request_id,
                 "approved_by": approved_by,
                 "consent_confirmed": True,
@@ -1142,41 +1166,59 @@ def approve_outreach(req: ApprovalRequest):
         katalog, _ = get_katalog_and_stock()
         bundling_rules = get_bundling_rules()
         
-        # Ekstrak dari cubi_scout_output / cubi_scribe_output jika ada
+        # Ekstrak data bundling & scout
+        raw_items_bundling = req.items_bundling or req.bundling_items or []
+        if isinstance(raw_items_bundling, str):
+            try:
+                raw_items_bundling = json.loads(raw_items_bundling)
+            except Exception:
+                raw_items_bundling = [raw_items_bundling]
+
+        scout_dict = {}
         if req.cubi_scout_output:
-            scout_dict = req.cubi_scout_output.model_dump()
-            matched_pid = scout_dict.get("id_produk", "MTR-01")
-            unit_barang = scout_dict.get("unit_alternatif") or scout_dict.get("unit_rekomendasi", "Beat Street")
-            harga_otr = int(scout_dict.get("harga_otr", 19300000))
-            items_bundling = scout_dict.get("bundling_rekomendasi", [])
-        else:
+            if isinstance(req.cubi_scout_output, dict):
+                scout_dict = dict(req.cubi_scout_output)
+            elif hasattr(req.cubi_scout_output, "model_dump"):
+                scout_dict = req.cubi_scout_output.model_dump()
+
+        matched_pid = scout_dict.get("id_produk")
+        unit_barang = req.unit_barang or req.unit_rekomendasi or scout_dict.get("unit_alternatif") or scout_dict.get("unit_rekomendasi")
+        harga_otr = req.harga_otr or (int(scout_dict.get("harga_otr")) if scout_dict.get("harga_otr") else None)
+        
+        items_bundling = list(raw_items_bundling) if raw_items_bundling else (scout_dict.get("bundling_rekomendasi") or [])
+
+        if not unit_barang or not harga_otr or not matched_pid:
             minat_str = (lead.get("minat_kebutuhan") or "").lower()
-            matched_pid = "MTR-01"
-            if "vario" in minat_str or "sporty" in minat_str or "kencang" in minat_str or "tenaga" in minat_str:
-                matched_pid = "MTR-02"
-            elif "pcx" in minat_str or "touring" in minat_str or "maxi" in minat_str or "jarak jauh" in minat_str:
-                matched_pid = "MTR-03"
-            elif "beat" in minat_str or "lincah" in minat_str or "hemat" in minat_str or "irit" in minat_str or "murah" in minat_str:
+            if not matched_pid:
                 matched_pid = "MTR-01"
-            else:
-                best_sc = 0
-                for pid, itm in katalog.items():
-                    if itm.get("kategori", "").lower().startswith("motor"):
-                        seg_w = itm.get("segmen_kebutuhan", "").lower()
-                        sc = sum(1 for w in minat_str.split() if w in seg_w)
-                        if sc > best_sc:
-                            best_sc = sc
-                            matched_pid = pid
+                if "vario" in minat_str or "sporty" in minat_str or "kencang" in minat_str or "tenaga" in minat_str:
+                    matched_pid = "MTR-02"
+                elif "pcx" in minat_str or "touring" in minat_str or "maxi" in minat_str or "jarak jauh" in minat_str:
+                    matched_pid = "MTR-03"
+                elif "beat" in minat_str or "lincah" in minat_str or "hemat" in minat_str or "irit" in minat_str or "murah" in minat_str:
+                    matched_pid = "MTR-01"
+                else:
+                    best_sc = 0
+                    for pid, itm in katalog.items():
+                        if itm.get("kategori", "").lower().startswith("motor"):
+                            seg_w = itm.get("segmen_kebutuhan", "").lower()
+                            sc = sum(1 for w in minat_str.split() if w in seg_w)
+                            if sc > best_sc:
+                                best_sc = sc
+                                matched_pid = pid
 
             matched_item = katalog.get(matched_pid, {
                 "id_produk": "MTR-01",
                 "nama_barang": "Beat Street",
                 "harga": "19300000"
             })
-            unit_barang = matched_item.get("nama_barang", "Beat Street")
-            harga_otr = int(matched_item.get("harga", 19300000))
-            bundling_info = bundling_rules.get(matched_pid, {})
-            items_bundling = []
+            if not unit_barang:
+                unit_barang = matched_item.get("nama_barang", "Beat Street")
+            if not harga_otr:
+                harga_otr = int(matched_item.get("harga", 19300000))
+
+        if not items_bundling:
+            bundling_info = bundling_rules.get(matched_pid or "MTR-01", {})
             for bonus_id in bundling_info.get("cross_sell", []):
                 if bonus_id in katalog:
                     items_bundling.append({
@@ -1189,8 +1231,27 @@ def approve_outreach(req: ApprovalRequest):
                     {"nama": "Helm Eksklusif & Toolkit Resmi", "kategori": "Safety Apparel", "biaya": "Termasuk Promo"},
                     {"nama": "Garansi Extended Mesin 2 Tahun", "kategori": "Proteksi Servis", "biaya": "Termasuk Promo"}
                 ]
+
+        # Normalisasi items_bundling ke list of dicts
+        normalized_bundling = []
+        for it in items_bundling:
+            if isinstance(it, dict):
+                normalized_bundling.append({
+                    "nama": it.get("nama") or it.get("item") or "Item Bundling",
+                    "kategori": it.get("kategori", "Aksesoris"),
+                    "biaya": it.get("biaya", "Termasuk Promo")
+                })
+            else:
+                normalized_bundling.append({
+                    "nama": str(it),
+                    "kategori": "Aksesoris / Promo",
+                    "biaya": "Termasuk Promo"
+                })
+        items_bundling = normalized_bundling
+
+        if not scout_dict:
             scout_dict = {
-                "id_produk": matched_pid,
+                "id_produk": matched_pid or "MTR-01",
                 "unit_rekomendasi": unit_barang,
                 "kategori": katalog.get(matched_pid, {}).get("kategori", "Motor Matic"),
                 "cabang_terdekat": lead.get("domisili", "Banyumas"),
@@ -1200,40 +1261,53 @@ def approve_outreach(req: ApprovalRequest):
                 "bundling_rekomendasi": items_bundling
             }
 
+        scribe_dict = {}
         if req.cubi_scribe_output:
-            scribe_dict = req.cubi_scribe_output.model_dump()
-            nominal_dp = int(scribe_dict.get("dp_disetujui", int(harga_otr * 0.15)))
-            tenor_bulan = int(scribe_dict.get("tenor_bulan", 36))
-            angsuran = int(scribe_dict.get("estimasi_cicilan_bulanan", hitung_angsuran_bulanan(harga_otr, nominal_dp, tenor_bulan)))
-            persentase_dp = float(scribe_dict.get("persentase_dp", round((nominal_dp / harga_otr) * 100, 1)))
-            pokok_hutang = int(scribe_dict.get("pokok_hutang", harga_otr - nominal_dp))
-            total_investasi = int(scribe_dict.get("total_investasi_paket", harga_otr))
-        else:
+            if isinstance(req.cubi_scribe_output, dict):
+                scribe_dict = dict(req.cubi_scribe_output)
+            elif hasattr(req.cubi_scribe_output, "model_dump"):
+                scribe_dict = req.cubi_scribe_output.model_dump()
+
+        nominal_dp = req.nominal_dp or (int(scribe_dict.get("dp_disetujui")) if scribe_dict.get("dp_disetujui") else None)
+        tenor_bulan = req.tenor_bulan or int(scribe_dict.get("tenor_bulan", 36))
+        angsuran = req.angsuran_per_bulan or (int(scribe_dict.get("estimasi_cicilan_bulanan")) if scribe_dict.get("estimasi_cicilan_bulanan") else None)
+
+        if nominal_dp is None:
             try:
                 nominal_dp = int(lead.get("budget_dp", 0))
             except (ValueError, TypeError):
                 nominal_dp = int(harga_otr * 0.15)
             if nominal_dp < int(harga_otr * 0.15):
                 nominal_dp = int(harga_otr * 0.15)
-            tenor_bulan = 36
-            angsuran = hitung_angsuran_bulanan(harga_otr, nominal_dp, tenor_bulan)
-            persentase_dp = round((nominal_dp / harga_otr) * 100, 1) if harga_otr > 0 else 15.0
-            pokok_hutang = max(0, harga_otr - nominal_dp)
-            total_investasi = harga_otr
-            scribe_dict = {
-                "dp_disetujui": nominal_dp,
-                "persentase_dp": persentase_dp,
-                "pokok_hutang": pokok_hutang,
-                "tenor_bulan": tenor_bulan,
-                "estimasi_cicilan_bulanan": angsuran,
-                "total_investasi_paket": total_investasi,
-                "draft_pesan_wa": pesan_final,
-            }
 
-        konsumen_nama = (req.prospek and req.prospek.nama) or lead.get("nama_prospek") or lead.get("nama") or "Konsumen"
-        domisili = (req.prospek and req.prospek.domisili) or lead.get("domisili", "Banyumas")
+        if not angsuran:
+            angsuran = hitung_angsuran_bulanan(harga_otr, nominal_dp, tenor_bulan)
+        
+        persentase_dp = round((nominal_dp / harga_otr) * 100, 1) if harga_otr > 0 else 15.0
+        pokok_hutang = max(0, harga_otr - nominal_dp)
+        total_investasi = harga_otr
+
+        scribe_dict.update({
+            "dp_disetujui": nominal_dp,
+            "persentase_dp": persentase_dp,
+            "pokok_hutang": pokok_hutang,
+            "tenor_bulan": tenor_bulan,
+            "estimasi_cicilan_bulanan": angsuran,
+            "total_investasi_paket": total_investasi,
+            "draft_pesan_wa": pesan_final,
+        })
+
+        prospek_dict = {}
+        if req.prospek:
+            if isinstance(req.prospek, dict):
+                prospek_dict = dict(req.prospek)
+            elif hasattr(req.prospek, "model_dump"):
+                prospek_dict = req.prospek.model_dump()
+
+        konsumen_nama = prospek_dict.get("nama") or lead.get("nama_prospek") or lead.get("nama") or "Konsumen"
+        domisili = prospek_dict.get("domisili") or lead.get("domisili", "Banyumas")
         konsumen_clean = konsumen_nama.replace(" ", "_").replace("/", "_")
-        pdf_filename = f"SPK_{req.id_lead}_{konsumen_clean}.pdf"
+        pdf_filename = f"SPK_{effective_lead_id}_{konsumen_clean}.pdf"
 
         try:
             pdf_path = generate_spk_pdf(
@@ -1245,13 +1319,13 @@ def approve_outreach(req: ApprovalRequest):
                 tenor_bulan=tenor_bulan,
                 angsuran_per_bulan=angsuran,
                 items_bundling=items_bundling,
-                id_lead=req.id_lead,
+                id_lead=effective_lead_id,
                 file_name=pdf_filename,
                 output_dir=OUTPUT_DIR
             )
         except Exception as pdf_err:
             print(f"[PDF GENERATION WARNING]: {pdf_err}")
-            pdf_filename = f"SPK_{req.id_lead}_{konsumen_clean}.pdf"
+            pdf_filename = f"SPK_{effective_lead_id}_{konsumen_clean}.pdf"
 
         pdf_url = f"/api/v1/documents/{pdf_filename}"
         
@@ -1264,20 +1338,22 @@ def approve_outreach(req: ApprovalRequest):
 
     add_log(
         "Cubi Gate",
-        f"Outreach {status_kontak} untuk prospek {req.id_lead}",
+        f"Outreach {status_kontak} untuk prospek {effective_lead_id}",
         f"Disetujui oleh {approved_by}; consent_verified=True; SPK diterbitkan ({pdf_filename}).",
     )
 
     return {
         "request_id": request_id,
-        "id_lead": req.id_lead,
-        "lead_id": req.id_lead,
+        "id_lead": effective_lead_id,
+        "lead_id": effective_lead_id,
         "status": status_kontak,
         "consent_verified": True,
         "mode_simulasi": mode_simulasi,
         "pdf_filename": pdf_filename,
         "pdf_url": pdf_url,
         "download_url": pdf_url,
+        "items_bundling": items_bundling,
+        "bundling_items": items_bundling,
         "prospek": {
             "nama": konsumen_nama,
             "nomor_wa": target_phone,
@@ -1294,6 +1370,7 @@ def approve_outreach(req: ApprovalRequest):
             "nominal_dp": nominal_dp,
             "tenor_bulan": tenor_bulan,
             "angsuran_per_bulan": angsuran,
+            "items_bundling": items_bundling,
         },
         "dispatch": dispatch_result,
         "dispatched_to_gateway": dispatch_status == "terkirim_live_wa",

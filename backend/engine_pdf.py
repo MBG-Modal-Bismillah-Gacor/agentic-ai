@@ -234,10 +234,18 @@ def generate_spk_pdf(
             [Paragraph("<b>Item Pelengkap</b>", header_table_style), Paragraph("<b>Kategori</b>", header_table_style), Paragraph("<b>Status Biaya</b>", header_table_style)]
         ]
         for it in items_bundling:
+            if isinstance(it, dict):
+                nama_item = it.get("nama") or it.get("item") or "-"
+                kat_item = it.get("kategori", "Aksesoris")
+                biaya_item = it.get("biaya", "Termasuk Promo")
+            else:
+                nama_item = str(it)
+                kat_item = "Aksesoris / Promo"
+                biaya_item = "Termasuk Promo"
             bundling_table.append([
-                Paragraph(_pdf_text(it.get("nama", "-")), body_style),
-                Paragraph(_pdf_text(it.get("kategori", "Aksesoris")), body_style),
-                Paragraph(_pdf_text(it.get("biaya", "Termasuk Promo")), body_style)
+                Paragraph(_pdf_text(nama_item), body_style),
+                Paragraph(_pdf_text(kat_item), body_style),
+                Paragraph(_pdf_text(biaya_item), body_style)
             ])
         t_bundling = Table(bundling_table, colWidths=[240, 140, 140])
         t_bundling.setStyle(TableStyle([

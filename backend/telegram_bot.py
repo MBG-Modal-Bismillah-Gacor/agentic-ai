@@ -20,10 +20,10 @@ from typing import Dict, Any, Optional
 import requests
 
 try:
-    from backend.engine_pdf import generate_spk_pdf
+    from backend.engine_pdf import generate_spk_pdf, OUTPUT_DIR
     from backend.dispatcher import SafeOutreachDispatcher
 except ImportError:
-    from engine_pdf import generate_spk_pdf
+    from engine_pdf import generate_spk_pdf, OUTPUT_DIR
     from dispatcher import SafeOutreachDispatcher
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -466,38 +466,110 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
 
         p = generate_pitch_for_lead(lead)
 
-        # 1. Terbitkan berkas PDF SPK resmi
-        spk_path = ""
-        try:
-            spk_path = generate_spk_pdf(
-                nama_konsumen=nama,
-                domisili=dom,
-                unit_barang=p.get("unit_spk") or p["product_name"],
-                harga_otr=p["harga_otr"],
-                nominal_dp=p["dp_approved"],
-                tenor_bulan=36,
-                angsuran_per_bulan=p["c36"],
-                items_bundling=p["bundling_items"]
-            )
-        except Exception as e:
-            print(f"[SPK GENERATE ERROR]: {e}")
-
-        # 2. Update status ke dispatched di CSV
-        update_lead_status(lid, new_status="dispatched")
-
-        # 3. Jalankan dispatch pengiriman via SafeOutreachDispatcher
-        dispatch_res = dispatcher.kirim_whatsapp_aman(
-            nomor_tujuan=wa,
-            pesan=p["pitch_text"],
-            mode_simulasi=not dispatcher.live_enabled,
-            audit_context={
-                "lead_id": lid,
-                "approved_by": f"Sales via Telegram ({clean_sender})",
-                "consent_confirmed": True
+        # 1. Susun payload resmi untuk endpoint approve-and-send (Pydantic Resilient)
+        backend_api = os.getenv("BACKEND_API_BASE", "http://127.0.0.1:8000")
+        approval_payload = {
+            "id_lead": lid,
+            "lead_id": lid,
+            "consent_verified": True,
+            "consent_confirmed": True,
+            "mode_simulasi": not dispatcher.live_enabled,
+            "approved_by": f"Sales via Telegram ({clean_sender})",
+            "pesan_final": p["pitch_text"],
+            "draft_pitch": p["pitch_text"],
+            "nomor_wa": wa,
+            "unit_barang": p.get("unit_spk") or p["product_name"],
+            "unit_rekomendasi": p.get("unit_spk") or p["product_name"],
+            "harga_otr": p["harga_otr"],
+            "nominal_dp": p["dp_approved"],
+            "tenor_bulan": 36,
+            "angsuran_per_bulan": p["c36"],
+            "items_bundling": p["bundling_items"],
+            "bundling_items": p["bundling_items"],
+            "prospek": {
+                "nama": nama,
+                "nomor_wa": wa,
+                "domisili": dom,
+                "skor_prioritas": "Hot" if p["dp_approved"] >= 3500000 else "Warm",
+            },
+            "cubi_scout_output": {
+                "id_produk": p.get("id_produk", "MTR-01"),
+                "unit_rekomendasi": p.get("unit_spk") or p["product_name"],
+                "status_stok": p.get("status_stok", "Ready"),
+                "sisa_unit": 1,
+                "harga_otr": p["harga_otr"],
+                "bundling_rekomendasi": p["bundling_items"],
+            },
+            "cubi_scribe_output": {
+                "dp_disetujui": p["dp_approved"],
+                "tenor_bulan": 36,
+                "estimasi_cicilan_bulanan": p["c36"],
+                "draft_pesan_wa": p["pitch_text"],
             }
-        )
+        }
 
-        # 4. Jika SPK berhasil diterbitkan, kirimkan filenya ke Telegram Sales
+        spk_path = ""
+        dispatch_status = "simulated"
+        api_dispatched = False
+
+        # 2. Panggil API FastAPI backend Uvicorn
+        try:
+            resp = requests.post(
+                f"{backend_api}/api/v1/leads/approve-and-send",
+                json=approval_payload,
+                timeout=12
+            )
+            if resp.status_code == 200:
+                api_dispatched = True
+                res_data = resp.json()
+                dispatch_status = res_data.get("status", "dispatched")
+                pdf_fname = res_data.get("pdf_filename") or f"SPK_{lid}_{nama.replace(' ', '_')}.pdf"
+                cand_path = os.path.join(OUTPUT_DIR, pdf_fname)
+                if os.path.exists(cand_path):
+                    spk_path = cand_path
+            elif resp.status_code == 409:
+                return (
+                    f"ℹ️ *Pemberitahuan Sales:*\n"
+                    f"Penawaran untuk prospek *{nama}* (`{lid}`) sudah disetujui & terkirim sebelumnya.\n"
+                    f"Ketik `/prospek` untuk memeriksa prospek lainnya."
+                )
+            else:
+                print(f"[TELEGRAM TRIGGER API WARNING HTTP {resp.status_code}]: {resp.text}")
+        except Exception as net_err:
+            print(f"[TELEGRAM TRIGGER API EXCEPTION]: {net_err}")
+
+        # 3. Fallback lokal jika FastAPI backend offline
+        if not api_dispatched or not spk_path or not os.path.exists(spk_path):
+            try:
+                spk_path = generate_spk_pdf(
+                    nama_konsumen=nama,
+                    domisili=dom,
+                    unit_barang=p.get("unit_spk") or p["product_name"],
+                    harga_otr=p["harga_otr"],
+                    nominal_dp=p["dp_approved"],
+                    tenor_bulan=36,
+                    angsuran_per_bulan=p["c36"],
+                    items_bundling=p["bundling_items"],
+                    id_lead=lid
+                )
+            except Exception as e:
+                print(f"[SPK GENERATE ERROR]: {e}")
+
+            update_lead_status(lid, new_status="dispatched")
+            dispatch_res = dispatcher.kirim_whatsapp_aman(
+                nomor_tujuan=wa,
+                pesan=p["pitch_text"],
+                mode_simulasi=not dispatcher.live_enabled,
+                audit_context={
+                    "lead_id": lid,
+                    "approved_by": f"Sales via Telegram ({clean_sender})",
+                    "consent_confirmed": True,
+                    "consent_verified": True
+                }
+            )
+            dispatch_status = dispatch_res.get("status", "dispatched")
+
+        # 4. Jika berkas PDF SPK terbit, kirimkan langsung ke Telegram Sales
         if spk_path and os.path.exists(spk_path):
             try:
                 dispatcher.kirim_pdf_telegram(
@@ -507,17 +579,18 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
                     audit_context={
                         "lead_id": lid,
                         "approved_by": f"Sales via Telegram ({clean_sender})",
-                        "consent_confirmed": True
+                        "consent_confirmed": True,
+                        "consent_verified": True
                     }
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[TELEGRAM PDF SEND ERROR]: {e}")
 
         # 5. Catat log event ke sistem dashboard
         log_tele_event(
             "Cubi Gate",
             f"Persetujuan Penawaran via Telegram: {nama} ({lid})",
-            f"Disetujui oleh {clean_sender} | Unit: {p['product_name']} | Status: Dispatched"
+            f"Disetujui oleh {clean_sender} | Unit: {p['product_name']} | Status: {dispatch_status.capitalize()}"
         )
 
         return (
@@ -525,7 +598,7 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
             f"• *ID Prospek:* `{lid}` — *{nama}*\n"
             f"• *Nomor WhatsApp:* `{wa}`\n"
             f"• *Unit Rekomendasi:* *{p['product_name']}* ({p['domisili']})\n"
-            f"• *Status Dispatch:* ✅ *{dispatch_res.get('status', 'dispatched').upper()}*\n"
+            f"• *Status Dispatch:* ✅ *{dispatch_status.upper()}*\n"
             f"• *Dokumen SPK:* Berkas resmi SPK telah diterbitkan & diarsipkan!\n\n"
             f"📊 Transaksi ini otomatis tercatat di Data Vault & terupdate di **Dashboard Pusat Kontrol**.\n"
             f"Ketik `/prospek` untuk memproses antrean berikutnya!"
@@ -540,36 +613,97 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
 
         processed_count = 0
         names_processed = []
+        backend_api = os.getenv("BACKEND_API_BASE", "http://127.0.0.1:8000")
+
         for l in pending[:5]:  # Batch 5 per trigger agar responsif
             lid = l.get("id_lead") or l.get("\ufeffid_lead", "LD-???")
             nama = l.get("nama_prospek", "Konsumen")
+            dom = l.get("domisili", "Purwokerto")
+            wa = l.get("nomor_wa", "6281234567890")
             p = generate_pitch_for_lead(l)
 
+            # Eksekusi via endpoint approve-and-send
+            pipe_payload = {
+                "id_lead": lid,
+                "lead_id": lid,
+                "consent_verified": True,
+                "consent_confirmed": True,
+                "mode_simulasi": True,
+                "approved_by": f"AutoPipeline Telegram ({clean_sender})",
+                "pesan_final": p["pitch_text"],
+                "draft_pitch": p["pitch_text"],
+                "nomor_wa": wa,
+                "unit_barang": p.get("unit_spk") or p["product_name"],
+                "unit_rekomendasi": p.get("unit_spk") or p["product_name"],
+                "harga_otr": p["harga_otr"],
+                "nominal_dp": p["dp_approved"],
+                "tenor_bulan": 36,
+                "angsuran_per_bulan": p["c36"],
+                "items_bundling": p["bundling_items"],
+                "bundling_items": p["bundling_items"],
+                "prospek": {
+                    "nama": nama,
+                    "nomor_wa": wa,
+                    "domisili": dom,
+                    "skor_prioritas": "Warm",
+                },
+                "cubi_scout_output": {
+                    "id_produk": p.get("id_produk", "MTR-01"),
+                    "unit_rekomendasi": p.get("unit_spk") or p["product_name"],
+                    "status_stok": p.get("status_stok", "Ready"),
+                    "sisa_unit": 1,
+                    "harga_otr": p["harga_otr"],
+                    "bundling_rekomendasi": p["bundling_items"],
+                },
+                "cubi_scribe_output": {
+                    "dp_disetujui": p["dp_approved"],
+                    "tenor_bulan": 36,
+                    "estimasi_cicilan_bulanan": p["c36"],
+                    "draft_pesan_wa": p["pitch_text"],
+                }
+            }
+
+            pipe_dispatched = False
             try:
-                generate_spk_pdf(
-                    nama_konsumen=nama,
-                    domisili=p["domisili"],
-                    unit_barang=p.get("unit_spk") or p["product_name"],
-                    harga_otr=p["harga_otr"],
-                    nominal_dp=p["dp_approved"],
-                    tenor_bulan=36,
-                    angsuran_per_bulan=p["c36"],
-                    items_bundling=p["bundling_items"]
+                r_pipe = requests.post(
+                    f"{backend_api}/api/v1/leads/approve-and-send",
+                    json=pipe_payload,
+                    timeout=10
                 )
+                if r_pipe.status_code in [200, 409]:
+                    pipe_dispatched = True
             except Exception:
                 pass
 
-            update_lead_status(lid, new_status="dispatched")
-            dispatcher.kirim_whatsapp_aman(
-                nomor_tujuan=p["nomor_wa"],
-                pesan=p["pitch_text"],
-                mode_simulasi=True,
-                audit_context={
-                    "lead_id": lid,
-                    "approved_by": f"AutoPipeline Telegram ({clean_sender})",
-                    "consent_confirmed": True
-                }
-            )
+            if not pipe_dispatched:
+                try:
+                    generate_spk_pdf(
+                        nama_konsumen=nama,
+                        domisili=p["domisili"],
+                        unit_barang=p.get("unit_spk") or p["product_name"],
+                        harga_otr=p["harga_otr"],
+                        nominal_dp=p["dp_approved"],
+                        tenor_bulan=36,
+                        angsuran_per_bulan=p["c36"],
+                        items_bundling=p["bundling_items"],
+                        id_lead=lid
+                    )
+                except Exception:
+                    pass
+
+                update_lead_status(lid, new_status="dispatched")
+                dispatcher.kirim_whatsapp_aman(
+                    nomor_tujuan=p["nomor_wa"],
+                    pesan=p["pitch_text"],
+                    mode_simulasi=True,
+                    audit_context={
+                        "lead_id": lid,
+                        "approved_by": f"AutoPipeline Telegram ({clean_sender})",
+                        "consent_confirmed": True,
+                        "consent_verified": True
+                    }
+                )
+
             processed_count += 1
             names_processed.append(f"{nama} ({lid})")
 
