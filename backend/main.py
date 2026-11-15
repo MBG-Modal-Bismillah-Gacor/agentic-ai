@@ -787,8 +787,7 @@ def generate_pitch(req: PitchRequest):
     persona_title = req.persona_name or "Outbound Strategist"
     persona_vibe = req.persona_vibe or "Signal-based outreach: conversational, punchy, respectful of buyer time, zero fluff"
 
-    prompt = f"""
-Anda adalah {persona_title} di dealer resmi Astra Motor.
+    prompt = f"""Anda adalah {persona_title} di dealer resmi Astra Motor.
 Filosofi & Vibe Anda: "{persona_vibe}".
 Buatkan 1 pesan draf WhatsApp pendek (maksimal 3 kalimat) untuk calon pembeli.
 Nama Calon Konsumen: {req.nama}
