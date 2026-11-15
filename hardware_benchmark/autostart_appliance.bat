@@ -19,18 +19,19 @@ if exist .venv\Scripts\activate.bat call .venv\Scripts\activate.bat
 start "Backend Engine" cmd /k "python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000"
 timeout /t 3 /nobreak >nul
 
-:: 3. Jalankan Frontend Virtual Office (Port 5173)
-echo [3/3] Menjalankan Virtual Office Interface (Port 5173)...
+:: 3. Jalankan Frontend Virtual Office (Port 3000)
+echo [3/3] Menjalankan Virtual Office Interface (Port 3000)...
 cd /d "%~dp0\..\frontend"
-start "Virtual Office UI" cmd /k "npm run dev -- --host 0.0.0.0 --port 5173"
+start "Virtual Office UI" cmd /k "npm run dev -- --host 0.0.0.0 --port 3000"
 timeout /t 5 /nobreak >nul
 
 :: Buka Browser Showcase Secara Otomatis langsung ke Kantor 3D
-start http://localhost:5173/office
+start http://localhost:3000/office
 
 echo.
 echo ========================================================
 echo  APPLIANCE ONLINE! SEMUA AGENT BEKERJA DI LOCAL-FIRST.
-echo  Kantor 3D: http://localhost:5173/office
+echo  Kantor 3D: http://localhost:3000/office (LAN: http://192.168.1.11:3000/office)
+echo  API Docs : http://localhost:8000/docs (LAN: http://192.168.1.11:8000/docs)
 echo ========================================================
 pause

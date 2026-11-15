@@ -32,8 +32,9 @@ restart_local_services() {
         pkill -f "uvicorn backend.main:app" >/dev/null 2>&1 || true
     fi
 
-    # Hentikan frontend port 5173 jika ada
+    # Hentikan frontend port 3000 & 5173 jika ada
     if command -v fuser >/dev/null 2>&1; then
+        fuser -k 3000/tcp >/dev/null 2>&1
         fuser -k 5173/tcp >/dev/null 2>&1
     else
         pkill -f "vite" >/dev/null 2>&1 || true
@@ -50,14 +51,14 @@ restart_local_services() {
     nohup python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > "$PROJECT_ROOT/backend.log" 2>&1 &
     echo "[AUTO-UPDATER] Backend berhasil dimulai kembali (PID: $!)."
 
-    # Jalankan ulang frontend di background
+    # Jalankan ulang frontend di background (Port 3000)
     cd "$PROJECT_ROOT/frontend" || exit 1
     if [ -d "dist" ]; then
-        nohup npx vite preview --host 0.0.0.0 --port 5173 > "$PROJECT_ROOT/frontend.log" 2>&1 &
+        nohup npx vite preview --host 0.0.0.0 --port 3000 > "$PROJECT_ROOT/frontend.log" 2>&1 &
     else
-        nohup npm run dev -- --host 0.0.0.0 --port 5173 > "$PROJECT_ROOT/frontend.log" 2>&1 &
+        nohup npm run dev -- --host 0.0.0.0 --port 3000 > "$PROJECT_ROOT/frontend.log" 2>&1 &
     fi
-    echo "[AUTO-UPDATER] Frontend berhasil dimulai kembali."
+    echo "[AUTO-UPDATER] Frontend berhasil dimulai kembali di port 3000."
     cd "$PROJECT_ROOT" || exit 1
 }
 

@@ -24,6 +24,7 @@ try:
     )
     from backend import agentic_swarm
 except ImportError:
+    from dispatcher import SafeOutreachDispatcher
     from engine_pdf import (
         generate_spk_pdf,
         hitung_simulasi_kredit,
