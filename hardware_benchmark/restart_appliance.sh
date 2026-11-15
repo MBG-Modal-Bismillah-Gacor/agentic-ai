@@ -38,6 +38,8 @@ if [ -d ".venv" ]; then
     source .venv/bin/activate
 fi
 nohup python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > "$BASE_DIR/backend.log" 2>&1 &
+BACKEND_PID=$!
+disown $BACKEND_PID 2>/dev/null || true
 sleep 2
 
 # 4. Jalankan Frontend
@@ -48,6 +50,8 @@ if [ -d "dist" ]; then
 else
     nohup npm run dev -- --host 0.0.0.0 --port 3000 > "$BASE_DIR/frontend.log" 2>&1 &
 fi
+FRONTEND_PID=$!
+disown $FRONTEND_PID 2>/dev/null || true
 sleep 2
 
 echo ""
