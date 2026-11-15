@@ -1675,9 +1675,10 @@ def trigger_cicd_deploy(req: CICDDeployRequest):
     repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     results = {}
 
-    # 1. Git Pull
+    # 1. Git Pull (dengan stash terlebih dahulu agar aman dari file output/log lokal)
     if req.pull_git:
         try:
+            subprocess.run(["git", "stash"], cwd=repo_dir, capture_output=True, timeout=10)
             pull_proc = subprocess.run(
                 ["git", "pull", "origin", req.branch or "main"],
                 cwd=repo_dir,
