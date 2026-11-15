@@ -1476,28 +1476,47 @@ export function DashboardOverlay({
               </div>
 
               {/* Target Saluran Konfirmasi: Telegram @iiibays */}
-              <div className="p-3 bg-sky-50/80 border border-sky-200 rounded-xl flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-[#229ED9] text-white flex items-center justify-center shadow-xs shrink-0">
-                    <Send className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-sky-800 font-bold uppercase tracking-wider block">Kirim Konfirmasi &amp; PDF SPK ke:</span>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-sm text-[#192A56] font-mono">Telegram: @iiibays</span>
-                      <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold">Bukti Riil Aktif</span>
+              <div className="p-3 bg-sky-50/80 border border-sky-200 rounded-xl space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#229ED9] text-white flex items-center justify-center shadow-xs shrink-0">
+                      <Send className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-sky-800 font-bold uppercase tracking-wider block">Kirim Konfirmasi &amp; PDF SPK ke:</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-[#192A56] font-mono">Telegram: @iiibays</span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold">Bukti Riil Aktif</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href="https://t.me/StelAgentBot"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1.5 bg-[#229ED9] hover:bg-[#1C88BD] text-white text-[11px] rounded-lg font-bold transition flex items-center gap-1 shadow-xs"
+                      style={{ backgroundColor: '#229ED9', color: '#FFFFFF' }}
+                      title="Buka bot @StelAgentBot dan klik Start"
+                    >
+                      <Bot className="w-3.5 h-3.5 text-white" />
+                      <span>Start @StelAgentBot</span>
+                    </a>
+                    <a
+                      href="https://t.me/iiibays"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1.5 bg-white border border-sky-300 hover:border-sky-500 text-sky-800 text-[11px] rounded-lg font-bold transition flex items-center gap-1 shadow-2xs hover:bg-sky-50"
+                    >
+                      <span>Chat</span>
+                      <ExternalLink className="w-3 h-3 text-sky-600" />
+                    </a>
+                  </div>
                 </div>
-                <a
-                  href="https://t.me/iiibays"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-2.5 py-1.5 bg-white border border-sky-300 hover:border-sky-500 text-sky-800 text-[11px] rounded-lg font-bold transition flex items-center gap-1 shrink-0 shadow-2xs hover:bg-sky-50"
-                >
-                  <span>Buka Chat</span>
-                  <ExternalLink className="w-3 h-3 text-sky-600" />
-                </a>
+                <div className="text-[10px] text-slate-500 leading-normal bg-white/70 p-1.5 rounded-lg border border-sky-100 flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  <span>Pastikan Anda telah membuka <a href="https://t.me/StelAgentBot" target="_blank" rel="noreferrer" className="text-[#229ED9] font-bold underline">@StelAgentBot</a> di Telegram dan mengirim <code>/start</code> agar bot memiliki izin mengirimkan berkas resmi SPK ke chat Anda.</span>
+                </div>
               </div>
 
               <label className="flex items-start gap-2 text-[11px] leading-relaxed text-slate-600">

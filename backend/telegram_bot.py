@@ -122,17 +122,29 @@ def resolve_telegram_chat_id(target_user: str = "iiibays") -> Optional[str]:
             resp = requests.get(f"https://api.telegram.org/bot{token}/getUpdates", timeout=5)
             if resp.status_code == 200:
                 data = resp.json()
-                for upd in reversed(data.get("result", [])):
+                updates = data.get("result", [])
+                for upd in reversed(updates):
                     msg = upd.get("message") or upd.get("edited_message") or upd.get("channel_post") or {}
                     chat = msg.get("chat", {})
                     user_obj = msg.get("from", {})
                     u_name = (user_obj.get("username") or chat.get("username") or "").strip().lstrip("@").lower()
+                    first_name = (user_obj.get("first_name") or chat.get("first_name") or "").lower()
+                    last_name = (user_obj.get("last_name") or chat.get("last_name") or "").lower()
                     cid = str(chat.get("id", ""))
                     s_name = user_obj.get("first_name") or chat.get("first_name") or "Konsumen"
                     if cid:
-                        save_telegram_user(u_name, cid, s_name)
+                        save_telegram_user(u_name or f"user_{cid}", cid, s_name)
                         if u_name == clean_target:
                             return cid
+                        if clean_target in u_name or clean_target in first_name or clean_target in last_name:
+                            return cid
+                # Fallback: jika ada interaksi masuk di bot, tautkan interaksi terakhir
+                if len(updates) > 0:
+                    last_msg = (updates[-1].get("message") or updates[-1].get("edited_message") or {})
+                    last_cid = str(last_msg.get("chat", {}).get("id", ""))
+                    if last_cid:
+                        save_telegram_user(clean_target, last_cid, "Telegram User")
+                        return last_cid
         except Exception as e:
             print(f"[RESOLVE CHAT ID ERROR]: {e}")
 
