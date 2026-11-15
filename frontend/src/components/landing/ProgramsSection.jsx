@@ -25,9 +25,8 @@ export function ProgramsSection({ onNavigate }) {
     },
     {
       number: '02',
-      name: 'Dual 2.5GbE Isolated Network Gateway',
-      icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aa47c8540d52c18b41338_ico-investment.svg',
-      isImage: false
+      name: 'Autonomous Multi-Agent Swarm OS',
+      isMesh: true
     }
   ]
 
@@ -210,6 +209,34 @@ export function ProgramsSection({ onNavigate }) {
                             className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
                           />
                         </div>
+                      ) : s.isMesh ? (
+                        <div className="w-28 h-24 flex items-center justify-center bg-slate-50 border border-[#192A56]/15 p-2 rounded-lg relative overflow-hidden group hover:border-[#192A56]/40 transition-colors">
+                          <svg width="72" height="72" viewBox="0 0 80 80" fill="none" className="transition-transform duration-300 hover:scale-105">
+                            {/* Neural connection mesh lines */}
+                            <line x1="40" y1="16" x2="18" y2="38" stroke="#192A56" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.35" />
+                            <line x1="40" y1="16" x2="62" y2="38" stroke="#192A56" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.35" />
+                            <line x1="18" y1="38" x2="28" y2="64" stroke="#192A56" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.35" />
+                            <line x1="62" y1="38" x2="52" y2="64" stroke="#192A56" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.35" />
+                            <line x1="28" y1="64" x2="52" y2="64" stroke="#192A56" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.35" />
+                            
+                            <line x1="40" y1="16" x2="40" y2="42" stroke="#0284c7" strokeWidth="1.5" opacity="0.6" />
+                            <line x1="18" y1="38" x2="40" y2="42" stroke="#0284c7" strokeWidth="1.5" opacity="0.6" />
+                            <line x1="62" y1="38" x2="40" y2="42" stroke="#0284c7" strokeWidth="1.5" opacity="0.6" />
+                            <line x1="28" y1="64" x2="40" y2="42" stroke="#0284c7" strokeWidth="1.5" opacity="0.6" />
+                            <line x1="52" y1="64" x2="40" y2="42" stroke="#0284c7" strokeWidth="1.5" opacity="0.6" />
+
+                            {/* Center Neural Core: Local LLM Bus */}
+                            <circle cx="40" cy="42" r="9" fill="#192A56" />
+                            <circle cx="40" cy="42" r="4.5" fill="#0284c7" />
+
+                            {/* 5 Agent Swarm Nodes */}
+                            <circle cx="40" cy="16" r="6.5" fill="#2563EB" stroke="#FFFFFF" strokeWidth="1.5" />
+                            <circle cx="18" cy="38" r="6.5" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="1.5" />
+                            <circle cx="62" cy="38" r="6.5" fill="#059669" stroke="#FFFFFF" strokeWidth="1.5" />
+                            <circle cx="28" cy="64" r="6.5" fill="#D97706" stroke="#FFFFFF" strokeWidth="1.5" />
+                            <circle cx="52" cy="64" r="6.5" fill="#192A56" stroke="#FFFFFF" strokeWidth="1.5" />
+                          </svg>
+                        </div>
                       ) : (
                         <div className="relative flex items-center justify-center">
                           <img
@@ -237,7 +264,7 @@ export function ProgramsSection({ onNavigate }) {
               </div>
 
               <div className="mt-4 pt-3 text-[11px] font-mono text-[#576574] text-center">
-                Dual 2.5G Isolated Hardware Infrastructure
+                Sinergi Hardware On-Premise &amp; Software Swarm Otonom
               </div>
             </div>
           </div>
@@ -404,10 +431,6 @@ export function ProgramsSection({ onNavigate }) {
                       className="w-full h-full object-contain rounded-full"
                       loading="lazy"
                     />
-                  </div>
-                  {/* Badge MBG Pill */}
-                  <div className="absolute -bottom-2 bg-[#192A56] text-white border border-[#192A56] font-mono text-[10px] font-bold px-3.5 py-0.5 rounded-full shadow-md tracking-widest z-20">
-                    MBG
                   </div>
                 </div>
               </div>
