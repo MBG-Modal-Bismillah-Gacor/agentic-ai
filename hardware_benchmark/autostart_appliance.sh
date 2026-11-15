@@ -50,9 +50,9 @@ sleep 3
 echo ""
 echo "========================================================"
 echo " APPLIANCE ONLINE! SEMUA AGENT BEKERJA DI LOCAL-FIRST."
-echo " Dashboard Kantor 3D : http://localhost:3000/office (LAN: http://192.168.1.11:3000/office)"
-echo " Pusat Kontrol Hub   : http://localhost:3000/dashboard (LAN: http://192.168.1.11:3000/dashboard)"
-echo " Backend Swagger API : http://localhost:8000/docs (LAN: http://192.168.1.11:8000/docs)"
+echo " Dashboard Kantor 3D : http://localhost:3000/office (LAN: http://192.168.18.119:3000/office)"
+echo " Pusat Kontrol Hub   : http://localhost:3000/dashboard (LAN: http://192.168.18.119:3000/dashboard)"
+echo " Backend Swagger API : http://localhost:8000/docs (LAN: http://192.168.18.119:8000/docs)"
 echo "========================================================"
 
 # Buka Aplikasi Mandiri (Standalone PWA / App Mode) jika ada display

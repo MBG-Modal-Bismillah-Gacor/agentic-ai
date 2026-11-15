@@ -41,7 +41,7 @@ if %ERRORLEVEL% equ 0 (
 echo.
 echo ========================================================
 echo  APPLIANCE ONLINE! SEMUA AGENT BEKERJA DI LOCAL-FIRST.
-echo  Kantor 3D: http://localhost:3000/office (LAN: http://192.168.1.11:3000/office)
-echo  API Docs : http://localhost:8000/docs (LAN: http://192.168.1.11:8000/docs)
+echo  Kantor 3D: http://localhost:3000/office (LAN: http://192.168.18.119:3000/office)
+echo  API Docs : http://localhost:8000/docs (LAN: http://192.168.18.119:8000/docs)
 echo ========================================================
 pause
