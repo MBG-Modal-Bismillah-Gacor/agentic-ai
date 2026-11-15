@@ -21,6 +21,7 @@ import {
   PlusCircle,
   RefreshCw,
   ChevronRight,
+  ChevronDown,
   Clock,
   Send,
   PackageCheck,
@@ -1005,16 +1006,21 @@ export function DashboardView({
                     />
                   </div>
 
-                  {/* Filter Status */}
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 text-xs font-mono text-[#192A56] focus:outline-none rounded-xl"
-                  >
-                    <option value="all">Semua ({leads.length})</option>
-                    <option value="pending">Menunggu ({pendingLeads})</option>
-                    <option value="dispatched">Terkirim ({dispatchedLeads})</option>
-                  </select>
+                  {/* Filter Status Custom Dropdown */}
+                  <div className="relative inline-block text-xs font-mono">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="appearance-none bg-white hover:bg-slate-50 border border-[#192A56]/25 hover:border-[#192A56]/60 focus:border-[#192A56] pl-3 pr-8 py-1.5 text-xs font-mono font-bold text-[#192A56] rounded-xl cursor-pointer shadow-2xs transition-all outline-none"
+                    >
+                      <option value="all">Semua ({leads.length})</option>
+                      <option value="pending">Menunggu ({pendingLeads})</option>
+                      <option value="dispatched">Terkirim ({dispatchedLeads})</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-[#192A56]">
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1028,7 +1034,7 @@ export function DashboardView({
                       <th className="pb-2">BUDGET DP</th>
                       <th className="pb-2">SKOR PRIORITAS</th>
                       <th className="pb-2">STATUS</th>
-                      <th className="pb-2 text-right">AKSI EKSEKUSI</th>
+                      <th className="pb-2 text-right whitespace-nowrap min-w-[100px]">AKSI EKSEKUSI</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y border-t border-slate-100">
@@ -1086,7 +1092,7 @@ export function DashboardView({
                                 </span>
                               )}
                             </td>
-                            <td className="py-3 text-right">
+                            <td className="py-3 text-right whitespace-nowrap">
                               <button
                                 onClick={() => {
                                   setLoadingLeadId(lead.id_lead)
@@ -1094,7 +1100,7 @@ export function DashboardView({
                                 }}
                                 disabled={isGenerating}
                                 style={!isDispatched && !isGenerating ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
-                                className={`group px-2.5 py-1 text-[10px] font-bold transition-all cursor-pointer rounded-lg inline-flex items-center gap-1.5 shadow-xs ${
+                                className={`group px-3 py-1.5 text-[10px] font-bold transition-all cursor-pointer rounded-lg inline-flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap shrink-0 ${
                                   isDispatched
                                     ? 'bg-white hover:bg-[#192A56] text-[#192A56] hover:text-white border border-[#192A56]/30'
                                     : 'bg-[#192A56] hover:bg-[#0E1A38] text-white'
@@ -1103,11 +1109,11 @@ export function DashboardView({
                               >
                                 {isGenerating && loadingLeadId === lead.id_lead ? (
                                   <>
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                    <span>Memproses...</span>
+                                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                                    <span className="whitespace-nowrap">Memproses...</span>
                                   </>
                                 ) : (
-                                  <span className={isDispatched ? 'text-[#192A56] group-hover:text-white transition-colors' : 'text-white'}>
+                                  <span className={`whitespace-nowrap ${isDispatched ? 'text-[#192A56] group-hover:text-white transition-colors' : 'text-white'}`}>
                                     {isDispatched ? 'Lihat Draf' : 'Proses AI'}
                                   </span>
                                 )}
@@ -1136,26 +1142,26 @@ export function DashboardView({
                 <button
                   type="button"
                   onClick={() => setStreamTab('logs')}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
                     streamTab === 'logs'
-                      ? 'bg-white text-[#0284c7] shadow-xs'
+                      ? 'bg-white text-[#192A56] shadow-xs'
                       : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  <Terminal className={`w-3.5 h-3.5 ${streamTab === 'logs' ? 'text-[#0284c7]' : ''}`} />
-                  <span>STREAM LOG</span>
+                  <Terminal className={`w-3.5 h-3.5 ${streamTab === 'logs' ? 'text-[#192A56]' : 'text-slate-300'}`} />
+                  <span className={streamTab === 'logs' ? 'text-[#192A56]' : ''}>STREAM LOG</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setStreamTab('deliberations')}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
                     streamTab === 'deliberations'
-                      ? 'bg-white text-[#0284c7] shadow-xs'
+                      ? 'bg-white text-[#192A56] shadow-xs'
                       : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  <Bot className={`w-3.5 h-3.5 ${streamTab === 'deliberations' ? 'text-[#0284c7]' : ''}`} />
-                  <span>RAPAT SWARM ({deliberations.length})</span>
+                  <Bot className={`w-3.5 h-3.5 ${streamTab === 'deliberations' ? 'text-[#192A56]' : 'text-slate-300'}`} />
+                  <span className={streamTab === 'deliberations' ? 'text-[#192A56]' : ''}>RAPAT SWARM ({deliberations.length})</span>
                 </button>
               </div>
               <span className="text-[10px] text-emerald-400 font-bold tracking-widest flex items-center gap-1.5">
