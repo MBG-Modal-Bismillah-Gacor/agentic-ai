@@ -13,9 +13,16 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+from engine_pdf import generate_spk_pdf
 
 if __package__:
     from .dispatcher import SafeOutreachDispatcher
+    from .engine_pdf import (
+        OUTPUT_DIR,
+        generate_spk_pdf,
+        hitung_simulasi_kredit,
+    )
+    from . import agentic_swarm
 else:
     from dispatcher import SafeOutreachDispatcher
 
@@ -48,6 +55,10 @@ TEAM_FILE = os.path.join(CONFIG_DIR, "team_config.json")
 AGENCY_AGENTS_FILE = os.path.join(CONFIG_DIR, "agency_agents.json")
 outreach_dispatcher = SafeOutreachDispatcher()
 lead_approval_lock = threading.Lock()
+SWARM_SIMULATED_RESTOCK_ENABLED = (
+    os.getenv("SWARM_SIMULATED_RESTOCK_ENABLED", "true").strip().lower() == "true"
+)
+SWARM_AUTO_START = os.getenv("SWARM_AUTO_START", "").strip().lower() == "true"
 
 # ==============================================================================
 # STATE & BACKGROUND HEARTBEAT ENGINE (30 DETIK)
@@ -1069,6 +1080,7 @@ def approve_outreach(req: ApprovalRequest):
         f"Outreach {status_kontak} untuk prospek {req.id_lead}",
         f"Disetujui oleh {approved_by}; consent_verified=True; SPK diterbitkan ({pdf_filename}).",
     )
+
     return {
         "request_id": request_id,
         "id_lead": req.id_lead,
@@ -1106,6 +1118,8 @@ def approve_outreach(req: ApprovalRequest):
 
 @app.get("/api/v1/documents/{filename}")
 def download_document(filename: str):
+    if filename != os.path.basename(filename) or not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=404, detail="Berkas SPK tidak ditemukan.")
     candidate_dirs = [
         OUTPUT_DIR,
         os.path.join(BASE_DIR, "output"),
@@ -1150,6 +1164,16 @@ class GenerateSPKRequest(BaseModel):
 
 @app.post("/api/v1/sales/generate-spk")
 def api_generate_spk(req: GenerateSPKRequest):
+    if not req.nama_konsumen.strip() or not req.domisili.strip() or not req.unit_barang.strip():
+        raise HTTPException(status_code=422, detail="Nama, domisili, dan unit wajib diisi.")
+    if req.harga_otr <= 0 or req.nominal_dp < 0 or req.nominal_dp > req.harga_otr:
+        raise HTTPException(status_code=422, detail="Nilai OTR dan DP tidak valid.")
+    dp_min = int(req.harga_otr * 0.15)
+    if req.nominal_dp < dp_min:
+        raise HTTPException(status_code=422, detail=f"Nominal DP minimal 15% dari OTR (Rp {dp_min:,}).")
+    if req.tenor_bulan not in (12, 24, 36):
+        raise HTTPException(status_code=422, detail="Tenor harus 12, 24, atau 36 bulan.")
+
     angsuran = hitung_angsuran_bulanan(
         req.harga_otr,
         req.nominal_dp,
@@ -1290,8 +1314,18 @@ def toggle_swarm_endpoint(req: SwarmToggleRequest):
 
 @app.post("/api/v1/swarm/run-cycle")
 def run_swarm_cycle_endpoint():
+    if not SWARM_SIMULATED_RESTOCK_ENABLED:
+        raise HTTPException(
+            status_code=409,
+            detail="Cycle swarm diblokir: modul hanya mensimulasikan persetujuan pemasok dan dapat mengubah CSV stok.",
+        )
     result = agentic_swarm.run_swarm_cycle(trigger_source="manual_api")
-    return {"status": "ok", "result": result, "telemetry": agentic_swarm.get_swarm_telemetry()}
+    return {
+        "status": "ok",
+        "mode": "simulated",
+        "result": result,
+        "telemetry": agentic_swarm.get_swarm_telemetry(),
+    }
 
 # ==============================================================================
 # SYSTEM ACTIVITIES & ACTIVITY LOG

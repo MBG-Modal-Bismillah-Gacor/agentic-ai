@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
+import engine_pdf
 import main
 import requests
 from dispatcher import SafeOutreachDispatcher
@@ -331,6 +332,57 @@ class StockStatusTests(unittest.TestCase):
         status = main.get_stock_status("MTR-01", "Purwokerto", {})
 
         self.assertEqual(status, "Stok belum terverifikasi di cabang Purwokerto")
+
+
+class MergedSalesFeatureTests(unittest.TestCase):
+    def test_spk_api_rejects_invalid_dp_before_creating_document(self):
+        request = main.GenerateSPKRequest(
+            nama_konsumen="QA",
+            domisili="Purwokerto",
+            unit_barang="Beat Street",
+            harga_otr=19300000,
+            nominal_dp=2500000,
+            tenor_bulan=12,
+        )
+        with patch.object(main, "generate_spk_pdf") as generate_pdf:
+            with self.assertRaises(HTTPException) as error:
+                main.api_generate_spk(request)
+
+        self.assertEqual(error.exception.status_code, 422)
+        generate_pdf.assert_not_called()
+
+    def test_download_rejects_path_traversal(self):
+        with self.assertRaises(HTTPException) as error:
+            main.download_spk(r"..\..\outside.pdf")
+
+        self.assertEqual(error.exception.status_code, 404)
+
+    def test_swarm_cycle_is_disabled_without_explicit_simulation_consent(self):
+        with patch.object(main, "SWARM_SIMULATED_RESTOCK_ENABLED", False):
+            with patch.object(main.agentic_swarm, "run_swarm_cycle") as run_cycle:
+                with self.assertRaises(HTTPException) as error:
+                    main.run_swarm_cycle_endpoint()
+
+        self.assertEqual(error.exception.status_code, 409)
+        run_cycle.assert_not_called()
+
+    def test_pdf_generation_keeps_untrusted_values_inside_output_directory(self):
+        with tempfile.TemporaryDirectory() as output_dir:
+            with patch.object(engine_pdf, "OUTPUT_DIR", output_dir):
+                pdf_path = engine_pdf.generate_spk_pdf(
+                    nama_konsumen=r"..\..\QA <buyer>",
+                    domisili="<Purwokerto>",
+                    unit_barang="<Beat & Street>",
+                    harga_otr=19300000,
+                    nominal_dp=3000000,
+                    tenor_bulan=12,
+                    angsuran_per_bulan=1000000,
+                    items_bundling=[{"nama": "<Helmet & jacket>"}],
+                )
+
+            self.assertEqual(os.path.commonpath((output_dir, pdf_path)), output_dir)
+            with open(pdf_path, "rb") as pdf_file:
+                self.assertTrue(pdf_file.read(5).startswith(b"%PDF-"))
 
 
 if __name__ == "__main__":

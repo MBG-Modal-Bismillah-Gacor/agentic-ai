@@ -2,6 +2,8 @@ import os
 import io
 import json
 import csv
+import re
+from html import escape
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from reportlab.lib.pagesizes import A4
@@ -21,6 +23,11 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 DEFAULT_BUNGA_TAHUNAN = 0.08  # 8% flat rate per tahun
 DEFAULT_MINIMAL_DP_RATIO = 0.15  # Minimal DP 15% dari OTR
+
+
+def _pdf_text(value: Any) -> str:
+    return escape(str(value if value is not None else ""))
+
 
 def hitung_angsuran_bulanan(
     harga_otr: int,
@@ -134,12 +141,16 @@ def generate_spk_pdf(
 
     judul_dokumen = profil.get("judul_spk", "SURAT PESANAN KENDARAAN (SPK) RESMI")
 
-    clean_name = nama_konsumen.replace(' ', '_').replace('/', '_')
+    safe_nama = re.sub(r'[\\/*?:"<>|]', '_', nama_konsumen.replace('..', '_')).strip()
+    clean_name = re.sub(r'\s+', '_', safe_nama) or "Konsumen"
     if not file_name:
         if id_lead:
-            file_name = f"SPK_{id_lead}_{clean_name}.pdf"
+            safe_lead = re.sub(r'[\\/*?:"<>|]', '_', id_lead.replace('..', '_')).strip()
+            file_name = f"SPK_{safe_lead}_{clean_name}.pdf"
         else:
             file_name = f"SPK_{clean_name}_{datetime.now().strftime('%H%M%S')}.pdf"
+    else:
+        file_name = os.path.basename(file_name)
 
     pdf_path = os.path.join(target_output_dir, file_name)
 
@@ -188,19 +199,19 @@ def generate_spk_pdf(
     )
 
     # 1. KOP SURAT RESMI
-    story.append(Paragraph(f"<b>{profil['nama_perusahaan'].upper()}</b>", title_style))
-    story.append(Paragraph(f"Sektor: {profil['tipe_industri']} | Layanan Mandiri Local Appliance B206", subtitle_style))
+    story.append(Paragraph(f"<b>{_pdf_text(profil['nama_perusahaan']).upper()}</b>", title_style))
+    story.append(Paragraph(f"Sektor: {_pdf_text(profil['tipe_industri'])} | Layanan Mandiri Local Appliance B206", subtitle_style))
     story.append(Spacer(1, 12))
-    story.append(Paragraph(f"<b>{judul_dokumen}</b>", title_style))
-    story.append(Paragraph(f"Nomor Dokumen: <b>{nomor_spk}</b> | Tanggal: {datetime.now().strftime('%d-%m-%Y %H:%M')}", subtitle_style))
+    story.append(Paragraph(f"<b>{_pdf_text(judul_dokumen)}</b>", title_style))
+    story.append(Paragraph(f"Nomor Dokumen: <b>{_pdf_text(nomor_spk)}</b> | Tanggal: {datetime.now().strftime('%d-%m-%Y %H:%M')}", subtitle_style))
     story.append(Spacer(1, 15))
 
     # 2. IDENTITAS PEMESAN & UNIT
-    curr = profil["mata_uang"]
+    curr = _pdf_text(profil["mata_uang"])
     info_data = [
-        [Paragraph("<b>Nama Pemesan</b>", body_style), Paragraph(f": {nama_konsumen}", body_style)],
-        [Paragraph("<b>Domisili / Wilayah</b>", body_style), Paragraph(f": {domisili}", body_style)],
-        [Paragraph("<b>Unit Dipesan</b>", body_style), Paragraph(f": <b>{unit_barang}</b>", body_style)],
+        [Paragraph("<b>Nama Pemesan</b>", body_style), Paragraph(f": {_pdf_text(nama_konsumen)}", body_style)],
+        [Paragraph("<b>Domisili / Wilayah</b>", body_style), Paragraph(f": {_pdf_text(domisili)}", body_style)],
+        [Paragraph("<b>Unit Dipesan</b>", body_style), Paragraph(f": <b>{_pdf_text(unit_barang)}</b>", body_style)],
         [Paragraph("<b>Harga OTR Dasar</b>", body_style), Paragraph(f": {curr} {harga_otr:,}", body_style)],
         [Paragraph("<b>Uang Muka (DP) Disepakati</b>", body_style), Paragraph(f": <b>{curr} {nominal_dp:,}</b>", body_style)],
         [Paragraph("<b>Jangka Waktu (Tenor)</b>", body_style), Paragraph(f": {tenor_bulan} Bulan", body_style)],
@@ -224,9 +235,9 @@ def generate_spk_pdf(
         ]
         for it in items_bundling:
             bundling_table.append([
-                Paragraph(it.get("nama", "-"), body_style),
-                Paragraph(it.get("kategori", "Aksesoris"), body_style),
-                Paragraph(it.get("biaya", "Termasuk Promo"), body_style)
+                Paragraph(_pdf_text(it.get("nama", "-")), body_style),
+                Paragraph(_pdf_text(it.get("kategori", "Aksesoris")), body_style),
+                Paragraph(_pdf_text(it.get("biaya", "Termasuk Promo")), body_style)
             ])
         t_bundling = Table(bundling_table, colWidths=[240, 140, 140])
         t_bundling.setStyle(TableStyle([
@@ -240,14 +251,14 @@ def generate_spk_pdf(
 
     # 4. KLAUSUL HUKUM & TANDA TANGAN
     klausul_teks = profil.get("klausul_resmi", "*Dokumen diterbitkan secara otomatis oleh Agentic Sales Hub lokal. Sah sebagai bukti pemesanan unit dan pengajuan pembiayaan.")
-    story.append(Paragraph(f"<i>{klausul_teks}</i>", subtitle_style))
+    story.append(Paragraph(f"<i>{_pdf_text(klausul_teks)}</i>", subtitle_style))
     story.append(Spacer(1, 30))
 
     ttd_data = [
         [Paragraph("Pemohon / Pembeli,", subtitle_style), Paragraph("Petugas Sales Dealer,", subtitle_style)],
         ["", ""],
         ["", ""],
-        [Paragraph(f"( <b>{nama_konsumen}</b> )", subtitle_style), Paragraph("( <b>Sales Executive</b> )", subtitle_style)]
+        [Paragraph(f"( <b>{_pdf_text(nama_konsumen)}</b> )", subtitle_style), Paragraph("( <b>Sales Executive</b> )", subtitle_style)]
     ]
     t_ttd = Table(ttd_data, colWidths=[260, 260])
     t_ttd.setStyle(TableStyle([
