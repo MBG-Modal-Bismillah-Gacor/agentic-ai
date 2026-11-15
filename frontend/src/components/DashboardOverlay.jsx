@@ -1465,7 +1465,7 @@ export function DashboardOverlay({
               {/* Draft WhatsApp Preview */}
               <div>
                 <label className="text-xs font-bold text-[#192A56] block mb-1.5">
-                  Draf Pesan Penawaran (Dihasilkan oleh Qwen 2.5 Local):
+                  Draf Pesan Penawaran Sales:
                 </label>
                 <textarea
                   rows={4}

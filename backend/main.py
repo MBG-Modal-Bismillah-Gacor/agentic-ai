@@ -1362,7 +1362,7 @@ def approve_outreach(req: ApprovalRequest):
                 f"💰 *DP Disetujui:* Rp {nominal_dp:,} (Min. 15%)\n"
                 f"📊 *Skema Angsuran:* Tenor {tenor_bulan}x @ Rp {angsuran:,}/bln\n"
                 f"🎁 *Paket Promo & Bundling:* {bundling_desc}\n\n"
-                f"💬 *Draf Penawaran Sales (Qwen 2.5 Local):*\n_{pesan_final}_\n\n"
+                f"{pesan_final}\n\n"
                 f"📄 *Berkas Resmi SPK Penjualan terbit dan dilampirkan:*"
             ),
             pdf_path=full_pdf_path if os.path.exists(full_pdf_path) else None,
