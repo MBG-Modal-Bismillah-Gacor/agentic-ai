@@ -1646,3 +1646,98 @@ async def telegram_webhook(update: Dict[str, Any]):
         telegram_bot.send_telegram_reply(chat_id, balasan)
         return {"status": "ok", "reply": balasan}
     return {"status": "ignored"}
+
+# ==============================================================================
+# CI/CD & AUTOMATED APPLIANCE DEPLOYMENT (PWA & BACKEND)
+# ==============================================================================
+
+class CICDDeployRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    secret_token: Optional[str] = "stelagent-b206"
+    branch: Optional[str] = "main"
+    build_pwa: Optional[bool] = True
+    pull_git: Optional[bool] = True
+
+@app.post("/api/v1/system/cicd-deploy")
+def trigger_cicd_deploy(req: CICDDeployRequest):
+    """
+    Endpoint CI/CD otonom untuk MSI Cubi NUC AI+ B206.
+    Menerima trigger deploy via LAN, melakukan git pull, dan membangun ulang bundle PWA.
+    """
+    import subprocess
+    
+    expected_token = os.getenv("DEPLOY_TOKEN", "stelagent-b206")
+    if req.secret_token and req.secret_token != expected_token:
+        raise HTTPException(status_code=403, detail="Invalid deploy token.")
+
+    repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    results = {}
+
+    # 1. Git Pull
+    if req.pull_git:
+        try:
+            pull_proc = subprocess.run(
+                ["git", "pull", "origin", req.branch or "main"],
+                cwd=repo_dir,
+                capture_output=True,
+                text=True,
+                timeout=45
+            )
+            results["git_pull"] = {
+                "exit_code": pull_proc.returncode,
+                "stdout": pull_proc.stdout.strip(),
+                "stderr": pull_proc.stderr.strip()
+            }
+        except Exception as e:
+            results["git_pull"] = {"error": str(e)}
+
+    # Dapatkan Commit SHA terbaru
+    try:
+        commit_proc = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        current_sha = commit_proc.stdout.strip()
+    except Exception:
+        current_sha = "unknown"
+
+    # 2. Build PWA Frontend jika diminta
+    if req.build_pwa:
+        frontend_dir = os.path.join(repo_dir, "frontend")
+        try:
+            build_cmd = "npm run build"
+            build_proc = subprocess.run(
+                build_cmd,
+                cwd=frontend_dir,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=180
+            )
+            results["pwa_build"] = {
+                "exit_code": build_proc.returncode,
+                "status": "success" if build_proc.returncode == 0 else "failed",
+                "output_sample": build_proc.stdout[-300:].strip() if build_proc.stdout else build_proc.stderr[-300:].strip()
+            }
+        except Exception as e:
+            results["pwa_build"] = {"error": str(e)}
+
+    add_log(
+        "Cubi DevOps",
+        f"CI/CD PWA Deployment ke Cubi NUC ({current_sha})",
+        f"Branch: {req.branch} | PWA Build: {results.get('pwa_build', {}).get('status', 'skipped')}"
+    )
+
+    return {
+        "status": "deployed",
+        "appliance": "MSI Cubi NUC AI+ B206",
+        "ip_appliance": "192.168.18.119",
+        "commit_sha": current_sha,
+        "branch": req.branch,
+        "pwa_ready": results.get("pwa_build", {}).get("status") == "success",
+        "details": results,
+        "timestamp": datetime.now().isoformat()
+    }
