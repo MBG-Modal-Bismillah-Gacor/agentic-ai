@@ -269,7 +269,7 @@ export function DashboardView({
             agent: activeTarget.name,
             time: timeStr,
             action: 'Turnstile Gate Diperiksa',
-            detail: `Verifikasi keamanan transmisi oleh ${activeTarget.name} selesai. WhatsApp dispatch disetujui.`,
+            detail: `Verifikasi keamanan transmisi oleh ${activeTarget.name} selesai. Telegram dispatch disetujui.`,
             type: 'agent'
           },
           ...prev
@@ -558,7 +558,7 @@ export function DashboardView({
             </div>
             <div className="text-[10px] text-emerald-700 font-bold mt-2 pt-2 border-t border-[#192A56]/10 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
-              <span>WHATSAPP DISPATCHED</span>
+              <span>TELEGRAM DISPATCHED</span>
             </div>
           </div>
 
@@ -992,7 +992,7 @@ export function DashboardView({
                     </span>
                   </h2>
                   <span className="text-xs text-[#576574] font-medium">
-                    Pilih prospek untuk memicu alur verifikasi stok &amp; draf WhatsApp otonom
+                    Pilih prospek untuk memicu alur verifikasi stok &amp; draf Telegram otonom
                   </span>
                 </div>
 

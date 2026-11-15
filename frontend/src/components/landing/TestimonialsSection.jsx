@@ -39,7 +39,7 @@ export function TestimonialsSection() {
       name: 'Alfa',
       initials: 'AF',
       pos: 'Showroom Digital Director & Sales Automation Lead',
-      quote: 'Dengan arsitektur turnstile approval, pimpinan memiliki kendali veto penuh sebelum penawaran motor dikirim via WhatsApp. Tidak ada risiko salah harga atau diskon sepihak oleh AI.',
+      quote: 'Dengan arsitektur turnstile approval, pimpinan memiliki kendali veto penuh sebelum penawaran motor dikirim via Telegram. Tidak ada risiko salah harga atau diskon sepihak oleh AI.',
       social: 'https://linkedin.com'
     },
     {

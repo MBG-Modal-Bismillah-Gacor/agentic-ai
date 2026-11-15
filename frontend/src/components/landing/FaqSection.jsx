@@ -10,7 +10,7 @@ export function FaqSection() {
     },
     {
       q: 'Apakah pimpinan tetap memegang kendali sebelum penawaran dikirim?',
-      a: 'Ya. Sistem turnstile Human-in-the-Loop mewajibkan verifikasi direktur untuk penawaran atau diskon di atas limit sebelum bot WhatsApp mengeksekusi pengiriman kepada konsumen.'
+      a: 'Ya. Sistem turnstile Human-in-the-Loop mewajibkan verifikasi direktur untuk penawaran atau diskon di atas limit sebelum bot Telegram mengeksekusi pengiriman berkas SPK kepada konsumen.'
     },
     {
       q: 'Berapa banyak agen AI yang dapat aktif bersamaan dalam satu jaringan mesh?',

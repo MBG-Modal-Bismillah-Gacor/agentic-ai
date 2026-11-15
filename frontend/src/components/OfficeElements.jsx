@@ -364,7 +364,7 @@ export function KanbanGlassBoard({
             {(lead.nama || lead.id_lead || `SENT-${idx + 1}`).substring(0, 14)}
           </Text>
           <Text position={[-0.24, -0.04, 0.01]} fontSize={0.032} color="#6ee7b7" anchorX="left" anchorY="middle">
-            WhatsApp Dispatched
+            Telegram Dispatched
           </Text>
         </group>
       ))}

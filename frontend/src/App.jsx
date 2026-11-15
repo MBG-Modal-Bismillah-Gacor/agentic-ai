@@ -213,7 +213,7 @@ const DEFAULT_AGENTS = {
     isWalking: false,
     isTyping: false,
     isScanning: false,
-    statusText: 'WhatsApp Gateway Standby',
+    statusText: 'Telegram Gateway Standby',
     station: 'Meja Resepsionis',
   },
   'orange-agent': {
@@ -640,7 +640,7 @@ export default function App() {
               isWalking: false,
               isTyping: false,
               targetPos: STATIONS.security_gate,
-              statusText: 'WhatsApp Gateway Standby',
+              statusText: 'Telegram Gateway Standby',
             },
             'orange-agent': {
               ...prev['orange-agent'],
@@ -745,7 +745,7 @@ export default function App() {
             rotationY: 0,
             isWalking: true,
             isTyping: false,
-            statusText: 'Laporan Gateway WhatsApp di Meja Rapat',
+            statusText: 'Laporan Gateway Telegram di Meja Rapat',
           },
           'orange-agent': {
             ...prev['orange-agent'],
@@ -786,7 +786,7 @@ export default function App() {
               isWalking: false,
               isTyping: false,
               targetPos: STATIONS.meeting_green,
-              statusText: 'Laporan Gateway WhatsApp di Meja Rapat',
+              statusText: 'Laporan Gateway Telegram di Meja Rapat',
             },
             'orange-agent': {
               ...prev['orange-agent'],
@@ -918,13 +918,14 @@ export default function App() {
       }
     }
 
-    // 5. Perintah Resepsionis / Tamu / Gateway WhatsApp
+    // 5. Perintah Resepsionis / Tamu / Gateway Telegram
     if (
       cmd.includes('resepsionis') ||
       cmd.includes('reception') ||
       cmd.includes('tamu') ||
       cmd.includes('pintu') ||
       cmd.includes('gate') ||
+      cmd.includes('telegram') ||
       cmd.includes('whatsapp')
     ) {
       const targetId = (!isGlobal && selectedAgentId) ? selectedAgentId : 'green-agent'
@@ -937,7 +938,7 @@ export default function App() {
           targetPos: STATIONS.security_gate,
           rotationY: -Math.PI / 2,
           isWalking: true,
-          statusText: 'Siaga Tamu & WhatsApp Dispatch',
+          statusText: 'Siaga Tamu & Telegram Dispatch',
         },
       }))
 
@@ -1046,7 +1047,7 @@ export default function App() {
                 : selectedAgentId === 'blue-agent'
                 ? 'Monitoring Stock & Catalog'
                 : selectedAgentId === 'green-agent'
-                ? 'WhatsApp Gateway Standby'
+                ? 'Telegram Gateway Standby'
                 : 'Database & Inventory Synced',
           },
         }))
@@ -1410,7 +1411,7 @@ export default function App() {
           'green-agent': {
             ...prev['green-agent'],
             isScanning: true,
-            statusText: `Draf siap! Menunggu otorisasi Direktur untuk WhatsApp Dispatch`,
+            statusText: `Draf siap! Menunggu otorisasi Direktur untuk Telegram Dispatch`,
           },
         }))
         fetchData()
@@ -1438,7 +1439,7 @@ export default function App() {
           'green-agent': {
             ...prev['green-agent'],
             isScanning: true,
-            statusText: `Draf siap! Menunggu otorisasi Direktur untuk WhatsApp Dispatch`,
+            statusText: `Draf siap! Menunggu otorisasi Direktur untuk Telegram Dispatch`,
           },
         }))
       }
@@ -1489,7 +1490,7 @@ export default function App() {
         'purple-agent': {
           ...prev['purple-agent'],
           isTyping: true,
-          statusText: `Menyusun draf WhatsApp personal via model Qwen 2.5...`,
+          statusText: `Menyusun draf Telegram personal via model Qwen 2.5...`,
         },
         'blue-agent': {
           ...prev['blue-agent'],
@@ -1508,7 +1509,7 @@ export default function App() {
     }, 1000)
   }
 
-  // Aksi: Setujui & Dispatch WhatsApp ke Calon Konsumen
+  // Aksi: Setujui & Dispatch Telegram ke Calon Konsumen
   const handleApprovePitch = async (payload) => {
     if (!payload) {
       setPitchResult(null)
@@ -1516,14 +1517,14 @@ export default function App() {
         ...prev,
         'green-agent': {
           ...prev['green-agent'],
-          statusText: 'WhatsApp Gateway Standby',
+          statusText: 'Telegram Gateway Standby',
           targetPos: STATIONS.security_gate,
         },
       }))
       return
     }
 
-    // Cubi Gate mengaktifkan transmisi pengiriman WhatsApp
+    // Cubi Gate mengaktifkan transmisi pengiriman Telegram
     setSelectedAgentId('green-agent')
     setAgents((prev) => ({
       ...prev,

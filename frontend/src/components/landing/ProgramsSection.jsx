@@ -34,7 +34,7 @@ export function ProgramsSection({ onNavigate }) {
     { num: '04', name: 'Draf Penawaran AI', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacb349c345d241a0bc9f_KOLs-Management.svg' },
     { num: '05', name: 'Verifikasi Swarm', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacca4748929ef2d7590c_Top-CEXs.svg' },
     { num: '06', name: 'Otorisasi Pimpinan', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aace04f85ccf9a4f3361d_Tokenization-Strategy-Design.svg' },
-    { num: '07', name: 'Kirim Pesan WhatsApp', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacf559a32012ab873e83_GTM-Marketing-support.svg' },
+    { num: '07', name: 'Kirim Pesan Telegram', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacf559a32012ab873e83_GTM-Marketing-support.svg' },
     { num: '08', name: 'Negosiasi & Follow-up', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad0bba648054c1bd5bde_Website-Design-Development.svg' },
     { num: '09', name: 'Penerbitan SPK', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad34133a6f4f73f76568_PR-strategy.svg' },
     { num: '10', name: 'Enkripsi Berkas Lokal', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad4a28225aa07c06018d_Post-TGE-strategies.svg' },

@@ -215,7 +215,7 @@ export function DashboardOverlay({
     const roleFeatures = {
       'blue-agent': { station: 'Workstation 01', feature: 'Local Hardware Compute & Stock', tokens: '14,850 tok' },
       'purple-agent': { station: 'Workstation 02', feature: 'Qwen 2.5 3B Local AI Drafter', tokens: '28,420 tok' },
-      'green-agent': { station: 'Meja Resepsionis', feature: 'WhatsApp Cloud Gateway', tokens: '8,920 tok' },
+      'green-agent': { station: 'Meja Resepsionis', feature: 'Telegram Bot Gateway', tokens: '8,920 tok' },
       'orange-agent': { station: 'Server Vault & Data Archive', feature: 'Persistent CSV Data Vault', tokens: '6,100 tok' },
     }
     const feat = roleFeatures[ag?.id] || { station: 'Workstation', feature: 'MSI Cubi NUC Appliance', tokens: '12,840 tok' }
@@ -1093,10 +1093,10 @@ export function DashboardOverlay({
                         {agents?.['green-agent']?.name || 'Cubi Gate'}
                       </span>
                       <span className="text-[10px]" style={{ color: selectedAgentId === 'green-agent' ? '#E2E8F0' : '#576574' }}>
-                        Approval &amp; WhatsApp
+                        Approval &amp; Telegram
                       </span>
                       <span className="text-[9.5px] leading-snug mt-0.5 break-words whitespace-normal" style={{ color: selectedAgentId === 'green-agent' ? '#E2E8F0' : '#576574' }}>
-                        Otorisasi SPK &amp; gateway pengiriman WhatsApp
+                        Otorisasi SPK &amp; gateway pengiriman Telegram
                       </span>
                     </div>
                   </div>
