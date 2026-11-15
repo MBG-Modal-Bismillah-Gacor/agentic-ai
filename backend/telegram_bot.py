@@ -19,10 +19,27 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 import requests
 
-from backend.engine_pdf import generate_spk_pdf
-from backend.dispatcher import SafeOutreachDispatcher
+try:
+    from backend.engine_pdf import generate_spk_pdf
+    from backend.dispatcher import SafeOutreachDispatcher
+except ImportError:
+    from engine_pdf import generate_spk_pdf
+    from dispatcher import SafeOutreachDispatcher
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Load .env file automatically if present
+ENV_FILE = os.path.join(BASE_DIR, ".env")
+if os.path.exists(ENV_FILE):
+    with open(ENV_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip('"').strip("'")
+                if k and k not in os.environ:
+                    os.environ[k] = v
 WORKSPACE = os.path.join(BASE_DIR, "workspace")
 KATALOG_FILE = os.path.join(WORKSPACE, "katalog_produk.csv")
 STOK_FILE = os.path.join(WORKSPACE, "stok_cabang.csv")

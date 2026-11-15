@@ -36,6 +36,22 @@ except ImportError:
     import telegram_bot
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Auto-load backend/.env jika ada
+ENV_FILE = os.path.join(BASE_DIR, ".env")
+if os.path.exists(ENV_FILE):
+    try:
+        with open(ENV_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip('"').strip("'")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+    except Exception:
+        pass
 WORKSPACE = os.path.join(BASE_DIR, "workspace")
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
 
