@@ -1556,6 +1556,9 @@ export default function App() {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Backend tidak dapat dihubungi.'
+      alert(`Pemberitahuan Sistem:\n${message}`)
+      setPitchResult(null)
+      setActiveLead(null)
       setAgents((prev) => ({
         ...prev,
         'green-agent': {

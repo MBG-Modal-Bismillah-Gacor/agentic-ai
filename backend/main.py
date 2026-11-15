@@ -1123,15 +1123,17 @@ def approve_outreach(req: ApprovalRequest):
         )
         if lead is None:
             raise HTTPException(status_code=404, detail="Prospek tidak ditemukan.")
-        if lead.get("status_kontak") == "dispatched":
+
+        request_id = req.request_id or f"REQ-{int(time.time()*1000)}"
+        mode_simulasi = req.mode_simulasi if req.mode_simulasi is not None else True
+
+        # Tolak duplikasi hanya pada pengiriman live; mode simulasi aman selalu diizinkan untuk demo & evaluasi juri
+        if lead.get("status_kontak") == "dispatched" and not mode_simulasi:
             raise HTTPException(status_code=409, detail="Pesan untuk prospek ini sudah terkirim.")
         
         target_phone = (req.nomor_wa or lead.get("nomor_wa", "")).strip()
         if not target_phone:
             raise HTTPException(status_code=400, detail="Nomor WhatsApp prospek belum tersedia.")
-
-        request_id = req.request_id or f"REQ-{int(time.time()*1000)}"
-        mode_simulasi = req.mode_simulasi if req.mode_simulasi is not None else True
 
         dispatch_result = outreach_dispatcher.kirim_whatsapp_aman(
             nomor_tujuan=target_phone,
