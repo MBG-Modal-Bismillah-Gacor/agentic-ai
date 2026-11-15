@@ -34,13 +34,28 @@ fi
 # 3. Jalankan Backend FastAPI
 echo "[3/4] Menjalankan Backend FastAPI (Port 8000)..."
 cd "$BASE_DIR" || exit 1
-if [ -d ".venv" ]; then
-    source .venv/bin/activate
+
+PYTHON_BIN="python3"
+if [ -f "$BASE_DIR/.venv/bin/python3" ]; then
+    PYTHON_BIN="$BASE_DIR/.venv/bin/python3"
+elif [ -f "$BASE_DIR/.venv/bin/python" ]; then
+    PYTHON_BIN="$BASE_DIR/.venv/bin/python"
+elif [ -f "$BASE_DIR/backend/.venv/bin/python" ]; then
+    PYTHON_BIN="$BASE_DIR/backend/.venv/bin/python"
 fi
-nohup python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > "$BASE_DIR/backend.log" 2>&1 &
+
+nohup "$PYTHON_BIN" -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > "$BASE_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
 disown $BACKEND_PID 2>/dev/null || true
-sleep 2
+sleep 3
+
+# Verifikasi apakah Port 8000 hidup
+if ! curl -s http://127.0.0.1:8000/api/v1/system/health >/dev/null 2>&1; then
+    echo "       ⚠️ PERINGATAN: Backend gagal start. Menampilkan log backend.log:"
+    tail -n 15 "$BASE_DIR/backend.log"
+else
+    echo "       ✅ Backend FastAPI aktif di port 8000."
+fi
 
 # 4. Jalankan Frontend
 echo "[4/4] Menjalankan Frontend Virtual Office (Port 3000)..."
