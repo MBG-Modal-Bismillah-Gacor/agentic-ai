@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { RobotMascotCanvas } from './RobotMascotCanvas'
 
 export function HeroSection({ onNavigate }) {
   const [sliderOffset, setSliderOffset] = useState(0)
+  const [itemsPerView, setItemsPerView] = useState(4)
   const heroRobotRef = useRef(null)
 
   const partners = [
@@ -72,12 +73,25 @@ export function HeroSection({ onNavigate }) {
     },
   ]
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) setItemsPerView(1)
+      else if (window.innerWidth < 1024) setItemsPerView(2)
+      else setItemsPerView(4)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const maxOffset = Math.max(0, partners.length - itemsPerView)
+
   const handleNext = () => {
-    setSliderOffset((prev) => (prev + 1) % (partners.length - 3))
+    setSliderOffset((prev) => (prev >= maxOffset ? 0 : prev + 1))
   }
 
   const handlePrev = () => {
-    setSliderOffset((prev) => (prev > 0 ? prev - 1 : Math.max(0, partners.length - 4)))
+    setSliderOffset((prev) => (prev <= 0 ? maxOffset : prev - 1))
   }
 
   return (
@@ -242,30 +256,30 @@ export function HeroSection({ onNavigate }) {
 
             {/* Partners Header & Nav Controls */}
             <div id="w-node-_3ed4ddf5-96e2-2d95-cc00-99d4d88a966e-ef5b982d" className="hero-partners">
-              <div className="hero-partners-title">PARTNER TEKNOLOGI:</div>
+              <div className="hero-partners-title">TEKNOLOGI YANG DIGUNAKAN:</div>
               <div className="hero-partners-nav-col">
                 <div className="hero-partners-nav">
                   <div
                     onClick={handlePrev}
                     id="hero-partners-prev-btn"
-                    className="hero-partners-button group"
-                    style={{ cursor: 'pointer' }}
+                    className="hero-partners-button group hover:!bg-[#192A56] transition-colors cursor-pointer"
+                    title="Teknologi Sebelumnya"
                   >
-                    <div className="hero-partners-button-image partners-arrow w-embed">
+                    <div className="hero-partners-button-image partners-arrow w-embed flex items-center justify-center">
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14.3212 2.91429C14.3212 2.40934 13.9118 2 13.4069 2H11.5783C11.0734 2 10.664 2.40934 10.664 2.91429V4.28571C10.664 4.79066 10.2547 5.2 9.74975 5.2H8.37832C7.87337 5.2 7.46404 5.60934 7.46404 6.11429V7.48571C7.46404 7.99066 7.0547 8.4 6.54975 8.4H5.17832C4.67338 8.4 4.26404 8.80934 4.26404 9.31429V11.1429C4.26404 11.6478 4.67338 12.0571 5.17832 12.0571H7.00689C7.51184 12.0571 7.92118 12.4665 7.92118 12.9714V13.8857C7.92118 14.3907 8.33052 14.8 8.83546 14.8H10.2069C10.7118 14.8 11.1212 15.2093 11.1212 15.7143V17.0857C11.1212 17.5907 11.5305 18 12.0355 18H13.864C14.369 18 14.7783 17.5907 14.7783 17.0857V15.2571C14.7783 14.7522 14.369 14.3429 13.864 14.3429H12.4926C11.9877 14.3429 11.5783 13.9335 11.5783 13.4286V12.0571C11.5783 11.5522 11.169 11.1429 10.664 11.1429H8.83546C8.33052 11.1429 7.92118 10.7335 7.92118 10.2286V9.77143C7.92118 9.26648 8.33052 8.85714 8.83546 8.85714H10.2069C10.7118 8.85714 11.1212 8.4478 11.1212 7.94286V6.57143C11.1212 6.06648 11.5305 5.65714 12.0355 5.65714H13.4069C13.9118 5.65714 14.3212 5.2478 14.3212 4.74286V2.91429Z" fill="currentColor" className="text-[#192A56] group-hover:fill-white group-active:fill-white transition-colors" />
+                        <path d="M14.3212 2.91429C14.3212 2.40934 13.9118 2 13.4069 2H11.5783C11.0734 2 10.664 2.40934 10.664 2.91429V4.28571C10.664 4.79066 10.2547 5.2 9.74975 5.2H8.37832C7.87337 5.2 7.46404 5.60934 7.46404 6.11429V7.48571C7.46404 7.99066 7.0547 8.4 6.54975 8.4H5.17832C4.67338 8.4 4.26404 8.80934 4.26404 9.31429V11.1429C4.26404 11.6478 4.67338 12.0571 5.17832 12.0571H7.00689C7.51184 12.0571 7.92118 12.4665 7.92118 12.9714V13.8857C7.92118 14.3907 8.33052 14.8 8.83546 14.8H10.2069C10.7118 14.8 11.1212 15.2093 11.1212 15.7143V17.0857C11.1212 17.5907 11.5305 18 12.0355 18H13.864C14.369 18 14.7783 17.5907 14.7783 17.0857V15.2571C14.7783 14.7522 14.369 14.3429 13.864 14.3429H12.4926C11.9877 14.3429 11.5783 13.9335 11.5783 13.4286V12.0571C11.5783 11.5522 11.169 11.1429 10.664 11.1429H8.83546C8.33052 11.1429 7.92118 10.7335 7.92118 10.2286V9.77143C7.92118 9.26648 8.33052 8.85714 8.83546 8.85714H10.2069C10.7118 8.85714 11.1212 8.4478 11.1212 7.94286V6.57143C11.1212 6.06648 11.5305 5.65714 12.0355 5.65714H13.4069C13.9118 5.65714 14.3212 5.2478 14.3212 4.74286V2.91429Z" fill="currentColor" className="text-[#192A56] group-hover:text-white group-active:text-white transition-colors" />
                       </svg>
                     </div>
                   </div>
                   <div
                     onClick={handleNext}
                     id="hero-partners-next-btn"
-                    className="hero-partners-button group"
-                    style={{ cursor: 'pointer' }}
+                    className="hero-partners-button group hover:!bg-[#192A56] transition-colors cursor-pointer"
+                    title="Teknologi Berikutnya"
                   >
-                    <div className="hero-partners-button-image partners-arrow w-embed">
+                    <div className="hero-partners-button-image partners-arrow w-embed flex items-center justify-center">
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5.67882 2.91429C5.67882 2.40934 6.08816 2 6.59311 2H8.42168C8.92663 2 9.33597 2.40934 9.33597 2.91429V4.28571C9.33597 4.79066 9.7453 5.2 10.2503 5.2H11.6217C12.1266 5.2 12.536 5.60934 12.536 6.11429V7.48571C12.536 7.99066 12.9453 8.4 13.4503 8.4H14.8217C15.3266 8.4 15.736 8.80934 15.736 9.31429V11.1429C15.736 11.6478 15.3266 12.0571 14.8217 12.0571H12.9931C12.4882 12.0571 12.0788 12.4665 12.0788 12.9714V13.8857C12.0788 14.3907 11.6695 14.8 11.1645 14.8H9.79311C9.28816 14.8 8.87882 15.2093 8.87882 15.7143V17.0857C8.87882 17.5907 8.46948 18 7.96454 18H6.13597C5.63102 18 5.22168 17.5907 5.22168 17.0857V15.2571C5.22168 14.7522 5.63102 14.3429 6.13597 14.3429H7.50739C8.01234 14.3429 8.42168 13.9335 8.42168 13.4286V12.0571C8.42168 11.5522 8.83102 11.1429 9.33597 11.1429H11.1645C11.6695 11.1429 12.0788 10.7335 12.0788 10.2286V9.77143C12.0788 9.26648 11.6695 8.85714 11.1645 8.85714H9.79311C9.28816 8.85714 8.87882 8.4478 8.87882 7.94286V6.57143C8.87882 6.06648 8.46948 5.65714 7.96454 5.65714H6.59311C6.08816 5.65714 5.67882 5.2478 5.67882 4.74286V2.91429Z" fill="currentColor" />
+                        <path d="M5.67882 2.91429C5.67882 2.40934 6.08816 2 6.59311 2H8.42168C8.92663 2 9.33597 2.40934 9.33597 2.91429V4.28571C9.33597 4.79066 9.7453 5.2 10.2503 5.2H11.6217C12.1266 5.2 12.536 5.60934 12.536 6.11429V7.48571C12.536 7.99066 12.9453 8.4 13.4503 8.4H14.8217C15.3266 8.4 15.736 8.80934 15.736 9.31429V11.1429C15.736 11.6478 15.3266 12.0571 14.8217 12.0571H12.9931C12.4882 12.0571 12.0788 12.4665 12.0788 12.9714V13.8857C12.0788 14.3907 11.6695 14.8 11.1645 14.8H9.79311C9.28816 14.8 8.87882 15.2093 8.87882 15.7143V17.0857C11.1212 17.5907 8.46948 18 7.96454 18H6.13597C5.63102 18 5.22168 17.5907 5.22168 17.0857V15.2571C5.22168 14.7522 5.63102 14.3429 6.13597 14.3429H7.50739C8.01234 14.3429 8.42168 13.9335 8.42168 13.4286V12.0571C8.42168 11.5522 8.83102 11.1429 9.33597 11.1429H11.1645C11.6695 11.1429 12.0788 10.7335 12.0788 10.2286V9.77143C12.0788 9.26648 11.6695 8.85714 11.1645 8.85714H9.79311C9.28816 8.85714 8.87882 8.4478 8.87882 7.94286V6.57143C8.87882 6.06648 8.46948 5.65714 7.96454 5.65714H6.59311C6.08816 5.65714 5.67882 5.2478 5.67882 4.74286V2.91429Z" fill="currentColor" className="text-[#192A56] group-hover:text-white group-active:text-white transition-colors" />
                       </svg>
                     </div>
                   </div>
@@ -314,20 +328,28 @@ export function HeroSection({ onNavigate }) {
 
         </div>
 
-        {/* Partner Slider Strip - Enlarged & Prominently Styled (Matching rfhero.png) */}
-        <div className="hero-slider border-t border-b border-[#192A56]/20 bg-white">
-          <div className="swiper overflow-visible w-dyn-list">
+        {/* Partner Slider Strip - Fixed Uniform Width Cards with Infinite Loop */}
+        <div className="hero-slider border-t border-b border-[#192A56]/20 bg-white w-full overflow-hidden">
+          <div className="w-full overflow-hidden">
             <div
               role="list"
-              className="swiper-wrapper hero-slider-swiper-wrapper w-dyn-items"
+              className="flex transition-transform duration-500 ease-out"
               style={{
-                transform: `translateX(-${sliderOffset * 25}%)`,
-                transition: 'transform 0.4s ease'
+                transform: `translateX(-${(sliderOffset / partners.length) * 100}%)`,
+                width: `${(partners.length / itemsPerView) * 100}%`
               }}
             >
               {partners.map((partner, idx) => (
-                <div key={idx} role="listitem" className="swiper-slide w-dyn-item" style={{ width: '25%' }}>
-                  <div className="hero-partner border-r border-[#192A56]/20 min-h-[112px] sm:min-h-[128px] flex items-center justify-center p-4 sm:p-6 relative bg-white hover:bg-slate-50 transition-colors">
+                <div
+                  key={idx}
+                  role="listitem"
+                  className="shrink-0"
+                  style={{
+                    width: `${100 / partners.length}%`,
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <div className="border-r border-[#192A56]/20 min-h-[112px] sm:min-h-[128px] h-full flex items-center justify-center p-4 sm:p-6 relative bg-white hover:bg-slate-50 transition-colors">
                     <a
                       href={partner.link}
                       target="_blank"

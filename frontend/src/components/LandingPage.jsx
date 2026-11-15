@@ -24,121 +24,127 @@ export function LandingPage({
 }) {
   const lenisRef = useRef(null)
 
-  // Inisialisasi Smooth Scroll Lenis + GSAP ScrollTrigger Integration
+  // Inisialisasi Smooth Scroll Lenis + GSAP ScrollTrigger Integration (Aman & Tahan Transisi Rute)
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.4,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 0.82,
-      touchMultiplier: 1.2,
-      infinite: false,
-    })
+    let lenis = null
+    let ctx = null
+    let handleAnchorClick = null
+    let updateLenis = null
 
-    lenisRef.current = lenis
+    try {
+      lenis = new Lenis({
+        duration: 1.4,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: 'vertical',
+        gestureOrientation: 'vertical',
+        smoothWheel: true,
+        wheelMultiplier: 0.82,
+        touchMultiplier: 1.2,
+        infinite: false,
+      })
 
-    // Sinkronisasi GSAP ScrollTrigger dengan Lenis scroll event
-    lenis.on('scroll', ScrollTrigger.update)
+      lenisRef.current = lenis
+      lenis.on('scroll', ScrollTrigger.update)
 
-    // Ticker loop GSAP mengemudikan Lenis RAF (100% frame-perfect sync)
-    const updateLenis = (time) => {
-      lenis.raf(time * 1000)
-    }
-    gsap.ticker.add(updateLenis)
-    gsap.ticker.lagSmoothing(0)
+      updateLenis = (time) => {
+        lenis?.raf(time * 1000)
+      }
+      gsap.ticker.add(updateLenis)
+      gsap.ticker.lagSmoothing(0)
 
-    // Tangkap klik anchor menu navigasi agar meluncur halus
-    const handleAnchorClick = (e) => {
-      const anchor = e.target.closest('a[href^="#"]')
-      if (anchor) {
-        const href = anchor.getAttribute('href')
-        if (href && href.startsWith('#') && href.length > 1) {
-          e.preventDefault()
-          const targetEl = document.querySelector(href)
-          if (targetEl) {
-            lenis.scrollTo(targetEl, {
-              offset: -70,
-              duration: 1.2,
-              easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            })
+      handleAnchorClick = (e) => {
+        const anchor = e.target.closest('a[href^="#"]')
+        if (anchor) {
+          const href = anchor.getAttribute('href')
+          if (href && href.startsWith('#') && href.length > 1) {
+            e.preventDefault()
+            const targetEl = document.querySelector(href)
+            if (targetEl && lenis) {
+              lenis.scrollTo(targetEl, {
+                offset: -70,
+                duration: 1.2,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+              })
+            }
           }
         }
       }
+
+      document.addEventListener('click', handleAnchorClick)
+
+      ctx = gsap.context(() => {
+        const revealTargets = [
+          '.section-heading',
+          '.team-card',
+          '.testimonials-item',
+          '.portfolio-item',
+          '.media-item',
+          '.accordion',
+        ]
+
+        revealTargets.forEach((targetSelector) => {
+          const items = gsap.utils.toArray(targetSelector)
+          items.forEach((item) => {
+            gsap.fromTo(
+              item,
+              { opacity: 0, y: 20 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.65,
+                ease: 'power2.out',
+                scrollTrigger: {
+                  trigger: item,
+                  start: 'top 90%',
+                  toggleActions: 'play none none none',
+                },
+              }
+            )
+          })
+        })
+
+        const heroEl = document.getElementById('hero-section')
+        const capEl = document.getElementById('Capital-Incubation-Section')
+        if (heroEl && capEl) {
+          ScrollTrigger.create({
+            trigger: heroEl,
+            start: 'top top',
+            endTrigger: capEl,
+            end: 'top top',
+            pin: true,
+            pinSpacing: false,
+            anticipatePin: 1,
+            onUpdate: (self) => {
+              gsap.set(heroEl, {
+                scale: 1 - self.progress * 0.06,
+                opacity: 1 - self.progress * 0.25,
+                transformOrigin: 'center 40%',
+              })
+            },
+            onLeave: () => {
+              heroEl.style.visibility = 'hidden'
+            },
+            onEnterBack: () => {
+              heroEl.style.visibility = 'visible'
+            },
+          })
+        }
+      })
+    } catch (err) {
+      console.warn('Scroll animation initialization bypassed:', err)
     }
 
-    document.addEventListener('click', handleAnchorClick)
-
-    // GSAP ScrollTrigger Batched Reveals untuk Animasi Halus & Presisi
-    const ctx = gsap.context(() => {
-      const revealTargets = [
-        '.section-heading',
-        '.team-card',
-        '.testimonials-item',
-        '.portfolio-item',
-        '.media-item',
-        '.accordion',
-      ]
-
-      revealTargets.forEach((targetSelector) => {
-        const items = gsap.utils.toArray(targetSelector)
-        items.forEach((item) => {
-          gsap.fromTo(
-            item,
-            {
-              opacity: 0,
-              y: 20,
-            },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.65,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: item,
-                start: 'top 90%',
-                toggleActions: 'play none none none',
-              },
-            }
-          )
-        })
-      })
-
-      // Stacking Card Effect: Hero dipin secara presisi HANYA sampai Section 2 selesai menumpuk di atasnya
-      ScrollTrigger.create({
-        trigger: '#hero-section',
-        start: 'top top',
-        endTrigger: '#Capital-Incubation-Section',
-        end: 'top top',
-        pin: true,
-        pinSpacing: false,
-        anticipatePin: 1,
-        onUpdate: (self) => {
-          gsap.set('#hero-section', {
-            scale: 1 - self.progress * 0.06,
-            opacity: 1 - self.progress * 0.25,
-            transformOrigin: 'center 40%',
-          })
-        },
-        onLeave: () => {
-          const el = document.getElementById('hero-section')
-          if (el) el.style.visibility = 'hidden'
-        },
-        onEnterBack: () => {
-          const el = document.getElementById('hero-section')
-          if (el) el.style.visibility = 'visible'
-        },
-      })
-    })
-
     return () => {
-      document.removeEventListener('click', handleAnchorClick)
-      lenis.off('scroll', ScrollTrigger.update)
-      gsap.ticker.remove(updateLenis)
-      ctx.revert()
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill())
-      lenis.destroy()
+      try {
+        if (handleAnchorClick) document.removeEventListener('click', handleAnchorClick)
+        if (lenis) lenis.off('scroll', ScrollTrigger.update)
+        if (updateLenis) gsap.ticker.remove(updateLenis)
+        if (ctx) ctx.revert()
+        ScrollTrigger.getAll().forEach((trigger) => trigger.kill())
+        if (lenis) lenis.destroy()
+      } catch (err) {
+        console.warn('Scroll animation cleanup bypassed:', err)
+      }
     }
   }, [])
 
