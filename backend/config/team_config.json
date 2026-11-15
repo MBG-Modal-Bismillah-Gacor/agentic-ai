@@ -9,7 +9,10 @@
       -8.36,
       0.33,
       0.36
-    ]
+    ],
+    "emoji": "DIRECTOR",
+    "vibe": "Qualifies deals like a surgeon and kills happy ears on contact.",
+    "personaId": "sales-deal-strategist"
   },
   "agents": {
     "blue-agent": {
@@ -33,7 +36,10 @@
       "isWalking": false,
       "isTyping": true,
       "isScanning": false,
-      "statusText": "Monitoring Stock & Catalog"
+      "statusText": "Monitoring Stock & Catalog",
+      "emoji": "COMPUTE",
+      "vibe": "Connects technical specs directly to customer ROI.",
+      "personaId": "sales-engineer"
     },
     "purple-agent": {
       "id": "purple-agent",
@@ -56,7 +62,10 @@
       "isWalking": false,
       "isTyping": true,
       "isScanning": false,
-      "statusText": "Sprint Task Ready"
+      "statusText": "Sprint Task Ready",
+      "emoji": "DRAFTER",
+      "vibe": "Turns buying signals into booked meetings before competition notices.",
+      "personaId": "sales-outbound-strategist"
     },
     "green-agent": {
       "id": "green-agent",
@@ -79,7 +88,10 @@
       "isWalking": false,
       "isTyping": false,
       "isScanning": false,
-      "statusText": "WhatsApp Gateway Standby"
+      "statusText": "WhatsApp Gateway Standby",
+      "emoji": "GATE",
+      "vibe": "Tells you your forecast is wrong before you realize it yourself.",
+      "personaId": "sales-pipeline-analyst"
     },
     "orange-agent": {
       "id": "orange-agent",
@@ -102,7 +114,10 @@
       "isWalking": false,
       "isTyping": false,
       "isScanning": false,
-      "statusText": "Database & Inventory Synced"
+      "statusText": "Database & Inventory Synced",
+      "emoji": "VAULT",
+      "vibe": "Expands customer lifetime value through proactive account mastery.",
+      "personaId": "sales-account-strategist"
     }
   }
 }
