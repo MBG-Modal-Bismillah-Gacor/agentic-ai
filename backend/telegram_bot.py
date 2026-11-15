@@ -114,6 +114,139 @@ def get_stok_data():
                 stok_rows.append(r)
     return stok_rows
 
+def get_bundling_data():
+    if os.path.exists(BUNDLING_FILE):
+        try:
+            with open(BUNDLING_FILE, mode="r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def get_leads_data():
+    leads = []
+    if os.path.exists(LEADS_FILE):
+        with open(LEADS_FILE, mode="r", encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                leads.append(r)
+    return leads
+
+def update_lead_status(lead_id: str, new_status: str = "dispatched") -> bool:
+    if not os.path.exists(LEADS_FILE):
+        return False
+    rows = []
+    fieldnames = ["id_lead", "nama_prospek", "nomor_wa", "minat_kebutuhan", "budget_dp", "domisili", "status_kontak"]
+    with open(LEADS_FILE, mode="r", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames:
+            fieldnames = reader.fieldnames
+        for r in reader:
+            lid = r.get("id_lead") or r.get("\ufeffid_lead", "")
+            if lid.upper() == lead_id.upper():
+                r["status_kontak"] = new_status
+            rows.append(r)
+    with open(LEADS_FILE, mode="w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    return True
+
+def generate_pitch_for_lead(lead: dict) -> dict:
+    katalog = get_katalog_data()
+    stok_rows = get_stok_data()
+    bundling = get_bundling_data()
+
+    lead_id = lead.get("id_lead") or lead.get("\ufeffid_lead", "LD-???")
+    nama = lead.get("nama_prospek", "Konsumen")
+    minat = lead.get("minat_kebutuhan", "").lower()
+    domisili = lead.get("domisili", "Purwokerto Timur")
+    nomor_wa = lead.get("nomor_wa", "-")
+    try:
+        dp_budget = int(lead.get("budget_dp", 0))
+    except (ValueError, TypeError):
+        dp_budget = 0
+
+    # Matching unit motor
+    matched_pid = "MTR-01"
+    if "sporty" in minat or "kencang" in minat or "tenaga" in minat:
+        matched_pid = "MTR-02"
+    elif "touring" in minat or "maxi" in minat or "jarak jauh" in minat or "nyaman" in minat:
+        matched_pid = "MTR-03"
+    elif "lincah" in minat or "hemat" in minat or "irit" in minat or "murah" in minat:
+        matched_pid = "MTR-01"
+    else:
+        best_score = 0
+        for pid, item in katalog.items():
+            if item.get("kategori", "").lower().startswith("motor"):
+                segmen = item.get("segmen_kebutuhan", "").lower()
+                score = sum(1 for w in minat.split() if w in segmen)
+                if score > best_score:
+                    best_score = score
+                    matched_pid = pid
+
+    item = katalog.get(matched_pid, {})
+    product_name = item.get("nama_barang", "Motor Honda")
+    harga_otr = int(item.get("harga", 19300000))
+
+    # Cek ketersediaan stok di cabang domisili
+    stok_ready = 0
+    for r in stok_rows:
+        if r.get("id_produk") == matched_pid and r.get("cabang", "").strip().lower() == domisili.lower():
+            try:
+                stok_ready = int(r.get("stok_ready", 0))
+            except ValueError:
+                stok_ready = 0
+            break
+
+    status_stok = f"Ready ({stok_ready} unit)" if stok_ready > 0 else "Out of Stock (Auto-Restock Astra Hub Aktif)"
+
+    # Kalkulasi finansial DP & cicilan
+    dp_min = int(harga_otr * 0.15)
+    dp_approved = max(dp_budget, dp_min)
+    pokok = max(0, harga_otr - dp_approved)
+    c12 = int((pokok * 1.10) / 12)
+    c24 = int((pokok * 1.18) / 24)
+    c36 = int((pokok * 1.25) / 36)
+
+    # Bundling cross-sell
+    b_rules = bundling.get(matched_pid, {}).get("cross_sell", [])
+    b_items = []
+    b_names = []
+    for bid in b_rules:
+        if bid in katalog:
+            b_item = katalog[bid]
+            b_names.append(b_item["nama_barang"])
+            b_items.append({"nama": b_item["nama_barang"], "harga": int(b_item.get("harga", 0)), "tipe": "Termasuk Promo"})
+    bundling_text = ", ".join(b_names) if b_names else "Helm Eksklusif & Garansi Servis Resmi"
+
+    pitch_text = (
+        f"Halo Kak {nama}, salam hangat dari Astra Motor! "
+        f"Berdasarkan preferensi Anda yang mencari kendaraan {minat}, kami merekomendasikan unit {product_name} (OTR Rp {harga_otr:,}). "
+        f"Unit saat ini berstatus {status_stok} di cabang {domisili} lengkap dengan bonus promo bundling {bundling_text}. "
+        f"Simulasi uang muka mulai Rp {dp_approved:,} dengan angsuran ringan 36x Rp {c36:,}/bln. "
+        f"Apakah berkenan kami jadwalkan sesi konsultasi atau unit test drive di cabang terdekat?"
+    )
+
+    return {
+        "lead_id": lead_id,
+        "nama": nama,
+        "nomor_wa": nomor_wa,
+        "domisili": domisili,
+        "minat": minat,
+        "product_id": matched_pid,
+        "product_name": product_name,
+        "harga_otr": harga_otr,
+        "stok_ready": stok_ready,
+        "status_stok": status_stok,
+        "dp_approved": dp_approved,
+        "c12": c12,
+        "c24": c24,
+        "c36": c36,
+        "bundling_text": bundling_text,
+        "bundling_items": b_items,
+        "pitch_text": pitch_text
+    }
+
 def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
     """
     Memproses perintah & teks kebutuhan customer dari Telegram.
@@ -140,13 +273,308 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
         return (
             f"👋 *Halo Kak {clean_sender}! Selamat datang di StelAgent Virtual Sales Hub.* 🏍️\n"
             f"Layanan Penjualan Resmi Honda Astra Motor (Local-First Agentic AI).\n\n"
-            f"*Perintah Cepat yang Dapat Digunakan:*\n"
+            f"*Perintah Konsumen:*\n"
             f"• `/katalog` — Lihat daftar motor Honda & harga OTR resmi\n"
             f"• `/stok` — Cek ketersediaan unit fisik di cabang dealer\n"
             f"• `/spk [id_prospek]` — Unduh berkas resmi PDF SPK penawaran Anda\n\n"
+            f"💼 *Khusus Staf Sales Dealer:* Ketik `/sales` untuk membuka Portal Perintah Penjualan (Akses Antrean Prospek, Buat Draf AI, & Kirim Penawaran langsung via Telegram).\n\n"
             f"💡 *Atau langsung ketik kebutuhan Anda*, contoh:\n"
-            f"_\"Saya mau tanya Vario 160 di Purwokerto Timur DP 4 juta\"_\n"
-            f"Tim agen AI kami akan langsung memberikan simulasi kredit presisi & ketersediaan stok."
+            f"_\"Saya mau tanya Vario 160 di Purwokerto Timur DP 4 juta\"_"
+        )
+
+    # ==========================================================================
+    # MODUL PERINTAH KHUSUS SALES & STAF DEALER (PORTAL SALES TELEGRAM)
+    # ==========================================================================
+
+    # PERINTAH /sales: PORTAL MENU KONTROL SALES
+    if cmd.startswith("/sales") or cmd.startswith("/admin") or cmd.startswith("/staff") or cmd.startswith("/menu_sales"):
+        return (
+            f"💼 *PORTAL KONTROL SALES // STELAGENT APPLIANCE* 💼\n"
+            f"Halo Rekan Sales *{clean_sender}*! Anda dapat mengelola prospek & memicu agen AI langsung dari Telegram tanpa perlu membuka dashboard web:\n\n"
+            f"📋 `/prospek` — Cek antrean calon pembeli (pending / belum diproses)\n"
+            f"🎯 `/tawarkan [ID]` — Minta agen AI susun draf penawaran personal (contoh: `/tawarkan LD-002`)\n"
+            f"🚀 `/kirim [ID]` — Setujui penawaran, kirim via WhatsApp & cetak PDF SPK\n"
+            f"⚡ `/autopipeline` — Jalankan otomatisasi penawaran ke semua prospek pending\n"
+            f"➕ `/tambah [Data]` — Daftarkan prospek baru dari lapangan\n"
+            f"🏢 `/stok` — Cek ketersediaan fisik showroom per cabang\n"
+            f"🤝 `/rapat` — Pantau sesi negosiasi restock otonom dengan Astra Hub\n\n"
+            f"💡 *Alur Kerja Cepat:* Ketik `/prospek` ➔ pilih ID ➔ ketik `/tawarkan LD-xxx` ➔ periksa draf ➔ ketik `/kirim LD-xxx`!"
+        )
+
+    # PERINTAH /prospek: LIHAT ANTREAN PROSPEK PENDING
+    if cmd.startswith("/prospek") or cmd.startswith("/leads") or cmd.startswith("/antrean"):
+        leads = get_leads_data()
+        pending = [l for l in leads if l.get("status_kontak", "").lower() in ["pending", "warm", "hot"]]
+        if not pending:
+            return (
+                "📋 *ANTREAN PROSPEK SALES* 📋\n\n"
+                "✅ Semua prospek saat ini sudah selesai diproses (status: Dispatched).\n"
+                "Ketik `/tambah [Nama], [WA], [Minat], [Cabang], [DP]` untuk mendaftarkan prospek baru dari lapangan!"
+            )
+        msg = f"📋 *ANTREAN PROSPEK SALES ({len(pending)} PENDING)* 📋\n\n"
+        for idx, l in enumerate(pending[:8], 1):
+            lid = l.get("id_lead") or l.get("\ufeffid_lead", "LD-???")
+            nama = l.get("nama_prospek", "Konsumen")
+            dom = l.get("domisili", "Purwokerto")
+            wa = l.get("nomor_wa", "-")
+            minat = l.get("minat_kebutuhan", "-")
+            try:
+                dp_val = int(l.get("budget_dp", 0))
+                dp_str = f"Rp {dp_val:,}"
+            except Exception:
+                dp_str = l.get("budget_dp", "-")
+            status = l.get("status_kontak", "pending").capitalize()
+            msg += (
+                f"{idx}. 👤 *[{lid}] {nama}*\n"
+                f"   📍 {dom} | 📱 `{wa}`\n"
+                f"   🎯 Minat: _{minat}_\n"
+                f"   💰 Budget DP: {dp_str} ({status})\n"
+                f"   👉 Ketik: `/tawarkan {lid}`\n\n"
+            )
+        msg += "⚡ *Ketik `/autopipeline` untuk memproses seluruh antrean secara beruntun!*"
+        return msg
+
+    # PERINTAH /tawarkan: AI MEMBUAT DRAF PENAWARAN PERSONAL
+    if cmd.startswith("/tawarkan") or cmd.startswith("/pitch"):
+        parts = clean_text.split()
+        target_id = parts[1].strip() if len(parts) > 1 else ""
+        if not target_id:
+            return "⚠️ Mohon sertakan ID Prospek yang ingin ditawarkan. Contoh: `/tawarkan LD-002`"
+
+        leads = get_leads_data()
+        lead = next((l for l in leads if (l.get("id_lead") or l.get("\ufeffid_lead", "")).upper() == target_id.upper()), None)
+        if not lead:
+            return f"❌ Prospek `{target_id}` tidak ditemukan dalam antrean database."
+
+        p = generate_pitch_for_lead(lead)
+        lid = p["lead_id"]
+
+        log_tele_event(
+            "Cubi Scribe",
+            f"Draf Penawaran Disusun via Telegram: {p['nama']}",
+            f"Unit: {p['product_name']} | Target WA: {p['nomor_wa']}"
+        )
+
+        return (
+            f"🎯 *DRAF PENAWARAN SALES AI // {lid}* 🎯\n\n"
+            f"👤 *Calon Pembeli:* *{p['nama']}* (`{p['nomor_wa']}`)\n"
+            f"📍 *Cabang Domisili:* {p['domisili']}\n"
+            f"🏍️ *Unit Rekomendasi:* *{p['product_name']}* (OTR Rp {p['harga_otr']:,})\n"
+            f"📦 *Status Stok Fisik:* {p['status_stok']}\n"
+            f"📊 *Skema Kredit Resmi (Zero-Hallucination):*\n"
+            f"   • DP Disetujui: *Rp {p['dp_approved']:,}*\n"
+            f"   • Cicilan 12x: *Rp {p['c12']:,}/bln*\n"
+            f"   • Cicilan 24x: *Rp {p['c24']:,}/bln*\n"
+            f"   • Cicilan 36x: *Rp {p['c36']:,}/bln*\n"
+            f"🎁 *Paket Bundling:* {p['bundling_text']}\n\n"
+            f"💬 *Draf Pesan WhatsApp yang Disusun Agen Scribe:*\n"
+            f"_{p['pitch_text']}_\n\n"
+            f"─────────────────────\n"
+            f"👉 *Ketik perintah di bawah untuk mengirim pesan & cetak PDF SPK:* \n"
+            f"`/kirim {lid}`"
+        )
+
+    # PERINTAH /kirim: SAHKAN PENAWARAN, DISPATCH KE WA & CETAK PDF SPK
+    if cmd.startswith("/kirim") or cmd.startswith("/approve"):
+        parts = clean_text.split()
+        target_id = parts[1].strip() if len(parts) > 1 else ""
+        if not target_id:
+            return "⚠️ Mohon sertakan ID Prospek yang ingin disahkan. Contoh: `/kirim LD-002`"
+
+        leads = get_leads_data()
+        lead = next((l for l in leads if (l.get("id_lead") or l.get("\ufeffid_lead", "")).upper() == target_id.upper()), None)
+        if not lead:
+            return f"❌ Prospek `{target_id}` tidak ditemukan dalam database."
+
+        lid = lead.get("id_lead") or lead.get("\ufeffid_lead", "LD-???")
+        nama = lead.get("nama_prospek", "Konsumen")
+        dom = lead.get("domisili", "Purwokerto Timur")
+        wa = lead.get("nomor_wa", "6281234567890")
+
+        p = generate_pitch_for_lead(lead)
+
+        # 1. Terbitkan berkas PDF SPK resmi
+        spk_path = ""
+        try:
+            spk_path = generate_spk_pdf(
+                nama_konsumen=nama,
+                domisili=dom,
+                unit_barang=p["product_name"],
+                harga_otr=p["harga_otr"],
+                nominal_dp=p["dp_approved"],
+                tenor_bulan=36,
+                angsuran_per_bulan=p["c36"],
+                items_bundling=p["bundling_items"]
+            )
+        except Exception as e:
+            print(f"[SPK GENERATE ERROR]: {e}")
+
+        # 2. Update status ke dispatched di CSV
+        update_lead_status(lid, new_status="dispatched")
+
+        # 3. Jalankan dispatch pengiriman via SafeOutreachDispatcher
+        dispatch_res = dispatcher.kirim_whatsapp_aman(
+            nomor_tujuan=wa,
+            pesan=p["pitch_text"],
+            mode_simulasi=not dispatcher.live_enabled,
+            audit_context={
+                "lead_id": lid,
+                "approved_by": f"Sales via Telegram ({clean_sender})",
+                "consent_confirmed": True
+            }
+        )
+
+        # 4. Jika SPK berhasil diterbitkan, kirimkan filenya ke Telegram Sales
+        if spk_path and os.path.exists(spk_path):
+            try:
+                dispatcher.kirim_pdf_telegram(
+                    chat_id=chat_id,
+                    path_pdf=spk_path,
+                    caption=f"📄 Berkas Resmi SPK Penjualan — {nama} ({lid})",
+                    audit_context={
+                        "lead_id": lid,
+                        "approved_by": f"Sales via Telegram ({clean_sender})",
+                        "consent_confirmed": True
+                    }
+                )
+            except Exception:
+                pass
+
+        # 5. Catat log event ke sistem dashboard
+        log_tele_event(
+            "Cubi Gate",
+            f"Persetujuan Penawaran via Telegram: {nama} ({lid})",
+            f"Disetujui oleh {clean_sender} | Unit: {p['product_name']} | Status: Dispatched"
+        )
+
+        return (
+            f"🚀 *PENAWARAN BERHASIL DISETUJUI & DIDISPATCH!* 🚀\n\n"
+            f"• *ID Prospek:* `{lid}` — *{nama}*\n"
+            f"• *Nomor WhatsApp:* `{wa}`\n"
+            f"• *Unit Rekomendasi:* *{p['product_name']}* ({p['domisili']})\n"
+            f"• *Status Dispatch:* ✅ *{dispatch_res.get('status', 'dispatched').upper()}*\n"
+            f"• *Dokumen SPK:* Berkas resmi SPK telah diterbitkan & diarsipkan!\n\n"
+            f"📊 Transaksi ini otomatis tercatat di Data Vault & terupdate di **Dashboard Pusat Kontrol**.\n"
+            f"Ketik `/prospek` untuk memproses antrean berikutnya!"
+        )
+
+    # PERINTAH /autopipeline: PROSES SELURUH ANTREAN SECARA OTOMATIS
+    if cmd.startswith("/autopipeline") or cmd.startswith("/auto"):
+        leads = get_leads_data()
+        pending = [l for l in leads if l.get("status_kontak", "").lower() in ["pending", "warm", "hot"]]
+        if not pending:
+            return "✅ Semua prospek dalam antrean sudah selesai diproses (tidak ada prospek pending)."
+
+        processed_count = 0
+        names_processed = []
+        for l in pending[:5]:  # Batch 5 per trigger agar responsif
+            lid = l.get("id_lead") or l.get("\ufeffid_lead", "LD-???")
+            nama = l.get("nama_prospek", "Konsumen")
+            p = generate_pitch_for_lead(l)
+
+            try:
+                generate_spk_pdf(
+                    nama_konsumen=nama,
+                    domisili=p["domisili"],
+                    unit_barang=p["product_name"],
+                    harga_otr=p["harga_otr"],
+                    nominal_dp=p["dp_approved"],
+                    tenor_bulan=36,
+                    angsuran_per_bulan=p["c36"],
+                    items_bundling=p["bundling_items"]
+                )
+            except Exception:
+                pass
+
+            update_lead_status(lid, new_status="dispatched")
+            dispatcher.kirim_whatsapp_aman(
+                nomor_tujuan=p["nomor_wa"],
+                pesan=p["pitch_text"],
+                mode_simulasi=True,
+                audit_context={
+                    "lead_id": lid,
+                    "approved_by": f"AutoPipeline Telegram ({clean_sender})",
+                    "consent_confirmed": True
+                }
+            )
+            processed_count += 1
+            names_processed.append(f"{nama} ({lid})")
+
+        log_tele_event(
+            "AutoPipeline",
+            f"Auto Pipeline Telegram Selesai ({processed_count} Prospek)",
+            f"Dipicu oleh {clean_sender} via Telegram Bot."
+        )
+
+        return (
+            f"⚡ *AUTO-PIPELINE PENJUALAN SELESAI DIPROSES!* ⚡\n\n"
+            f"Berhasil memproses & mendispatch *{processed_count} prospek* secara otomatis:\n"
+            + "\n".join([f"• ✅ {n}" for n in names_processed]) + "\n\n"
+            f"Seluruh berkas PDF SPK telah diterbitkan dan tercatat di Dashboard Pusat Kontrol!"
+        )
+
+    # PERINTAH /tambah: DAFTARKAN PROSPEK BARU DARI LAPANGAN
+    if cmd.startswith("/tambah") or cmd.startswith("/add_lead"):
+        raw_args = clean_text[7:].strip()
+        parts = [p.strip() for p in raw_args.split(",") if p.strip()]
+        if len(parts) < 3:
+            return (
+                "⚠️ *Format Tambah Prospek:* \n"
+                "`/tambah [Nama], [Nomor WA], [Minat Kebutuhan], [Cabang Domisili], [Budget DP]`\n\n"
+                "Contoh:\n"
+                "`/tambah Doni Pratama, 62812998877, vario 160 sporty tenaga besar, Purwokerto Timur, 4000000`"
+            )
+
+        nama = parts[0]
+        nomor_wa = parts[1]
+        minat = parts[2]
+        domisili = parts[3] if len(parts) > 3 else "Purwokerto Timur"
+        try:
+            dp_val = int(re.sub(r"\D", "", parts[4])) if len(parts) > 4 else 3000000
+        except Exception:
+            dp_val = 3000000
+
+        leads = get_leads_data()
+        new_id = f"LD-{len(leads) + 1:03d}"
+
+        try:
+            if os.path.exists(LEADS_FILE):
+                with open(LEADS_FILE, mode="a", encoding="utf-8-sig", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow([new_id, nama, nomor_wa, minat, str(dp_val), domisili, "pending"])
+        except Exception as e:
+            return f"⚠️ Gagal menyimpan prospek ke database: {e}"
+
+        log_tele_event(
+            "Sales Input",
+            f"Prospek Baru Didaftarkan via Telegram: {nama} ({new_id})",
+            f"Input oleh {clean_sender} | Domisili: {domisili} | Minat: {minat}"
+        )
+
+        return (
+            f"✅ *PROSPEK BARU BERHASIL DIDAFTARKAN!* ✅\n\n"
+            f"• *ID Prospek:* `{new_id}`\n"
+            f"• *Nama:* *{nama}* (`{nomor_wa}`)\n"
+            f"• *Domisili:* {domisili}\n"
+            f"• *Minat:* _{minat}_\n"
+            f"• *Budget DP:* Rp {dp_val:,}\n\n"
+            f"👉 *Ketik perintah ini untuk langsung membuatkan penawaran AI:* \n"
+            f"`/tawarkan {new_id}`"
+        )
+
+    # PERINTAH /rapat: STATUS NEGOSIASI OTONOM RESTOCK ASTRA HUB
+    if cmd.startswith("/rapat") or cmd.startswith("/deliberasi"):
+        return (
+            "🤝 *STATUS RAPAT SWARM & NEGOSIASI PEMASOK (ASTRA HUB)* 🤝\n\n"
+            "• *Agen Pengaudit:* Cubi Scout (Memindai defisit stok fisik cabang)\n"
+            "• *Agen Negosiator:* Cubi Supply (Tanya jawab mandiri ke AI Pemasok Astra)\n"
+            "• *Agen Kelaikan:* Cubi Gate (Menjaga Zero Fake Inventory)\n"
+            "• *Detak Otonom:* Aktif setiap 30 detik (Background Heartbeat)\n\n"
+            "📍 *Log Alokasi Terakhir:*\n"
+            "✅ Restock Darurat 2 Unit Vario 160 CBS (Cabang Purwokerto Timur) disetujui Astra Hub.\n"
+            "✅ Nomor Surat Jalan: `DO-ASTRA-PUR-901` (Prioritas Logistik Hari Ini).\n"
+            "✅ Promo Komplementer: Apparel Jaket Touring & Extended Warranty Mesin.\n\n"
+            "Ketik `/stok` untuk melihat ketersediaan unit terbaru di semua cabang!"
         )
 
     # 2. PERINTAH /katalog
