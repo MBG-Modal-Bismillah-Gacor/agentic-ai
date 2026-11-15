@@ -58,13 +58,16 @@ export function Navbar({ onNavigate }) {
       
       {/* Outer Border Layer Full 100% Width with Angled Chamfers & Crisp Strokes */}
       <div className="w-full relative pointer-events-auto">
-        {/* Inner Cream Canvas Navbar with 28px Inset Chamfers */}
-        <div
-          className="w-full bg-white flex items-center justify-between px-6 sm:px-10 md:px-14 h-16 sm:h-20 relative"
-          style={{
-            clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 28px 100%, 0 calc(100% - 28px))',
-          }}
-        >
+        {/* Inner Canvas Navbar with 28px Inset Chamfers (Background non-clipping wrapper) */}
+        <div className="w-full flex items-center justify-between px-6 sm:px-10 md:px-14 h-16 sm:h-20 relative">
+          
+          {/* Background Layer with Chamfer Polygon (Separated to allow popups/dropdowns to overflow freely) */}
+          <div
+            className="absolute inset-0 bg-white pointer-events-none z-0"
+            style={{
+              clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 28px 100%, 0 calc(100% - 28px))',
+            }}
+          />
           {/* Continuous Bottom & Chamfer Border Stroke Overlay */}
           <div 
             className="absolute pointer-events-none z-30"

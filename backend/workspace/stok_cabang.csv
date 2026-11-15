@@ -1,9 +1,9 @@
-id_produk,cabang,stok_ready,status
+﻿id_produk,cabang,stok_ready,status
 MTR-01,Purwokerto Timur,3,Ready
 MTR-01,Banyumas Kota,1,Ready
 MTR-02,Purwokerto Timur,2,Ready
 MTR-02,Banyumas Kota,0,Kosong
-MTR-03,Purwokerto Timur,1,Ready
+MTR-03,Purwokerto Timur,2,Ready
 MTR-03,Banyumas Kota,0,Kosong
 ACC-01,Purwokerto Timur,10,Ready
 ACC-02,Purwokerto Timur,5,Ready

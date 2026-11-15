@@ -109,6 +109,7 @@ export function DashboardView({
   const [commandInput, setCommandInput] = useState('')
   const [commandTarget, setCommandTarget] = useState('@scout') // '@scout' | '@scribe' | '@gate' | '@vault' | '@Alfa' | '@Amirul' | '@Idham' | '@Jullystian' | '@Hasbi'
   const [customLogs, setCustomLogs] = useState([])
+  const [streamTab, setStreamTab] = useState('logs') // 'logs' | 'deliberations'
 
   // KPI Metrics
   const totalLeads = leads.length
@@ -1037,46 +1038,111 @@ export function DashboardView({
             </div>
           </div>
 
-          {/* Kolom Kanan: Realtime Terminal Log Stream (4 Kolom) */}
+          {/* Kolom Kanan: Realtime Terminal Log & Autonomous Swarm Deliberation Stream (4 Kolom) */}
           <div className="lg:col-span-4 p-5 sm:p-6 bg-[#192A56] text-white font-mono text-xs rounded-2xl shadow-md flex flex-col justify-between border border-[#192A56]">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/20 mb-4">
-                <div className="flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-white" />
-                  <span className="font-bold text-white text-xs tracking-wider">STREAM LOG REALTIME</span>
+                <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setStreamTab('logs')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                      streamTab === 'logs' ? 'bg-white text-[#192A56] shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <Terminal className="w-3.5 h-3.5" />
+                    <span>STREAM LOG</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStreamTab('deliberations')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                      streamTab === 'deliberations' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <Bot className="w-3.5 h-3.5" />
+                    <span>RAPAT SWARM ({deliberations.length})</span>
+                  </button>
                 </div>
-                <span className="text-[10px] text-white font-bold tracking-widest">● AKTIF</span>
+                <span className="text-[10px] text-emerald-400 font-bold tracking-widest flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  HEARTBEAT 30S
+                </span>
               </div>
 
               {/* Feed List Terminal Monospaced */}
               <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                {allLogs.length === 0 ? (
-                  <div className="text-slate-400 py-8 text-center text-xs">
-                    Belum ada aktivitas baru tercatat.
-                  </div>
-                ) : (
-                  allLogs.map((log, idx) => (
-                    <div
-                      key={log.id || idx}
-                      className="p-2.5 bg-white/10 border border-white/15 text-[11px] space-y-1"
-                    >
-                      <div className="flex items-center justify-between text-slate-300 text-[10px]">
-                        <span className="text-amber-300 font-bold">{log.agent}</span>
-                        <span>{log.time}</span>
-                      </div>
-                      <div className="text-white font-medium">{log.action}</div>
-                      {log.detail && (
-                        <div className="text-slate-300 text-[10px] truncate">{log.detail}</div>
-                      )}
+                {streamTab === 'logs' ? (
+                  allLogs.length === 0 ? (
+                    <div className="text-slate-400 py-8 text-center text-xs">
+                      Belum ada aktivitas baru tercatat.
                     </div>
-                  ))
+                  ) : (
+                    allLogs.map((log, idx) => (
+                      <div
+                        key={log.id || idx}
+                        className="p-2.5 bg-white/10 border border-white/15 text-[11px] space-y-1 rounded-lg"
+                      >
+                        <div className="flex items-center justify-between text-slate-300 text-[10px]">
+                          <span className="text-amber-300 font-bold">{log.agent}</span>
+                          <span>{log.time}</span>
+                        </div>
+                        <div className="text-white font-medium">{log.action}</div>
+                        {log.detail && (
+                          <div className="text-slate-300 text-[10px] truncate">{log.detail}</div>
+                        )}
+                      </div>
+                    ))
+                  )
+                ) : (
+                  deliberations.length === 0 ? (
+                    <div className="text-slate-300 py-8 text-center text-xs space-y-2">
+                      <Bot className="w-7 h-7 mx-auto text-amber-300/70" />
+                      <p className="font-bold text-white">Belum Ada Sesi Rapat Tim</p>
+                      <p className="text-[10px] text-slate-300">
+                        Heartbeat otonom berdetak tiap 30 detik memindai defisit stok &amp; negosiasi ke Astra Hub.
+                      </p>
+                    </div>
+                  ) : (
+                    deliberations.map((delib, idx) => (
+                      <div
+                        key={delib.id || idx}
+                        className="p-3 bg-white/10 border border-white/15 text-[11px] space-y-2 rounded-xl"
+                      >
+                        <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+                          <span className="font-bold text-amber-300 text-[11px]">
+                            {delib.unit} • {delib.cabang}
+                          </span>
+                          <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded font-bold">
+                            {delib.defisit === 'CRITICAL_EMPTY' ? 'Stok 0' : 'Defisit'}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-300 font-sans">
+                          Prospek: <b className="text-white">{delib.konsumen}</b> ({delib.lead_target})
+                        </div>
+                        <div className="space-y-1.5 pt-1">
+                          {(delib.turns || []).map((t, tidx) => (
+                            <div key={tidx} className="bg-black/30 p-2 rounded-lg border border-white/10 text-[10.5px]">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="font-bold text-amber-300 text-[10px] uppercase">
+                                  {t.speaker}
+                                </span>
+                                <span className="text-[9px] text-slate-400 font-sans">{t.role}</span>
+                              </div>
+                              <p className="text-slate-200 font-sans leading-relaxed">{t.message}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )
                 )}
               </div>
             </div>
 
             <div className="pt-3 border-t border-white/20 text-[10px] text-slate-300 flex items-center justify-between">
-              <span>SISTEM EVENT BUS LOKAL</span>
-              <span>POLLING: 1 DETIK</span>
+              <span>{streamTab === 'logs' ? 'SISTEM EVENT BUS LOKAL' : 'AUTONOMOUS SWARM DELIBERATION'}</span>
+              <span>POLLING: 3.5 DETIK</span>
             </div>
           </div>
         </div>

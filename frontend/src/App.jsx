@@ -30,7 +30,32 @@ export const getApiBase = () => {
   return 'http://127.0.0.1:8000'
 }
 
-const API_BASE = getApiBase()
+export const API_BASE = getApiBase()
+let currentApiBase = API_BASE
+
+/**
+ * Resilient API fetch: mencoba direct API_BASE (port 8000) terlebih dahulu.
+ * Jika diblokir oleh firewall LAN/CORS, otomatis fallback ke reverse proxy Vite (port 3000).
+ */
+export async function safeApiFetch(endpoint, options = {}) {
+  try {
+    const res = await fetch(`${currentApiBase}${endpoint}`, options)
+    return res
+  } catch (err) {
+    if (currentApiBase !== '') {
+      try {
+        const fallbackRes = await fetch(endpoint, options)
+        if (fallbackRes && (fallbackRes.ok || fallbackRes.status < 500)) {
+          currentApiBase = '' // Kunci ke relative proxy untuk stabilitas LAN
+          return fallbackRes
+        }
+      } catch {
+        // Abaikan dan lempar error asli
+      }
+    }
+    throw err
+  }
+}
 
 // Inisialisasi rute dari path URL browser
 function getInitialRoute() {
@@ -940,7 +965,7 @@ export default function App() {
     let connected = false
     try {
       // 1. Health Check Riil
-      const healthRes = await fetch(`${API_BASE}/api/v1/system/health`, { cache: 'no-store' })
+      const healthRes = await safeApiFetch('/api/v1/system/health', { cache: 'no-store' })
       if (healthRes.ok) {
         const data = await healthRes.json()
         setSystemInfo(data)
@@ -997,7 +1022,7 @@ export default function App() {
 
     // 2. Team Config Riil (Terisolasi dari kegagalan parsial)
     try {
-      const teamRes = await fetch(`${API_BASE}/api/v1/team/config`, { cache: 'no-store' })
+      const teamRes = await safeApiFetch('/api/v1/team/config', { cache: 'no-store' })
       if (teamRes.ok) {
         const teamData = await teamRes.json()
         if (teamData.boss) {
@@ -1021,7 +1046,7 @@ export default function App() {
 
     // 3. Leads Riil dari workspace/leads_mentah.csv
     try {
-      const leadsRes = await fetch(`${API_BASE}/api/v1/leads/queue`, { cache: 'no-store' })
+      const leadsRes = await safeApiFetch('/api/v1/leads/queue', { cache: 'no-store' })
       if (leadsRes.ok) {
         const leadsData = await leadsRes.json()
         setLeads(leadsData.leads || [])
@@ -1032,7 +1057,7 @@ export default function App() {
 
     // 4. Activities Riil
     try {
-      const actRes = await fetch(`${API_BASE}/api/v1/system/activities`, { cache: 'no-store' })
+      const actRes = await safeApiFetch('/api/v1/system/activities', { cache: 'no-store' })
       if (actRes.ok) {
         const actData = await actRes.json()
         setActivities(actData.activities || [])
@@ -1043,7 +1068,7 @@ export default function App() {
 
     // 5. Deliberations Riil (Autonomous Swarm Deliberation)
     try {
-      const delibRes = await fetch(`${API_BASE}/api/v1/deliberations`, { cache: 'no-store' })
+      const delibRes = await safeApiFetch('/api/v1/deliberations', { cache: 'no-store' })
       if (delibRes.ok) {
         const delibData = await delibRes.json()
         setDeliberations(delibData.deliberations || [])
@@ -1080,7 +1105,7 @@ export default function App() {
     })
 
     try {
-      await fetch(`${API_BASE}/api/v1/team/config`, {
+      await safeApiFetch('/api/v1/team/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newConfig),
@@ -1094,7 +1119,7 @@ export default function App() {
   // Tambah Lead Baru ke Backend
   const handleCreateLead = async (leadData) => {
     try {
-      await fetch(`${API_BASE}/api/v1/leads/create`, {
+      await safeApiFetch('/api/v1/leads/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(leadData),
@@ -1185,7 +1210,7 @@ export default function App() {
 
       // Panggil API Backend Generate Pitch
       try {
-        const res = await fetch(`${API_BASE}/api/v1/leads/generate-pitch`, {
+        const res = await safeApiFetch('/api/v1/leads/generate-pitch', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1289,7 +1314,7 @@ export default function App() {
 
     let responseData
     try {
-      const response = await fetch(`${API_BASE}/api/v1/leads/approve-and-send`, {
+      const response = await safeApiFetch('/api/v1/leads/approve-and-send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
