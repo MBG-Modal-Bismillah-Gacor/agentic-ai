@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import { RobotMascotCanvas } from './RobotMascotCanvas'
 
+const msiCubiImg = '/assets/msi-cubi-nuc.png'
+const logoMbgImg = '/assets/logo-mbg.png'
+
 export function ProgramsSection({ onNavigate }) {
   const [incubationSlideIndex, setIncubationSlideIndex] = useState(0)
 
@@ -17,12 +20,14 @@ export function ProgramsSection({ onNavigate }) {
     {
       number: '01',
       name: 'MSI Cubi NUC On-Premise Appliance',
-      icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aa4640877adbdbb119497_ico-incubation.svg'
+      icon: msiCubiImg,
+      isImage: true
     },
     {
       number: '02',
-      name: 'Air-Gapped Dual LAN Hardware Node',
-      icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aa47c8540d52c18b41338_ico-investment.svg'
+      name: 'Dual 2.5GbE Isolated Network Gateway',
+      icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aa47c8540d52c18b41338_ico-investment.svg',
+      isImage: false
     }
   ]
 
@@ -195,21 +200,34 @@ export function ProgramsSection({ onNavigate }) {
                       <div className="w-2 h-2 bg-[#192A56]" />
                       <div className="font-mono text-xs font-bold text-[#192A56]">{s.number}</div>
                     </div>
-                    <div className="flex items-center justify-center my-3 relative">
-                      <img
-                        src="/assets/webflow/664753c2515af09bef5b9826/666aa5b019fc170dd5ab9fa9_ico-container.svg"
-                        loading="lazy"
-                        width="110"
-                        height="100"
-                        alt=""
-                        className="opacity-40"
-                      />
-                      <img
-                        src={s.icon}
-                        loading="lazy"
-                        alt=""
-                        className="absolute inset-0 m-auto w-10 h-10 object-contain"
-                      />
+                    <div className="flex items-center justify-center my-3 relative h-28">
+                      {s.isImage ? (
+                        <div className="w-28 h-24 flex items-center justify-center bg-slate-50 border border-[#192A56]/15 p-2 rounded-lg">
+                          <img
+                            src={s.icon}
+                            loading="lazy"
+                            alt={s.name}
+                            className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
+                          />
+                        </div>
+                      ) : (
+                        <div className="relative flex items-center justify-center">
+                          <img
+                            src="/assets/webflow/664753c2515af09bef5b9826/666aa5b019fc170dd5ab9fa9_ico-container.svg"
+                            loading="lazy"
+                            width="110"
+                            height="100"
+                            alt=""
+                            className="opacity-40"
+                          />
+                          <img
+                            src={s.icon}
+                            loading="lazy"
+                            alt=""
+                            className="absolute inset-0 m-auto w-10 h-10 object-contain"
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="font-mono font-bold text-xs sm:text-sm text-[#192A56] text-center leading-snug">
                       {s.name}
@@ -374,12 +392,19 @@ export function ProgramsSection({ onNavigate }) {
                   <div className="w-80 h-80 rounded-full border border-dashed border-[#192A56]/10 absolute" />
                 </div>
 
-                {/* 3D Bulet MBG Biasa di Section 3 (Cara Kerja) */}
+                {/* Logo MBG di Section Cara Kerja Menggantikan 3D Bulet Koin */}
                 <div
                   id="sec3-mascot-target"
                   className="w-48 h-48 sm:w-56 sm:h-56 relative flex flex-col items-center justify-center my-auto pointer-events-auto"
                 >
-                  <RobotMascotCanvas mode="coin" cameraDistance={3.2} />
+                  <div className="relative w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center rounded-full bg-white shadow-xl border-2 border-[#192A56]/20 p-2.5 transition-transform duration-300 hover:scale-105">
+                    <img
+                      src={logoMbgImg}
+                      alt="Logo MBG"
+                      className="w-full h-full object-contain rounded-full"
+                      loading="lazy"
+                    />
+                  </div>
                   {/* Badge MBG Pill */}
                   <div className="absolute -bottom-2 bg-[#192A56] text-white border border-[#192A56] font-mono text-[10px] font-bold px-3.5 py-0.5 rounded-full shadow-md tracking-widest z-20">
                     MBG
