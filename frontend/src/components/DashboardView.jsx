@@ -41,7 +41,8 @@ import {
   Bot,
   FileText,
   FileDown,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react'
 
 export function DashboardView({
@@ -94,6 +95,7 @@ export function DashboardView({
   const [editedPitch, setEditedPitch] = useState('')
   const [consentConfirmed, setConsentConfirmed] = useState(false)
   const [waNumber, setWaNumber] = useState('081234567890')
+  const [loadingLeadId, setLoadingLeadId] = useState(null)
 
   useEffect(() => {
     if (pitchResult?.draft_pitch) {
@@ -104,6 +106,12 @@ export function DashboardView({
     }
     setConsentConfirmed(false)
   }, [pitchResult])
+
+  useEffect(() => {
+    if (!isGenerating) {
+      setLoadingLeadId(null)
+    }
+  }, [isGenerating])
 
   // Sinkronisasi data saat halaman dashboard dibuka
   useEffect(() => {
@@ -1080,18 +1088,29 @@ export function DashboardView({
                             </td>
                             <td className="py-3 text-right">
                               <button
-                                onClick={() => onSelectLead(lead)}
+                                onClick={() => {
+                                  setLoadingLeadId(lead.id_lead)
+                                  onSelectLead(lead)
+                                }}
                                 disabled={isGenerating}
-                                style={!isDispatched ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
-                                className={`group px-3 py-1.5 text-[11px] font-bold transition-all cursor-pointer rounded-xl ${
+                                style={!isDispatched && !isGenerating ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
+                                className={`group px-2.5 py-1 text-[10px] font-bold transition-all cursor-pointer rounded-lg inline-flex items-center gap-1.5 shadow-xs ${
                                   isDispatched
-                                    ? 'bg-white hover:bg-[#192A56] border border-slate-200'
-                                    : 'bg-[#192A56] hover:bg-[#0E1A38] text-white shadow-xs'
-                                }`}
+                                    ? 'bg-white hover:bg-[#192A56] text-[#192A56] hover:text-white border border-[#192A56]/30'
+                                    : 'bg-[#192A56] hover:bg-[#0E1A38] text-white'
+                                } ${isGenerating && loadingLeadId === lead.id_lead ? 'opacity-90' : ''}`}
+                                title={isDispatched ? 'Lihat Draf Penawaran' : 'Proses Analisis AI'}
                               >
-                                <span className={isDispatched ? 'text-[#192A56] group-hover:text-white transition-colors' : 'text-white'}>
-                                  {isDispatched ? 'Lihat Draf' : 'Proses AI'}
-                                </span>
+                                {isGenerating && loadingLeadId === lead.id_lead ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    <span>Memproses...</span>
+                                  </>
+                                ) : (
+                                  <span className={isDispatched ? 'text-[#192A56] group-hover:text-white transition-colors' : 'text-white'}>
+                                    {isDispatched ? 'Lihat Draf' : 'Proses AI'}
+                                  </span>
+                                )}
                               </button>
                             </td>
                           </tr>
@@ -1118,20 +1137,24 @@ export function DashboardView({
                   type="button"
                   onClick={() => setStreamTab('logs')}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                    streamTab === 'logs' ? 'bg-white text-[#192A56] shadow-xs' : 'text-slate-300 hover:text-white'
+                    streamTab === 'logs'
+                      ? 'bg-white text-[#0284c7] shadow-xs'
+                      : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  <Terminal className="w-3.5 h-3.5" />
+                  <Terminal className={`w-3.5 h-3.5 ${streamTab === 'logs' ? 'text-[#0284c7]' : ''}`} />
                   <span>STREAM LOG</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setStreamTab('deliberations')}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                    streamTab === 'deliberations' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-300 hover:text-white'
+                    streamTab === 'deliberations'
+                      ? 'bg-white text-[#0284c7] shadow-xs'
+                      : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  <Bot className="w-3.5 h-3.5" />
+                  <Bot className={`w-3.5 h-3.5 ${streamTab === 'deliberations' ? 'text-[#0284c7]' : ''}`} />
                   <span>RAPAT SWARM ({deliberations.length})</span>
                 </button>
               </div>

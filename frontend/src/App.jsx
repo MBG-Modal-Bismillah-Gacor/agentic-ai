@@ -1369,70 +1369,11 @@ export default function App() {
     setIsGenerating(true)
     setPitchResult(null)
 
-    const bossName = bossConfig.name || 'Pak Alfa'
-    const scoutName = agents['blue-agent']?.name || 'Cubi Scout'
-    const scribeName = agents['purple-agent']?.name || 'Cubi Scribe'
-    const gateName = agents['green-agent']?.name || 'Cubi Gate'
-    const vaultName = agents['orange-agent']?.name || 'Cubi Vault'
+    const isDispatched = ['dispatched', 'approved', 'simulated'].includes(lead.status_kontak)
+    const isDashboard = currentRoute === 'dashboard'
 
-    // LANGKAH 1: Bos menugaskan tim dari meja eksekutif
-    setSelectedAgentId('boss')
-    setBossConfig((prev) => ({
-      ...prev,
-      statusText: `Menugaskan prospek ${lead.nama} ke tim StelAgent`,
-    }))
-
-    // LANGKAH 2: Cubi Scout (Sales Engineer) memproses komputasi spesifikasi & stok dari Meja Kerja 01
-    setTimeout(() => {
-      setSelectedAgentId('blue-agent')
-      setAgents((prev) => ({
-        ...prev,
-        'blue-agent': {
-          ...prev['blue-agent'],
-          isTyping: true,
-          isScanning: true,
-          statusText: `Menganalisis stok cabang & unit rekomendasi untuk ${lead.nama}...`,
-        },
-      }))
-    }, 800)
-
-    // LANGKAH 3: Cubi Vault memvalidasi histori prospek & aturan bundling di Server Vault
-    setTimeout(() => {
-      setSelectedAgentId('orange-agent')
-      setAgents((prev) => ({
-        ...prev,
-        'orange-agent': {
-          ...prev['orange-agent'],
-          isScanning: true,
-          statusText: `Memvalidasi database & aturan bundling untuk ${lead.minat}...`,
-        },
-      }))
-    }, 2200)
-
-    // LANGKAH 4: Cubi Scribe (AI Drafter) menyusun draf penawaran via Qwen 2.5 di Kanban Wall
-    setTimeout(async () => {
-      setSelectedAgentId('purple-agent')
-      setAgents((prev) => ({
-        ...prev,
-        'purple-agent': {
-          ...prev['purple-agent'],
-          isTyping: true,
-          statusText: `Menyusun draf WhatsApp personal via model Qwen 2.5...`,
-        },
-        'blue-agent': {
-          ...prev['blue-agent'],
-          isScanning: false,
-          isTyping: true,
-          statusText: `Analisis spesifikasi & stok selesai. Unit siap!`,
-        },
-        'orange-agent': {
-          ...prev['orange-agent'],
-          isScanning: false,
-          statusText: `Histori & bundling siap dipakai.`,
-        },
-      }))
-
-      // Panggil API Backend Generate Pitch
+    // Core async fetcher
+    const fetchPitchData = async () => {
       try {
         const res = await safeApiFetch('/api/v1/leads/generate-pitch', {
           method: 'POST',
@@ -1459,7 +1400,6 @@ export default function App() {
         setIsGenerating(false)
         setSelectedAgentId('green-agent')
 
-        // LANGKAH 5: Cubi Gate siap di gerbang turnstile menunggu persetujuan Direktur
         setAgents((prev) => ({
           ...prev,
           'purple-agent': {
@@ -1502,7 +1442,70 @@ export default function App() {
           },
         }))
       }
-    }, 3800)
+    }
+
+    // Jika pada dashboard atau melihat draf yang sudah selesai, eksekusi instan tanpa delay animasi 3D
+    if (isDashboard || isDispatched) {
+      await fetchPitchData()
+      return
+    }
+
+    // Pada 3D Office: Transisi cepat dan responsif ke agen-agen
+    setSelectedAgentId('boss')
+    setBossConfig((prev) => ({
+      ...prev,
+      statusText: `Menugaskan prospek ${lead.nama} ke tim StelAgent`,
+    }))
+
+    setTimeout(() => {
+      setSelectedAgentId('blue-agent')
+      setAgents((prev) => ({
+        ...prev,
+        'blue-agent': {
+          ...prev['blue-agent'],
+          isTyping: true,
+          isScanning: true,
+          statusText: `Menganalisis stok cabang & unit rekomendasi untuk ${lead.nama}...`,
+        },
+      }))
+    }, 300)
+
+    setTimeout(() => {
+      setSelectedAgentId('orange-agent')
+      setAgents((prev) => ({
+        ...prev,
+        'orange-agent': {
+          ...prev['orange-agent'],
+          isScanning: true,
+          statusText: `Memvalidasi database & aturan bundling untuk ${lead.minat}...`,
+        },
+      }))
+    }, 650)
+
+    setTimeout(async () => {
+      setSelectedAgentId('purple-agent')
+      setAgents((prev) => ({
+        ...prev,
+        'purple-agent': {
+          ...prev['purple-agent'],
+          isTyping: true,
+          statusText: `Menyusun draf WhatsApp personal via model Qwen 2.5...`,
+        },
+        'blue-agent': {
+          ...prev['blue-agent'],
+          isScanning: false,
+          isTyping: true,
+          statusText: `Analisis spesifikasi & stok selesai. Unit siap!`,
+        },
+        'orange-agent': {
+          ...prev['orange-agent'],
+          isScanning: false,
+          statusText: `Histori & bundling siap dipakai.`,
+        },
+      }))
+
+      await fetchPitchData()
+    }, 1000)
   }
 
   // Aksi: Setujui & Dispatch WhatsApp ke Calon Konsumen

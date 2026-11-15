@@ -1011,7 +1011,7 @@ ATURAN KETAT ANTI-HALUSINASI (ZERO-HALLUCINATION):
     
     pitch_text = ""
     try:
-        res = requests.post("http://localhost:11434/api/generate", json=payload, timeout=2.0)
+        res = requests.post("http://127.0.0.1:11434/api/generate", json=payload, timeout=0.8)
         if res.status_code == 200:
             pitch_text = res.json().get("response", "").strip()
     except Exception:
