@@ -13,20 +13,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
-from engine_pdf import generate_spk_pdf
-
-if __package__:
-    from .dispatcher import SafeOutreachDispatcher
-    from .engine_pdf import (
-        OUTPUT_DIR,
-        generate_spk_pdf,
-        hitung_simulasi_kredit,
-    )
-    from . import agentic_swarm
-else:
-    from dispatcher import SafeOutreachDispatcher
 
 try:
+    from backend.dispatcher import SafeOutreachDispatcher
     from backend.engine_pdf import (
         generate_spk_pdf,
         hitung_simulasi_kredit,

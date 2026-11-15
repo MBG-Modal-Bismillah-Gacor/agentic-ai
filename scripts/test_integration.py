@@ -184,7 +184,7 @@ def run_tests():
             domisili="Banyumas Kota",
             unit_barang="Beat Street",
             harga_otr=19300000,
-            nominal_dp=2500000,
+            nominal_dp=3000000,
             tenor_bulan=12
         ))
         assert spk_res["status"] == "success"
