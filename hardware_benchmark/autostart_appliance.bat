@@ -25,8 +25,18 @@ cd /d "%~dp0\..\frontend"
 start "Virtual Office UI" cmd /k "npm run dev -- --host 0.0.0.0 --port 3000"
 timeout /t 5 /nobreak >nul
 
-:: Buka Browser Showcase Secara Otomatis langsung ke Kantor 3D
-start http://localhost:3000/office
+:: Buka Browser Showcase Secara Otomatis dalam Mode Aplikasi Mandiri (Standalone PWA / App Mode)
+where msedge >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    start "" msedge --app=http://localhost:3000/office
+) else (
+    where chrome >nul 2>&1
+    if %ERRORLEVEL% equ 0 (
+        start "" chrome --app=http://localhost:3000/office
+    ) else (
+        start http://localhost:3000/office
+    )
+)
 
 echo.
 echo ========================================================
