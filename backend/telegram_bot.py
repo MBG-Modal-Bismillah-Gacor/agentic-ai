@@ -188,15 +188,75 @@ def generate_pitch_for_lead(lead: dict) -> dict:
     product_name = item.get("nama_barang", "Motor Honda")
     harga_otr = int(item.get("harga", 19300000))
 
-    # Cek ketersediaan stok di cabang domisili
+    # Cek ketersediaan stok & varian warna di cabang domisili
+    product_stok_rows = [r for r in stok_rows if r.get("id_produk") == matched_pid]
+    local_stok_rows = [r for r in product_stok_rows if r.get("cabang", "").strip().lower() == domisili.lower()]
+
+    warna_diminta = None
+    minat_lower = minat.lower()
+    if "hitam" in minat_lower or "black" in minat_lower:
+        warna_diminta = "Hitam"
+    elif "merah" in minat_lower or "red" in minat_lower:
+        warna_diminta = "Merah"
+    elif "silver" in minat_lower or "perak" in minat_lower:
+        warna_diminta = "Silver"
+    elif "putih" in minat_lower or "white" in minat_lower:
+        warna_diminta = "Putih"
+
     stok_ready = 0
-    for r in stok_rows:
-        if r.get("id_produk") == matched_pid and r.get("cabang", "").strip().lower() == domisili.lower():
+    is_out_of_stock = False
+    unit_diminta = product_name
+    alt_unit = product_name
+
+    if warna_diminta and local_stok_rows:
+        matched_color_row = next(
+            (r for r in local_stok_rows if warna_diminta.lower() in r.get("warna", "").lower() or r.get("warna", "").lower() in warna_diminta.lower()),
+            None
+        )
+        if matched_color_row:
+            csv_w = matched_color_row.get("warna", warna_diminta)
+            unit_diminta = f"{product_name} (Varian {csv_w})"
             try:
-                stok_ready = int(r.get("stok_ready", 0))
+                stok_ready = int(matched_color_row.get("stok_ready", 0))
             except ValueError:
                 stok_ready = 0
-            break
+            
+            if stok_ready > 0 and matched_color_row.get("status", "").lower() == "ready":
+                is_out_of_stock = False
+                alt_unit = unit_diminta
+            else:
+                is_out_of_stock = True
+                # Cari varian warna ready lain dari CSV di cabang ini
+                ready_alt = next((r for r in local_stok_rows if int(r.get("stok_ready", 0)) > 0 and r.get("status", "").lower() == "ready"), None)
+                if ready_alt and ready_alt.get("warna") and ready_alt.get("warna") not in ["Standar", "All"]:
+                    alt_unit = f"{product_name} (Varian {ready_alt.get('warna')})"
+                else:
+                    ready_mitra = next((r for r in product_stok_rows if int(r.get("stok_ready", 0)) > 0 and r.get("status", "").lower() == "ready"), None)
+                    if ready_mitra and ready_mitra.get("warna") and ready_mitra.get("warna") not in ["Standar", "All"]:
+                        alt_unit = f"{product_name} (Varian {ready_mitra.get('warna')})"
+                    else:
+                        alt_unit = product_name
+        else:
+            is_out_of_stock = True
+            unit_diminta = f"{product_name} (Varian {warna_diminta})"
+            ready_alt = next((r for r in local_stok_rows if int(r.get("stok_ready", 0)) > 0 and r.get("status", "").lower() == "ready"), None)
+            if ready_alt and ready_alt.get("warna") and ready_alt.get("warna") not in ["Standar", "All"]:
+                alt_unit = f"{product_name} (Varian {ready_alt.get('warna')})"
+            else:
+                alt_unit = product_name
+    else:
+        # Konsumen TIDAK minta warna spesifik -> JANGAN karang warna apa pun!
+        unit_diminta = product_name
+        alt_unit = product_name
+        total_qty = 0
+        for r in local_stok_rows:
+            try:
+                if r.get("status", "").lower() == "ready":
+                    total_qty += int(r.get("stok_ready", 0))
+            except ValueError:
+                pass
+        stok_ready = total_qty
+        is_out_of_stock = total_qty <= 0
 
     status_stok = f"Ready ({stok_ready} unit)" if stok_ready > 0 else "Out of Stock (Auto-Restock Astra Hub Aktif)"
 
@@ -218,20 +278,6 @@ def generate_pitch_for_lead(lead: dict) -> dict:
             b_names.append(b_item["nama_barang"])
             b_items.append({"nama": b_item["nama_barang"], "harga": int(b_item.get("harga", 0)), "tipe": "Termasuk Promo"})
     bundling_text = ", ".join(b_names) if b_names else "Helm Full Face Retro & Paket Servis Gratis"
-
-    # Deteksi Varian & Skenario 2: Objection Handling & Upselling
-    is_hitam_requested = "hitam" in minat.lower() or "black" in minat.lower()
-    is_out_of_stock = (stok_ready <= 0) or is_hitam_requested
-
-    if is_hitam_requested:
-        unit_diminta = f"{product_name} (Hitam)"
-        alt_unit = f"{product_name} (Sporty Red / Merah)"
-    elif stok_ready <= 0:
-        unit_diminta = product_name
-        alt_unit = f"{product_name} (Sporty Red / Merah)"
-    else:
-        unit_diminta = product_name
-        alt_unit = product_name
 
     if is_out_of_stock:
         pitch_text = (

@@ -1,11 +1,12 @@
-﻿id_produk,cabang,stok_ready,status
-MTR-01,Purwokerto Timur,3,Ready
-MTR-01,Banyumas Kota,1,Ready
-MTR-02,Purwokerto Timur,2,Ready
-MTR-02,Banyumas Kota,0,Kosong
-MTR-03,Purwokerto Timur,2,Ready
-MTR-03,Banyumas Kota,0,Kosong
-ACC-01,Purwokerto Timur,10,Ready
-ACC-02,Purwokerto Timur,5,Ready
-SRV-01,Semua Cabang,999,Ready
-SRV-02,Semua Cabang,999,Ready
+﻿id_produk,cabang,warna,stok_ready,status
+MTR-01,Purwokerto Timur,Street Black,3,Ready
+MTR-01,Banyumas Kota,Street Silver,1,Ready
+MTR-02,Purwokerto Timur,Sporty Red,2,Ready
+MTR-02,Banyumas Kota,Sporty Black,0,Kosong
+MTR-02,Banyumas Kota,Sporty Red,1,Ready
+MTR-03,Purwokerto Timur,Brilliant Black,2,Ready
+MTR-03,Banyumas Kota,Imperial White,0,Kosong
+ACC-01,Purwokerto Timur,Standar,10,Ready
+ACC-02,Purwokerto Timur,Standar,5,Ready
+SRV-01,Semua Cabang,Standar,999,Ready
+SRV-02,Semua Cabang,Standar,999,Ready

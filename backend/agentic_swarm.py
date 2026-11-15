@@ -264,11 +264,13 @@ def apply_restock_update(product_id: str, branch: str, added_qty: int, persist_t
         return False
 
     rows = []
-    fieldnames = ["id_produk", "cabang", "stok_ready", "status"]
+    fieldnames = ["id_produk", "cabang", "warna", "stok_ready", "status"]
     updated = False
 
     with open(STOK_FILE, mode="r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
+        if reader.fieldnames:
+            fieldnames = list(reader.fieldnames)
         for r in reader:
             pid = r.get("id_produk")
             cab = r.get("cabang", "").strip()
@@ -282,16 +284,19 @@ def apply_restock_update(product_id: str, branch: str, added_qty: int, persist_t
 
     # Jika kombinasi produk dan cabang belum ada, tambahkan baris baru
     if not updated:
-        rows.append({
+        new_row = {
             "id_produk": product_id,
             "cabang": branch,
             "stok_ready": str(added_qty),
             "status": "Ready"
-        })
+        }
+        if "warna" in fieldnames:
+            new_row["warna"] = "Standar"
+        rows.append(new_row)
 
     if persist_to_disk:
         with open(STOK_FILE, mode="w", encoding="utf-8-sig", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(rows)
 

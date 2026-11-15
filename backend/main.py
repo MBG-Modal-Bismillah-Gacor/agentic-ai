@@ -384,7 +384,7 @@ def get_katalog_and_stock():
                     stok.setdefault(pid, []).append(r)
     return katalog, stok
 
-def get_stock_status(product_id, domisili, stok):
+def get_stock_status(product_id, domisili, stok, warna=None):
     normalized_location = domisili.strip().casefold()
     if not normalized_location:
         return "Stok belum terverifikasi karena cabang belum diisi"
@@ -411,6 +411,16 @@ def get_stock_status(product_id, domisili, stok):
     if not matches:
         return f"Stok belum terverifikasi di cabang {domisili}"
 
+    # Filter warna jika spesifik diminta dan kolom warna tersedia
+    if warna:
+        w_low = warna.strip().casefold()
+        warna_matches = [
+            r for r in matches
+            if r.get("warna") and (w_low in r.get("warna", "").casefold() or r.get("warna", "").casefold() in w_low)
+        ]
+        if warna_matches:
+            matches = warna_matches
+
     available_rows = []
     for row in matches:
         try:
@@ -423,7 +433,13 @@ def get_stock_status(product_id, domisili, stok):
     branches = ", ".join(sorted({row.get("cabang", "cabang") for row in matches}))
     available_count = sum(quantity for _, quantity in available_rows)
     if available_count:
+        if warna and any(r.get("warna") for r, _ in available_rows):
+            w_name = available_rows[0][0].get("warna")
+            return f"Ready ({available_count} unit varian {w_name}) di {branches}"
         return f"Ready ({available_count} unit) di {branches}"
+    
+    if warna:
+        return f"Kosong (varian {warna}) di {branches}"
     return f"Kosong di {branches}"
 
 def read_lead_rows():
@@ -772,49 +788,128 @@ def generate_pitch(req: PitchRequest):
     
     bundling_text = ", ".join(bonus_item_names) if bonus_item_names else "Helm Full Face Retro & Paket Servis Gratis"
 
-    # 3. Periksa ketersediaan stok di cabang domisili (Cubi Scout)
-    stok_status = get_stock_status(target_pid, req.domisili, stok)
-    sisa_unit = 0
+    # 3. Periksa ketersediaan stok & varian warna di cabang domisili (Cubi Scout)
     product_rows = stok.get(target_pid, [])
     normalized_loc = req.domisili.strip().casefold()
-    for row in product_rows:
-        if row.get("cabang", "").strip().casefold() == normalized_loc:
+
+    local_rows = [
+        row for row in product_rows
+        if row.get("cabang", "").strip().casefold() == normalized_loc
+        or normalized_loc in row.get("cabang", "").strip().casefold()
+        or row.get("cabang", "").strip().casefold() in normalized_loc
+    ]
+
+    # Deteksi apakah prospek secara eksplisit meminta warna tertentu
+    warna_diminta = None
+    if "hitam" in minat_lower or "black" in minat_lower:
+        warna_diminta = "Hitam"
+    elif "merah" in minat_lower or "red" in minat_lower:
+        warna_diminta = "Merah"
+    elif "silver" in minat_lower or "perak" in minat_lower:
+        warna_diminta = "Silver"
+    elif "putih" in minat_lower or "white" in minat_lower:
+        warna_diminta = "Putih"
+
+    stok_status = get_stock_status(target_pid, req.domisili, stok, warna=warna_diminta)
+    sisa_unit = 0
+    is_out_of_stock = False
+    unit_diminta_label = target_unit
+    unit_alternatif_ready = target_unit
+    alt_status_label = ""
+
+    # KASUS 1: Konsumen secara spesifik meminta varian warna tertentu
+    if warna_diminta and local_rows:
+        warna_match_row = next(
+            (r for r in local_rows if warna_diminta.casefold() in r.get("warna", "").casefold() or r.get("warna", "").casefold() in warna_diminta.casefold()),
+            None
+        )
+        if warna_match_row:
+            csv_color = warna_match_row.get("warna", warna_diminta)
+            unit_diminta_label = f"{target_unit} (Varian {csv_color})"
             try:
-                sisa_unit = int(row.get("stok_ready", 0))
+                warna_qty = int(warna_match_row.get("stok_ready", 0))
             except ValueError:
+                warna_qty = 0
+
+            if warna_qty > 0 and warna_match_row.get("status", "").lower() == "ready":
+                sisa_unit = warna_qty
+                is_out_of_stock = False
+                unit_alternatif_ready = unit_diminta_label
+                alt_status_label = f"Ready ({sisa_unit} unit)"
+            else:
                 sisa_unit = 0
-            break
+                is_out_of_stock = True
+                # Cari varian warna alternatif yang READY dari data CSV lokal
+                alt_ready_row = next(
+                    (r for r in local_rows if int(r.get("stok_ready", 0)) > 0 and r.get("status", "").lower() == "ready"),
+                    None
+                )
+                if alt_ready_row and alt_ready_row.get("warna") and alt_ready_row.get("warna") not in ["Standar", "All"]:
+                    unit_alternatif_ready = f"{target_unit} (Varian {alt_ready_row.get('warna')})"
+                    alt_status_label = f"Ready Stock ({alt_ready_row.get('stok_ready')} unit di {req.domisili})"
+                else:
+                    # Cari varian ready di cabang mitra dari data CSV
+                    alt_mitra_row = next(
+                        (r for r in product_rows if int(r.get("stok_ready", 0)) > 0 and r.get("status", "").lower() == "ready"),
+                        None
+                    )
+                    if alt_mitra_row:
+                        mitra_cab = alt_mitra_row.get("cabang", "")
+                        mitra_w = alt_mitra_row.get("warna", "")
+                        if mitra_w and mitra_w not in ["Standar", "All"]:
+                            unit_alternatif_ready = f"{target_unit} (Varian {mitra_w})"
+                        else:
+                            unit_alternatif_ready = target_unit
+                        alt_status_label = f"Ready Stock di Cabang {mitra_cab}"
+                    else:
+                        unit_alternatif_ready = target_unit
+                        alt_status_label = "Ready Stock Dealer"
+        else:
+            # Warna yang diminta tidak tercatat di cabang ini
+            sisa_unit = 0
+            is_out_of_stock = True
+            unit_diminta_label = f"{target_unit} (Varian {warna_diminta})"
+            alt_ready_row = next(
+                (r for r in local_rows if int(r.get("stok_ready", 0)) > 0 and r.get("status", "").lower() == "ready"),
+                None
+            )
+            if alt_ready_row and alt_ready_row.get("warna") and alt_ready_row.get("warna") not in ["Standar", "All"]:
+                unit_alternatif_ready = f"{target_unit} (Varian {alt_ready_row.get('warna')})"
+                alt_status_label = f"Ready Stock di Cabang {req.domisili}"
+            else:
+                unit_alternatif_ready = target_unit
+                alt_status_label = "Ready Stock Dealer"
 
-    status_stok_label = "Ready" if sisa_unit > 0 else "Out of Stock / Lead Time Order"
-
-    # Deteksi Varian & Skenario 2: Objection Handling & Upselling Path
-    is_hitam_requested = "hitam" in minat_lower or "black" in minat_lower
-    is_out_of_stock = (sisa_unit <= 0) or is_hitam_requested
-
-    if is_hitam_requested:
-        unit_diminta_label = f"{target_unit} (Varian Hitam)"
-        unit_alternatif_ready = f"{target_unit} (Sporty Red / Merah)"
-        alt_status_label = "Ready Stock (Unit Siap Kirim Hari Ini Tanpa Inden)"
-    elif sisa_unit <= 0:
-        unit_diminta_label = target_unit
-        mitra_branch = None
-        for row in product_rows:
+    # KASUS 2: Konsumen TIDAK meminta warna (hanya model atau segmen)
+    else:
+        total_local_qty = 0
+        for r in local_rows:
             try:
-                if int(row.get("stok_ready", 0)) > 0:
-                    mitra_branch = row.get("cabang", "")
-                    break
+                if r.get("status", "").lower() == "ready":
+                    total_local_qty += int(r.get("stok_ready", 0))
             except ValueError:
                 pass
-        if mitra_branch:
-            unit_alternatif_ready = f"{target_unit} (Sporty Red / Merah)"
-            alt_status_label = f"Ready Stock di Cabang {mitra_branch} (Siap Kirim Langsung Tanpa Inden)"
-        else:
-            unit_alternatif_ready = f"{target_unit} (Sporty Red / Merah)"
-            alt_status_label = "Ready Stock Siap Kirim Hari Ini"
-    else:
+        
+        sisa_unit = total_local_qty
         unit_diminta_label = target_unit
-        unit_alternatif_ready = target_unit
-        alt_status_label = f"Ready ({sisa_unit} unit)"
+        
+        if total_local_qty > 0:
+            is_out_of_stock = False
+            unit_alternatif_ready = target_unit
+            alt_status_label = f"Ready ({total_local_qty} unit)"
+        else:
+            is_out_of_stock = True
+            ready_mitra = next((r for r in product_rows if int(r.get("stok_ready", 0)) > 0 and r.get("status", "").lower() == "ready"), None)
+            if ready_mitra:
+                mitra_cab = ready_mitra.get("cabang", "")
+                mitra_qty = ready_mitra.get("stok_ready", "1")
+                unit_alternatif_ready = target_unit
+                alt_status_label = f"Ready Stock ({mitra_qty} unit di Cabang {mitra_cab})"
+            else:
+                unit_alternatif_ready = target_unit
+                alt_status_label = "Ready Stock Dealer"
+
+    status_stok_label = "Ready" if not is_out_of_stock else "Out of Stock / Lead Time Order"
 
     # Bangun objek CubiScoutOutput
     cubi_scout_output = CubiScoutOutput(
@@ -868,14 +963,16 @@ TUGAS ANDA:
 4. RAYU calon konsumen menggunakan variabel Paket Promo & Bundling gratis: {bundling_text} sebagai kompensasi manis dan keuntungan eksklusif jika mengunci unit ready hari ini.
 5. Akhiri dengan Call To Action (CTA) persuasif untuk mengamankan unit ready tersebut atau menerbitkan draf SPK resmi sekarang.
 
-Detail Penawaran:
+DATA PAYLOAD VALID (GUNAKAN HANYA DATA INI):
 - Nama Konsumen: {req.nama}
 - Minat Awal: {req.minat}
 - Unit Diminta (Inden): {unit_diminta_label}
 - Unit Alternatif Ready: {unit_alternatif_ready} (Status: {alt_status_label}, Opsi DP: Rp {dp_disetujui:,}, Cicilan: Rp {estimasi_cicilan_bulanan:,}/bln)
 - Paket Promo & Bundling Gratis: {bundling_text}
 
-Aturan Penulisan:
+ATURAN KETAT ANTI-HALUSINASI (ZERO-HALLUCINATION):
+- Dilarang menyebutkan warna atau spesifikasi varian yang tidak ada di dalam data payload.
+- Gunakan HANYA nama unit dan varian yang tertera pada 'Unit Alternatif Ready' di atas ({unit_alternatif_ready}). JANGAN pernah menambahkan warna atau spesifikasi fiktif jika tidak tertulis di data payload!
 - Tulis 1 pesan WhatsApp mengalir, natural, persuasif, dan tidak kaku (maksimal 3-4 kalimat).
 - JANGAN pasrah atau hanya bertanya kosong. Wajib tawarkan unit ready {unit_alternatif_ready} dan sebutkan bonus bundling {bundling_text} sebagai pemikat utama.
 - Berikan hanya isi pesan, tanpa pembuka/penutup meta, tanpa tanda kutip.
@@ -884,15 +981,18 @@ Aturan Penulisan:
         prompt = f"""Anda adalah {persona_title} di dealer resmi Astra Motor.
 Filosofi & Vibe Anda: "{persona_vibe}".
 Buatkan 1 pesan draf WhatsApp pendek (maksimal 3-4 kalimat) untuk calon pembeli.
-Nama Calon Konsumen: {req.nama}
-Kebutuhan/Minat: {req.minat}
-Unit Rekomendasi: {target_unit} (OTR Rp {harga_otr:,}, Opsi DP Rp {dp_disetujui:,}, Cicilan Rp {estimasi_cicilan_bulanan:,}/bln)
-Status Stok: {stok_status}
-Paket Promo & Bundling: {bundling_text}
 
-Aturan Penulisan:
-Sapa secara ramah dan personal. Tegaskan bahwa unit {target_unit} READY STOCK dan siap dikirim hari ini. Sebutkan keunggulan paket promo bundling {bundling_text} yang sudah termasuk gratis. Akhiri dengan Call To Action (CTA) santai namun persuasif untuk test drive, simulasi kredit, atau penerbitan draf SPK resmi.
-Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
+DATA PAYLOAD VALID:
+- Nama Calon Konsumen: {req.nama}
+- Kebutuhan/Minat: {req.minat}
+- Unit Rekomendasi: {target_unit} (OTR Rp {harga_otr:,}, Opsi DP Rp {dp_disetujui:,}, Cicilan Rp {estimasi_cicilan_bulanan:,}/bln)
+- Status Stok: {stok_status}
+- Paket Promo & Bundling: {bundling_text}
+
+ATURAN KETAT ANTI-HALUSINASI (ZERO-HALLUCINATION):
+- Dilarang menyebutkan warna atau spesifikasi varian yang tidak ada di dalam data payload.
+- Sapa secara ramah dan personal. Tegaskan bahwa unit {target_unit} READY STOCK dan siap dikirim hari ini. Sebutkan keunggulan paket promo bundling {bundling_text} yang sudah termasuk gratis. Akhiri dengan Call To Action (CTA) santai namun persuasif untuk test drive, simulasi kredit, atau penerbitan draf SPK resmi.
+- Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
 """
 
     payload = {
