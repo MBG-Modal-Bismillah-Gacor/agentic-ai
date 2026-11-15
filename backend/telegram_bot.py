@@ -370,10 +370,11 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
             f"⚡ `/autopipeline` — Jalankan otomatisasi penawaran ke semua prospek pending\n"
             f"➕ `/tambah [Data]` — Daftarkan prospek baru dari lapangan\n"
             f"🏢 `/stok` — Cek ketersediaan fisik showroom per cabang\n"
-            f"🤝 `/rapat` — Pantau sesi negosiasi restock otonom dengan Astra Hub\n"
+            f"🤝 `/rapat` — Sesi rapat seluruh tim agen di Ruang Konferensi\n"
+            f"💻 `/selesai` — Selesai rapat, seluruh tim kembali ke meja dan fokus mengetik\n"
             f"🤖 `/status` — Cek status live seluruh agen robot kantor 3D\n"
-            f"📡 `/perintah [Aksi]` — Beri perintah ke seluruh tim (contoh: `/perintah rapat`, `/perintah kerja`)\n"
-            f"🎯 `/agen [Warna] [Aksi]` — Perintah khusus agen tertentu (contoh: `/agen ungu susun penawaran`)\n\n"
+            f"📡 `/perintah [Aksi]` — Beri perintah ke seluruh tim (contoh: `/perintah rapat`, `/perintah selesai`, `/perintah kembali kerja`)\n"
+            f"🎯 `/agen [Warna] [Aksi]` — Perintah khusus agen tertentu (contoh: `/agen ungu susun penawaran`, `/agen ungu rapat`)\n\n"
             f"💡 *Alur Kerja Cepat:* Ketik `/prospek` ➔ pilih ID ➔ ketik `/tawarkan LD-xxx` ➔ periksa draf ➔ ketik `/kirim LD-xxx`!"
         )
 
@@ -811,6 +812,21 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
             "• `/agen [warna] [aksi]` — contoh: `/agen ungu susun penawaran`"
         )
 
+    # PERINTAH /selesai /bubar /balik: SELESAI RAPAT & SEMUA KEMBALI KE MEJA
+    if cmd.startswith("/selesai") or cmd.startswith("/bubar") or cmd.startswith("/balik") or cmd.startswith("/kembali"):
+        log_tele_event(
+            "Direktur Pak Alfa",
+            "Rapat Selesai - Seluruh Tim Kembali",
+            f"Diinstruksikan oleh {clean_sender} via Telegram Bot."
+        )
+        return (
+            "💻 *[RAPAT SELESAI // SELURUH ARMADA KEMBALI KE MEJA]* 💻\n\n"
+            "• *Status:* Sesi rapat resmi selesai.\n"
+            "• *Pergerakan:* Direktur Pak Alfa, Cubi Scout (Biru), Cubi Scribe (Ungu), Cubi Gate (Hijau), dan Cubi Vault kembali ke stasiun kerja masing-masing.\n"
+            "• *Aktivitas:* Seluruh agen duduk tenang dan fokus mengetik pekerjaan tanpa mondar-mandir.\n"
+            "• *Kamera 3D:* Bergeser ke tampilan ikhtisar kantor (Overview)."
+        )
+
     # PERINTAH /perintah: INSTRUKSI LANGSUNG KE SELURUH TIM AGEN
     if cmd.startswith("/perintah") or cmd.startswith("/cmd") or cmd.startswith("/instruksi"):
         instruction = clean_text.split(maxsplit=1)[1].strip() if len(clean_text.split()) > 1 else ""
@@ -824,18 +840,29 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
         )
 
         ins_lower = instruction.lower()
-        if "rapat" in ins_lower or "meeting" in ins_lower or "kumpul" in ins_lower:
+        if any(w in ins_lower for w in ["selesai", "bubar", "balik", "kembali", "kerja", "meja", "stasiun"]):
+            log_tele_event(
+                "Direktur Pak Alfa",
+                "Rapat Selesai - Seluruh Tim Kembali",
+                "Seluruh armada agen kembali ke meja dan fokus mengetik pekerjaan masing-masing."
+            )
+            return (
+                f"💻 *[PERINTAH TELEGRAM DITERIMA]: Rapat Selesai & Seluruh Tim Kembali!*\n\n"
+                f"• Instruksi: _{instruction}_\n"
+                f"• Status: Seluruh agen kembali duduk fokus dan mengetik di workstation masing-masing.\n"
+                f"• Kamera Kantor 3D: Bergeser ke tampilan ikhtisar kantor (Overview)."
+            )
+        elif any(w in ins_lower for w in ["rapat", "meeting", "kumpul", "briefing", "diskusi"]):
+            log_tele_event(
+                "Direktur Pak Alfa",
+                "Memanggil Sesi Rapat Tim",
+                "Seluruh tim agen bergerak ke Ruang Rapat Konferensi."
+            )
             return (
                 f"🤝 *[PERINTAH TELEGRAM DITERIMA]: Seluruh Tim AI Menuju Meja Rapat!*\n\n"
                 f"• Instruksi: _{instruction}_\n"
-                f"• Status: Direktur Pak Alfa memimpin rapat, Cubi Scout & Scribe bergerak ke ruang rapat.\n"
-                f"• Kamera Kantor 3D: Bergeser memantau Meja Konferensi & Kanban Screen."
-            )
-        elif "kerja" in ins_lower or "kembali" in ins_lower or "meja" in ins_lower or "stasiun" in ins_lower:
-            return (
-                f"💻 *[PERINTAH TELEGRAM DITERIMA]: Seluruh Agen Kembali ke Stasiun Kerja!*\n\n"
-                f"• Instruksi: _{instruction}_\n"
-                f"• Status: Seluruh agen kembali duduk fokus dan mengetik di workstation masing-masing."
+                f"• Status: Direktur Pak Alfa memimpin rapat, Cubi Scout, Scribe, Gate & Vault berkumpul di meja rapat.\n"
+                f"• Kamera Kantor 3D: Bergeser memantau Meja Konferensi & Layar Kanban."
             )
         elif "auto" in ins_lower or "pipeline" in ins_lower or "proses" in ins_lower:
             return (

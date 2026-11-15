@@ -64,23 +64,30 @@ export function CubiCharacter({
     const isMultiWaypoint = Array.isArray(targetPosition) && Array.isArray(targetPosition[0])
     
     if (isMultiWaypoint) {
-      if (lastTargetPosRef.current !== targetPosition) {
-        lastTargetPosRef.current = targetPosition
+      const finalWp = targetPosition[targetPosition.length - 1]
+      const routeKey = `${targetPosition[0][0]},${targetPosition[0][2]}_${finalWp[0]},${finalWp[2]}_${targetPosition.length}`
+      if (lastTargetPosRef.current !== routeKey) {
+        lastTargetPosRef.current = routeKey
         waypointIdxRef.current = 0
       }
-      const currentWp = targetPosition[waypointIdxRef.current] || targetPosition[targetPosition.length - 1]
+      const currentWp = targetPosition[waypointIdxRef.current] || finalWp
       destPos.current.set(currentWp[0], currentWp[1], currentWp[2])
       
       const distToCurrentWp = Math.hypot(
         destPos.current.x - groupRef.current.position.x,
         destPos.current.z - groupRef.current.position.z
       )
-      if (distToCurrentWp < 0.38 && waypointIdxRef.current < targetPosition.length - 1) {
+      if (distToCurrentWp < 0.42 && waypointIdxRef.current < targetPosition.length - 1) {
         waypointIdxRef.current += 1
         const nextWp = targetPosition[waypointIdxRef.current]
         destPos.current.set(nextWp[0], nextWp[1], nextWp[2])
       }
     } else if (targetPosition) {
+      const posKey = `${targetPosition[0]},${targetPosition[1]},${targetPosition[2]}`
+      if (lastTargetPosRef.current !== posKey) {
+        lastTargetPosRef.current = posKey
+        waypointIdxRef.current = 0
+      }
       destPos.current.set(targetPosition[0], targetPosition[1], targetPosition[2])
     } else {
       destPos.current.set(position[0], position[1], position[2])

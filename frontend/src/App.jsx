@@ -536,16 +536,180 @@ export default function App() {
       cmd.includes('semua') ||
       cmd.includes('tim') ||
       cmd.includes('all') ||
-      cmd.includes('armada')
+      cmd.includes('armada') ||
+      cmd.includes('balik semua') ||
+      cmd.includes('kembali semua') ||
+      cmd.includes('bubar')
 
-    // 1. Perintah Rapat / Meeting / Kumpul / Briefing
-    if (
-      cmd.includes('rapat') ||
-      cmd.includes('meeting') ||
-      cmd.includes('kumpul') ||
-      cmd.includes('briefing') ||
-      cmd.includes('diskusi')
-    ) {
+    // Deteksi apakah perintah adalah kembali/selesai/bubar (prioritas tinggi di atas rapat agar 'selesai rapat' tidak memicu rapat baru)
+    const isReturnCmd =
+      cmd.includes('selesai') ||
+      cmd.includes('bubar') ||
+      cmd.includes('balik') ||
+      cmd.includes('kembali') ||
+      cmd.includes('pulang') ||
+      (cmd.includes('kerja') && !cmd.includes('rapat')) ||
+      (cmd.includes('meja') && !cmd.includes('rapat')) ||
+      (cmd.includes('stasiun') && !cmd.includes('rapat'))
+
+    // Deteksi apakah perintah adalah rapat/meeting
+    const isMeetingCmd =
+      !isReturnCmd && (
+        cmd.includes('rapat') ||
+        cmd.includes('meeting') ||
+        cmd.includes('kumpul') ||
+        cmd.includes('briefing') ||
+        cmd.includes('diskusi') ||
+        cmd.includes('konferensi')
+      )
+
+    // 1. Eksekusi Perintah Selesai Rapat / Kembali ke Meja / Bubar / Balik Semua
+    if (isReturnCmd) {
+      if (isGlobal) {
+        // SELURUH TIM KEMBALI KE MEJA & MENGETIK / FOKUS BEKERJA
+        setBossConfig((prev) => ({
+          ...prev,
+          targetPos: OFFICE_PATHS.boss_to_desk,
+          rotationY: 0,
+          isWalking: true,
+          isTyping: false,
+          statusText: 'Supervising Office & Deals',
+        }))
+
+        setAgents((prev) => ({
+          ...prev,
+          'blue-agent': {
+            ...prev['blue-agent'],
+            targetPos: OFFICE_PATHS.blue_to_desk,
+            rotationY: 0,
+            isWalking: true,
+            isTyping: false,
+            statusText: 'Kembali ke Meja Workstation 01...',
+          },
+          'purple-agent': {
+            ...prev['purple-agent'],
+            targetPos: OFFICE_PATHS.purple_to_desk,
+            rotationY: Math.PI,
+            isWalking: true,
+            isTyping: false,
+            statusText: 'Kembali ke Meja Workstation 02...',
+          },
+          'green-agent': {
+            ...prev['green-agent'],
+            targetPos: OFFICE_PATHS.green_to_desk,
+            rotationY: -Math.PI / 2,
+            isWalking: true,
+            isTyping: false,
+            statusText: 'Kembali ke Meja Resepsionis...',
+          },
+          'orange-agent': {
+            ...prev['orange-agent'],
+            targetPos: OFFICE_PATHS.orange_to_desk,
+            rotationY: 0,
+            isWalking: true,
+            isTyping: false,
+            statusText: 'Kembali ke Kluster Server Vault...',
+          },
+        }))
+
+        setTimeout(() => {
+          setBossConfig((prev) => ({
+            ...prev,
+            isWalking: false,
+            targetPos: STATIONS.boss_desk,
+            statusText: 'Supervising Office & Deals',
+          }))
+          setAgents((prev) => ({
+            ...prev,
+            'blue-agent': {
+              ...prev['blue-agent'],
+              isWalking: false,
+              isTyping: true,
+              targetPos: STATIONS.workstation_desk,
+              statusText: 'Monitoring Stock & Catalog',
+            },
+            'purple-agent': {
+              ...prev['purple-agent'],
+              isWalking: false,
+              isTyping: true,
+              targetPos: STATIONS.workstation_desk_02,
+              statusText: 'Fokus Mengetik Penawaran (Qwen 2.5)',
+            },
+            'green-agent': {
+              ...prev['green-agent'],
+              isWalking: false,
+              isTyping: false,
+              targetPos: STATIONS.security_gate,
+              statusText: 'WhatsApp Gateway Standby',
+            },
+            'orange-agent': {
+              ...prev['orange-agent'],
+              isWalking: false,
+              isTyping: false,
+              targetPos: STATIONS.data_vault,
+              statusText: 'Database & Inventory Synced',
+            },
+          }))
+        }, 8000)
+
+        handleChangePOV('overview')
+
+        return {
+          success: true,
+          feedback: '[SELESAI]: Rapat selesai. Seluruh tim AI kembali duduk fokus dan mengetik di stasiun kerja masing-masing.',
+        }
+      } else {
+        // PERINTAH KHUSUS HANYA UNTUK AGEN TERPILIH (Misal: Hanya Ungu yang kembali ke meja)
+        const targetKey = selectedAgentId.replace('-agent', '')
+        const deskPath = OFFICE_PATHS[`${targetKey}_to_desk`]
+        const deskStation = STATIONS[targetKey === 'purple' ? 'workstation_desk_02' : targetKey === 'blue' ? 'workstation_desk' : targetKey === 'green' ? 'security_gate' : 'data_vault']
+        const agentName = agents[selectedAgentId]?.name || (selectedAgentId === 'purple-agent' ? 'Cubi Scribe (Ungu)' : selectedAgentId)
+        const deskRot = selectedAgentId === 'purple-agent' ? Math.PI : selectedAgentId === 'blue-agent' ? 0 : selectedAgentId === 'green-agent' ? -Math.PI / 2 : 0
+
+        if (deskPath) {
+          setAgents((prev) => ({
+            ...prev,
+            [selectedAgentId]: {
+              ...prev[selectedAgentId],
+              targetPos: deskPath,
+              rotationY: deskRot,
+              isWalking: true,
+              isTyping: false,
+              statusText: `Kembali ke stasiun kerja...`,
+            },
+          }))
+
+          setTimeout(() => {
+            setAgents((prev) => ({
+              ...prev,
+              [selectedAgentId]: {
+                ...prev[selectedAgentId],
+                isWalking: false,
+                isTyping: selectedAgentId === 'purple-agent' || selectedAgentId === 'blue-agent',
+                targetPos: deskStation,
+                statusText: selectedAgentId === 'purple-agent' ? 'Fokus Mengetik Penawaran (Qwen 2.5)' : selectedAgentId === 'blue-agent' ? 'Monitoring Stock & Catalog' : 'Standby di Stasiun',
+              },
+            }))
+          }, 8000)
+
+          if (selectedAgentId === 'purple-agent' || selectedAgentId === 'blue-agent') {
+            handleChangePOV('workstation', selectedAgentId)
+          } else if (selectedAgentId === 'green-agent') {
+            handleChangePOV('reception', selectedAgentId)
+          } else if (selectedAgentId === 'orange-agent') {
+            handleChangePOV('vault', selectedAgentId)
+          }
+
+          return {
+            success: true,
+            feedback: `[PERINTAH KHUSUS]: ${agentName} kembali duduk fokus di stasiun kerjanya.`,
+          }
+        }
+      }
+    }
+
+    // 2. Eksekusi Perintah Rapat / Meeting / Kumpul / Briefing
+    if (isMeetingCmd) {
       if (isGlobal) {
         // SELURUH TIM KE MEJA RAPAT
         setBossConfig((prev) => ({
@@ -595,13 +759,42 @@ export default function App() {
 
         // Waktu cukup agar seluruh rute koridor selesai tanpa berhenti di tengah jalan
         setTimeout(() => {
-          setBossConfig((prev) => ({ ...prev, isWalking: false }))
+          setBossConfig((prev) => ({
+            ...prev,
+            isWalking: false,
+            targetPos: STATIONS.meeting_boss,
+            statusText: 'Memimpin Sesi Rapat Strategis Tim',
+          }))
           setAgents((prev) => ({
             ...prev,
-            'blue-agent': { ...prev['blue-agent'], isWalking: false },
-            'purple-agent': { ...prev['purple-agent'], isWalking: false },
-            'green-agent': { ...prev['green-agent'], isWalking: false },
-            'orange-agent': { ...prev['orange-agent'], isWalking: false },
+            'blue-agent': {
+              ...prev['blue-agent'],
+              isWalking: false,
+              isTyping: false,
+              targetPos: STATIONS.meeting_blue,
+              statusText: 'Diskusi Hardware & Stok di Meja Rapat',
+            },
+            'purple-agent': {
+              ...prev['purple-agent'],
+              isWalking: false,
+              isTyping: false,
+              targetPos: STATIONS.meeting_purple,
+              statusText: 'Review AI Pitch Deck di Meja Rapat',
+            },
+            'green-agent': {
+              ...prev['green-agent'],
+              isWalking: false,
+              isTyping: false,
+              targetPos: STATIONS.meeting_green,
+              statusText: 'Laporan Gateway WhatsApp di Meja Rapat',
+            },
+            'orange-agent': {
+              ...prev['orange-agent'],
+              isWalking: false,
+              isTyping: false,
+              targetPos: STATIONS.meeting_orange,
+              statusText: 'Laporan Sinkronisasi Data di Meja Rapat',
+            },
           }))
         }, 8000)
 
@@ -615,6 +808,7 @@ export default function App() {
         // PERINTAH KHUSUS HANYA UNTUK SATU AGEN YANG DIKLIK (Misal: Hanya Ungu yang jalan)
         const targetKey = selectedAgentId.replace('-agent', '')
         const meetingPath = OFFICE_PATHS[`${targetKey}_to_meeting`]
+        const meetingStation = STATIONS[`meeting_${targetKey}`]
         const agentName = agents[selectedAgentId]?.name || (selectedAgentId === 'purple-agent' ? 'Cubi Scribe (Ungu)' : selectedAgentId)
         const meetingRot = selectedAgentId === 'purple-agent' ? Math.PI / 2 : selectedAgentId === 'blue-agent' ? -Math.PI / 2 : selectedAgentId === 'green-agent' ? 0 : Math.PI / 4
 
@@ -637,6 +831,8 @@ export default function App() {
               [selectedAgentId]: {
                 ...prev[selectedAgentId],
                 isWalking: false,
+                isTyping: false,
+                targetPos: meetingStation,
               },
             }))
           }, 8000)
@@ -646,127 +842,6 @@ export default function App() {
           return {
             success: true,
             feedback: `[PERINTAH KHUSUS]: Hanya ${agentName} yang berjalan ke Ruang Rapat. Agen lain tetap fokus di posisinya.`,
-          }
-        }
-      }
-    }
-
-    // 2. Perintah Kembali / Kerja / Bubar / Selesai / Stasiun / Meja
-    if (
-      cmd.includes('kembali') ||
-      cmd.includes('kerja') ||
-      cmd.includes('bubar') ||
-      cmd.includes('selesai') ||
-      cmd.includes('stasiun') ||
-      cmd.includes('meja')
-    ) {
-      if (isGlobal) {
-        // SELURUH TIM KEMBALI KE MEJA & MENGETIK / FOKUS BEKERJA
-        setBossConfig((prev) => ({
-          ...prev,
-          targetPos: OFFICE_PATHS.boss_to_desk,
-          rotationY: 0,
-          isWalking: true,
-          isTyping: false,
-          statusText: 'Supervising Office & Deals',
-        }))
-
-        setAgents((prev) => ({
-          ...prev,
-          'blue-agent': {
-            ...prev['blue-agent'],
-            targetPos: OFFICE_PATHS.blue_to_desk,
-            rotationY: 0,
-            isWalking: true,
-            isTyping: true,
-            statusText: 'Monitoring Stock & Catalog',
-          },
-          'purple-agent': {
-            ...prev['purple-agent'],
-            targetPos: OFFICE_PATHS.purple_to_desk,
-            rotationY: Math.PI,
-            isWalking: true,
-            isTyping: true,
-            statusText: 'Fokus Mengetik Penawaran (Qwen 2.5)',
-          },
-          'green-agent': {
-            ...prev['green-agent'],
-            targetPos: OFFICE_PATHS.green_to_desk,
-            rotationY: -Math.PI / 2,
-            isWalking: true,
-            isTyping: false,
-            statusText: 'WhatsApp Gateway Standby',
-          },
-          'orange-agent': {
-            ...prev['orange-agent'],
-            targetPos: OFFICE_PATHS.orange_to_desk,
-            rotationY: 0,
-            isWalking: true,
-            isTyping: false,
-            statusText: 'Database & Inventory Synced',
-          },
-        }))
-
-        setTimeout(() => {
-          setBossConfig((prev) => ({ ...prev, isWalking: false }))
-          setAgents((prev) => ({
-            ...prev,
-            'blue-agent': { ...prev['blue-agent'], isWalking: false, isTyping: true },
-            'purple-agent': { ...prev['purple-agent'], isWalking: false, isTyping: true },
-            'green-agent': { ...prev['green-agent'], isWalking: false },
-            'orange-agent': { ...prev['orange-agent'], isWalking: false },
-          }))
-        }, 8000)
-
-        handleChangePOV('overview')
-
-        return {
-          success: true,
-          feedback: '[SELESAI]: Rapat selesai. Seluruh agen AI kembali duduk fokus dan mengetik di stasiun kerja masing-masing.',
-        }
-      } else {
-        // PERINTAH KHUSUS HANYA UNTUK AGEN TERPILIH (Misal: Hanya Ungu yang kembali ke meja)
-        const targetKey = selectedAgentId.replace('-agent', '')
-        const deskPath = OFFICE_PATHS[`${targetKey}_to_desk`]
-        const agentName = agents[selectedAgentId]?.name || (selectedAgentId === 'purple-agent' ? 'Cubi Scribe (Ungu)' : selectedAgentId)
-        const deskRot = selectedAgentId === 'purple-agent' ? Math.PI : selectedAgentId === 'blue-agent' ? 0 : selectedAgentId === 'green-agent' ? -Math.PI / 2 : 0
-
-        if (deskPath) {
-          setAgents((prev) => ({
-            ...prev,
-            [selectedAgentId]: {
-              ...prev[selectedAgentId],
-              targetPos: deskPath,
-              rotationY: deskRot,
-              isWalking: true,
-              isTyping: false,
-              statusText: `Kembali ke stasiun kerja...`,
-            },
-          }))
-
-          setTimeout(() => {
-            setAgents((prev) => ({
-              ...prev,
-              [selectedAgentId]: {
-                ...prev[selectedAgentId],
-                isWalking: false,
-                isTyping: selectedAgentId === 'purple-agent' || selectedAgentId === 'blue-agent',
-                statusText: selectedAgentId === 'purple-agent' ? 'Fokus Mengetik Penawaran (Qwen 2.5)' : 'Monitoring Stock & Catalog',
-              },
-            }))
-          }, 8000)
-
-          if (selectedAgentId === 'purple-agent' || selectedAgentId === 'blue-agent') {
-            handleChangePOV('workstation', selectedAgentId)
-          } else if (selectedAgentId === 'green-agent') {
-            handleChangePOV('reception', selectedAgentId)
-          } else if (selectedAgentId === 'orange-agent') {
-            handleChangePOV('vault', selectedAgentId)
-          }
-
-          return {
-            success: true,
-            feedback: `[PERINTAH KHUSUS]: ${agentName} kembali duduk fokus dan mengetik di mejanya.`,
           }
         }
       }
@@ -1077,14 +1152,22 @@ export default function App() {
       if (teamRes.ok) {
         const teamData = await teamRes.json()
         if (teamData.boss) {
-          setBossConfig((prev) => ({ ...prev, ...teamData.boss }))
+          setBossConfig((prev) => {
+            const { targetPos, isWalking, rotationY, isTyping, ...safeBossProps } = teamData.boss
+            return { ...prev, ...safeBossProps }
+          })
         }
         if (teamData.agents) {
           setAgents((prev) => {
             const next = { ...prev }
             for (const [k, v] of Object.entries(teamData.agents)) {
               if (next[k]) {
-                next[k] = { ...next[k], ...v }
+                const { targetPos, isWalking, rotationY, isTyping, isScanning, statusText, ...safeProps } = v
+                next[k] = {
+                  ...next[k],
+                  ...safeProps,
+                  statusText: next[k].isWalking ? next[k].statusText : (statusText || next[k].statusText),
+                }
               }
             }
             return next

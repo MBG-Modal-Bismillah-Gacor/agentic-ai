@@ -572,14 +572,17 @@ class TeamConfigUpdate(BaseModel):
 @app.post("/api/v1/team/config")
 def update_team_config_endpoint(payload: TeamConfigUpdate):
     current = load_team_config()
+    IGNORED_RUNTIME_KEYS = {"targetPos", "isWalking", "rotationY", "isTyping", "isScanning", "statusText"}
     if payload.boss:
-        current["boss"].update(payload.boss)
+        clean_boss = {k: v for k, v in payload.boss.items() if k not in IGNORED_RUNTIME_KEYS}
+        current["boss"].update(clean_boss)
     if payload.agents:
         for k, v in payload.agents.items():
+            clean_agent = {ak: av for ak, av in v.items() if ak not in IGNORED_RUNTIME_KEYS}
             if k in current["agents"]:
-                current["agents"][k].update(v)
+                current["agents"][k].update(clean_agent)
             else:
-                current["agents"][k] = v
+                current["agents"][k] = clean_agent
     save_team_config(current)
     boss_name = current.get("boss", {}).get("name", "Bos")
     add_log(boss_name, "Memperbarui Konfigurasi Tim & Kantor", "Nama dan peran tim berhasil disinkronkan.")

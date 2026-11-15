@@ -22,21 +22,6 @@
       "color": "#0284c7",
       "status": "Active Compute",
       "station": "Workstation 01",
-      "pos": [
-        -5.32,
-        0.33,
-        3.39
-      ],
-      "targetPos": [
-        -5.32,
-        0.33,
-        3.39
-      ],
-      "rotationY": 0,
-      "isWalking": false,
-      "isTyping": true,
-      "isScanning": false,
-      "statusText": "Monitoring Stock & Catalog",
       "emoji": "COMPUTE",
       "vibe": "Connects technical specs directly to customer ROI.",
       "personaId": "sales-engineer"
@@ -48,21 +33,6 @@
       "color": "#9333ea",
       "status": "Task Ready",
       "station": "Workstation 02",
-      "pos": [
-        -4.09,
-        0.33,
-        5.42
-      ],
-      "targetPos": [
-        -4.09,
-        0.33,
-        5.42
-      ],
-      "rotationY": 3.141592653589793,
-      "isWalking": false,
-      "isTyping": true,
-      "isScanning": false,
-      "statusText": "Sprint Task Ready",
       "emoji": "DRAFTER",
       "vibe": "Turns buying signals into booked meetings before competition notices.",
       "personaId": "sales-outbound-strategist"
@@ -74,21 +44,6 @@
       "color": "#16a34a",
       "status": "Access Control",
       "station": "Meja Resepsionis",
-      "pos": [
-        -0.69,
-        0.33,
-        4.87
-      ],
-      "targetPos": [
-        -0.69,
-        0.33,
-        4.87
-      ],
-      "rotationY": -1.5707963267948966,
-      "isWalking": false,
-      "isTyping": false,
-      "isScanning": false,
-      "statusText": "WhatsApp Gateway Standby",
       "emoji": "GATE",
       "vibe": "Tells you your forecast is wrong before you realize it yourself.",
       "personaId": "sales-pipeline-analyst"
@@ -100,21 +55,6 @@
       "color": "#ea580c",
       "status": "Vault Storage",
       "station": "Server Vault & Data Archive",
-      "pos": [
-        -5.06,
-        0.33,
-        0.45
-      ],
-      "targetPos": [
-        -5.06,
-        0.33,
-        0.45
-      ],
-      "rotationY": 0,
-      "isWalking": false,
-      "isTyping": false,
-      "isScanning": false,
-      "statusText": "Database & Inventory Synced",
       "emoji": "VAULT",
       "vibe": "Expands customer lifetime value through proactive account mastery.",
       "personaId": "sales-account-strategist"
