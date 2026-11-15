@@ -23,6 +23,7 @@ try:
         OUTPUT_DIR
     )
     from backend import agentic_swarm
+    from backend import telegram_bot
 except ImportError:
     from dispatcher import SafeOutreachDispatcher
     from engine_pdf import (
@@ -32,6 +33,7 @@ except ImportError:
         OUTPUT_DIR
     )
     import agentic_swarm
+    import telegram_bot
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE = os.path.join(BASE_DIR, "workspace")
@@ -301,8 +303,10 @@ async def lifespan(app: FastAPI):
     global main_loop, heartbeat_task
     main_loop = asyncio.get_running_loop()
     
-    # Hubungkan logger eksternal swarm ke push_log
+    # Hubungkan logger eksternal swarm & telegram bot ke push_log
     agentic_swarm.set_external_logger(push_log)
+    telegram_bot.set_external_logger(push_log)
+    telegram_bot.start_telegram_bot()
     
     # Jalankan pemindaian awal stok agar data deliberasi langsung tersedia
     try:
@@ -323,6 +327,7 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError:
             pass
     agentic_swarm.stop_swarm_background()
+    telegram_bot.stop_telegram_bot()
 
 app = FastAPI(
     title="Agentic Sales Hub Core API - MSI Cubi NUC",
@@ -1334,3 +1339,38 @@ class ActivityCreateRequest(BaseModel):
 def post_activity(req: ActivityCreateRequest):
     add_log(req.agent, req.action, req.detail or "")
     return {"status": "ok"}
+
+# ==============================================================================
+# TELEGRAM BOT & CUSTOMER INBOUND COMMAND ENDPOINTS
+# ==============================================================================
+
+@app.get("/api/v1/telegram/status")
+def get_telegram_status():
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    live_enabled = os.getenv("TELEGRAM_LIVE_ENABLED", "").strip().lower() == "true"
+    return {
+        "status": "ready",
+        "live_enabled": live_enabled,
+        "has_token": bool(token),
+        "supported_commands": [
+            "/start, /help, /bantuan - Panduan pemesanan & salam selamat datang",
+            "/katalog - Daftar motor Honda & harga OTR resmi deterministik",
+            "/stok - Ketersediaan fisik cabang dealer live",
+            "/spk <id_lead> - Unduh berkas fisik PDF SPK resmi",
+            "Pesan teks konsultasi - Parsing otomatis, simulasi DP & cicilan 12/24/36 bulan"
+        ]
+    }
+
+@app.post("/api/v1/telegram/webhook")
+async def telegram_webhook(update: Dict[str, Any]):
+    """Endpoint webhook untuk menerima update pesan langsung dari Telegram Bot API."""
+    msg = update.get("message", {})
+    chat = msg.get("chat", {})
+    chat_id = str(chat.get("id", ""))
+    sender_name = chat.get("first_name", "Konsumen")
+    text = msg.get("text", "")
+    if chat_id and text:
+        balasan = telegram_bot.handle_customer_command(chat_id, sender_name, text)
+        telegram_bot.send_telegram_reply(chat_id, balasan)
+        return {"status": "ok", "reply": balasan}
+    return {"status": "ignored"}
