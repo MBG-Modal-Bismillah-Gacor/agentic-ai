@@ -1530,7 +1530,7 @@ export default function App() {
       'green-agent': {
         ...prev['green-agent'],
         isScanning: true,
-        statusText: `Mengirim pesan via WhatsApp Gateway ke ${payload.nomor_wa}...`,
+        statusText: `Mengirim draf penawaran & berkas PDF SPK ke Telegram @iiibays...`,
       },
       'orange-agent': {
         ...prev['orange-agent'],
@@ -1576,9 +1576,10 @@ export default function App() {
     }
 
     const isSimulation = responseData.status === 'simulated'
-    const outcomeText = isSimulation
-      ? 'Simulasi tercatat; pesan tidak dikirim ke WhatsApp.'
-      : 'Pesan berhasil dikirim melalui WhatsApp Gateway.'
+    const teleTarget = responseData.telegram_target || '@iiibays'
+    const outcomeText = responseData.telegram_dispatch?.status === 'terkirim_live_telegram'
+      ? `Bukti penawaran & PDF SPK resmi berhasil dikirim live ke Telegram ${teleTarget}!`
+      : `Bukti penawaran & PDF SPK resmi berhasil diproses & tercatat untuk Telegram ${teleTarget}!`
     setPitchResult(null)
     setActiveLead(null)
     setBossConfig((prev) => ({

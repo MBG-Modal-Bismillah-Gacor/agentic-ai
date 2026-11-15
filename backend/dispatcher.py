@@ -240,9 +240,11 @@ class SafeOutreachDispatcher:
         caption: str,
         audit_context: Optional[Dict[str, object]] = None,
     ) -> dict:
-        if not TELEGRAM_LIVE_ENABLED:
+        token = TELEGRAM_BOT_TOKEN or os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+        live_enabled = TELEGRAM_LIVE_ENABLED or (os.getenv("TELEGRAM_LIVE_ENABLED", "").strip().lower() == "true")
+        if not live_enabled:
             return {"status": "dilewati", "alasan": "Pengiriman Telegram live tidak diaktifkan."}
-        if not TELEGRAM_BOT_TOKEN:
+        if not token:
             return {"status": "dilewati", "alasan": "TELEGRAM_BOT_TOKEN belum dikonfigurasi."}
         context = self._audit_context(audit_context)
         if not (
@@ -262,7 +264,7 @@ class SafeOutreachDispatcher:
             if document.read(5) != b"%PDF-":
                 return {"status": "dilewati", "alasan": "File yang dipilih bukan PDF valid."}
 
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
+        url = f"https://api.telegram.org/bot{token}/sendDocument"
         try:
             with open(path_pdf, "rb") as document:
                 response = requests.post(
@@ -278,7 +280,7 @@ class SafeOutreachDispatcher:
             else:
                 result = {"status": "terkirim_telegram", "http_code": response.status_code}
         except (requests.RequestException, ValueError) as error:
-            error_message = str(error).replace(TELEGRAM_BOT_TOKEN, "[redacted]")[:300]
+            error_message = str(error).replace(token, "[redacted]")[:300]
             result = {"status": "gagal_telegram", "error": error_message}
 
         self._catat_audit(

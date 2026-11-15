@@ -1073,12 +1073,15 @@ class ApprovalRequest(BaseModel):
     request_id: Optional[str] = None
     consent_verified: Optional[bool] = None
     consent_confirmed: Optional[bool] = None
-    mode_simulasi: Optional[bool] = True
+    mode_simulasi: Optional[bool] = None
     approved_by: Optional[str] = "Sales Director"
     pesan_final: Optional[str] = ""
     draft_pitch: Optional[str] = ""
     pesan: Optional[str] = ""
     nomor_wa: Optional[str] = None
+    target_channel: Optional[str] = "telegram"
+    telegram_target: Optional[str] = "@iiibays"
+    target_chat_id: Optional[str] = None
     unit_barang: Optional[str] = None
     unit_rekomendasi: Optional[str] = None
     harga_otr: Optional[int] = None
@@ -1125,7 +1128,7 @@ def approve_outreach(req: ApprovalRequest):
             raise HTTPException(status_code=404, detail="Prospek tidak ditemukan.")
 
         request_id = req.request_id or f"REQ-{int(time.time()*1000)}"
-        mode_simulasi = req.mode_simulasi if req.mode_simulasi is not None else True
+        mode_simulasi = bool(req.mode_simulasi) if req.mode_simulasi is not None else False
 
         # Tolak duplikasi hanya pada pengiriman live; mode simulasi aman selalu diizinkan untuk demo & evaluasi juri
         if lead.get("status_kontak") == "dispatched" and not mode_simulasi:
@@ -1341,10 +1344,38 @@ def approve_outreach(req: ApprovalRequest):
         }
         scribe_dict["dokumen_spk"] = dokumen_spk_payload
 
+        # Dispatch bukti konfirmasi penawaran & berkas fisik PDF SPK resmi ke Telegram (@iiibays)
+        tele_target = (req.telegram_target or os.getenv("TELEGRAM_TARGET_USER", "@iiibays")).strip()
+        if not tele_target.startswith("@") and not tele_target.isdigit() and not tele_target.startswith("-"):
+            tele_target = f"@{tele_target}"
+
+        full_pdf_path = os.path.join(OUTPUT_DIR, pdf_filename)
+        bundling_names = [b.get("nama", "") for b in items_bundling if isinstance(b, dict)] if items_bundling else []
+        bundling_desc = ", ".join(bundling_names) if bundling_names else "Helm Standar & Servis Gratis"
+
+        tele_dispatch_res = telegram_bot.dispatch_to_telegram(
+            target_user=tele_target,
+            message_text=(
+                f"🔔 *BUKTI PERSETUJUAN SALES DIREKTUR // {effective_lead_id}*\n\n"
+                f"👤 *Calon Konsumen:* *{konsumen_nama}* (📍 {domisili})\n"
+                f"🏍️ *Unit Disetujui:* *{unit_barang}* (OTR Rp {harga_otr:,})\n"
+                f"💰 *DP Disetujui:* Rp {nominal_dp:,} (Min. 15%)\n"
+                f"📊 *Skema Angsuran:* Tenor {tenor_bulan}x @ Rp {angsuran:,}/bln\n"
+                f"🎁 *Paket Promo & Bundling:* {bundling_desc}\n\n"
+                f"💬 *Draf Penawaran Sales (Qwen 2.5 Local):*\n_{pesan_final}_\n\n"
+                f"📄 *Berkas Resmi SPK Penjualan terbit dan dilampirkan:*"
+            ),
+            pdf_path=full_pdf_path if os.path.exists(full_pdf_path) else None,
+            caption=f"📄 Berkas Resmi SPK Penjualan — {konsumen_nama} ({effective_lead_id})",
+            lead_id=effective_lead_id,
+            approved_by=approved_by
+        )
+
+    tele_status_desc = "Terkirim Live Telegram" if tele_dispatch_res.get("delivery_mode") == "live" else "Tercatat Bukti Simulasi Telegram"
     add_log(
         "Cubi Gate",
-        f"Outreach {status_kontak} untuk prospek {effective_lead_id}",
-        f"Disetujui oleh {approved_by}; consent_verified=True; SPK diterbitkan ({pdf_filename}).",
+        f"Outreach {status_kontak} & Dispatch Telegram {tele_target} ({effective_lead_id})",
+        f"Disetujui oleh {approved_by}; berkas {pdf_filename} diterbitkan dan dikirimkan ke Telegram {tele_target} ({tele_status_desc}).",
     )
 
     return {
@@ -1357,6 +1388,11 @@ def approve_outreach(req: ApprovalRequest):
         "pdf_filename": pdf_filename,
         "pdf_url": pdf_url,
         "download_url": pdf_url,
+        "target_channel": req.target_channel or "telegram",
+        "telegram_target": tele_target,
+        "target_telegram": tele_target,
+        "telegram_url": tele_dispatch_res.get("telegram_url", f"https://t.me/{tele_target.lstrip('@')}"),
+        "telegram_dispatch": tele_dispatch_res,
         "items_bundling": items_bundling,
         "bundling_items": items_bundling,
         "prospek": {
@@ -1641,13 +1677,60 @@ async def telegram_webhook(update: Dict[str, Any]):
     msg = update.get("message", {})
     chat = msg.get("chat", {})
     chat_id = str(chat.get("id", ""))
-    sender_name = chat.get("first_name", "Konsumen")
+    user_obj = msg.get("from", {})
+    username = (user_obj.get("username") or chat.get("username") or "").strip().lstrip("@")
+    sender_name = user_obj.get("first_name") or chat.get("first_name") or "Konsumen"
     text = msg.get("text", "")
+    if chat_id:
+        telegram_bot.save_telegram_user(username, chat_id, sender_name)
     if chat_id and text:
         balasan = telegram_bot.handle_customer_command(chat_id, sender_name, text)
         telegram_bot.send_telegram_reply(chat_id, balasan)
         return {"status": "ok", "reply": balasan}
     return {"status": "ignored"}
+
+@app.get("/api/v1/telegram/target-user")
+def get_telegram_target_user():
+    target = os.getenv("TELEGRAM_TARGET_USER", "@iiibays").strip()
+    chat_id = telegram_bot.resolve_telegram_chat_id(target.lstrip("@"))
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip() or telegram_bot.TELEGRAM_BOT_TOKEN
+    return {
+        "target_user": target if target.startswith("@") else f"@{target}",
+        "chat_id": chat_id,
+        "is_ready": bool(token and chat_id),
+        "has_token": bool(token),
+        "telegram_url": f"https://t.me/{target.lstrip('@')}"
+    }
+
+class SetTelegramTargetRequest(BaseModel):
+    target_user: str = "@iiibays"
+    chat_id: Optional[str] = None
+
+@app.post("/api/v1/telegram/set-target")
+def set_telegram_target_user(req: SetTelegramTargetRequest):
+    clean = req.target_user.strip()
+    if not clean.startswith("@") and not clean.isdigit():
+        clean = f"@{clean}"
+    os.environ["TELEGRAM_TARGET_USER"] = clean
+    if req.chat_id:
+        os.environ["TELEGRAM_TARGET_CHAT_ID"] = req.chat_id
+        telegram_bot.save_telegram_user(clean.lstrip("@"), req.chat_id, clean)
+    return {
+        "status": "success",
+        "target_user": clean,
+        "chat_id": req.chat_id or telegram_bot.resolve_telegram_chat_id(clean.lstrip("@"))
+    }
+
+@app.get("/api/v1/telegram/proofs")
+def get_telegram_dispatch_proofs():
+    proof_file = os.path.join(WORKSPACE, "telegram_dispatch_proof.json")
+    if os.path.exists(proof_file):
+        try:
+            with open(proof_file, "r", encoding="utf-8") as pf:
+                return {"status": "ok", "proofs": json.load(pf)}
+        except Exception:
+            pass
+    return {"status": "ok", "proofs": []}
 
 # ==============================================================================
 # CI/CD & AUTOMATED APPLIANCE DEPLOYMENT (PWA & BACKEND)
