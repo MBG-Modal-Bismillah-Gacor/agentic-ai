@@ -94,8 +94,8 @@ export function CubiCharacter({
     }
 
     const distToTarget = groupRef.current.position.distanceTo(destPos.current)
-    const isMovingToTarget = isMultiWaypoint ? (waypointIdxRef.current < targetPosition.length - 1 || distToTarget > 0.12) : distToTarget > 0.10
-    const moving = isMovingToTarget
+    const isMovingToTarget = isMultiWaypoint ? (waypointIdxRef.current < targetPosition.length - 1 || distToTarget > 0.08) : distToTarget > 0.08
+    const moving = isMovingToTarget || isWalking
 
     // 2. Perpindahan Halus, Stabil & Rotasi Presisi
     if (isMovingToTarget) {
@@ -103,9 +103,9 @@ export function CubiCharacter({
       const dirZ = destPos.current.z - groupRef.current.position.z
       const dist = Math.hypot(dirX, dirZ)
 
-      if (dist > 0.04) {
-        // Kecepatan jalan responsif, berbobot alami & mencapai ruangan rapat secara presisi
-        const speed = Math.min(0.065, (delta || 0.016) * 2.4)
+      if (dist > 0.02) {
+        // Kecepatan langkah proporsional & sinkron dengan ayunan kaki
+        const speed = Math.min(0.048, (delta || 0.016) * 1.9)
         const step = Math.min(speed, dist)
         groupRef.current.position.x += (dirX / dist) * step
         groupRef.current.position.z += (dirZ / dist) * step
@@ -116,7 +116,7 @@ export function CubiCharacter({
         let diff = (moveAngle - groupRef.current.rotation.y) % (Math.PI * 2)
         if (diff < -Math.PI) diff += Math.PI * 2
         if (diff > Math.PI) diff -= Math.PI * 2
-        groupRef.current.rotation.y += diff * 0.08
+        groupRef.current.rotation.y += diff * 0.10
       }
     } else {
       // Tiba di tujuan: Kunci koordinat X & Z secara halus tanpa snapping
@@ -138,39 +138,40 @@ export function CubiCharacter({
       groupRef.current.rotation.y += diff * 0.08
     }
 
-    // 3. Animasi Bodi, Kepala, Tangan, dan Kaki (Gerakan Tenang, Berbobot, Alami & Realistis)
+    // 3. Animasi Bodi, Kepala, Tangan, dan Kaki (Gerakan Langkah Hidup, Nyata & Berbobot)
     if (bodyRef.current) {
       if (moving) {
-        // Mode Berjalan: Langkah mantap & santai, bobbing berbobot
-        const walkSpeed = 4.2
+        // Mode Berjalan: Kaki melangkah aktif, nyata & berayun di lantai (Bebas efek melayang / ngambang)
+        const walkSpeed = 8.5
         const step = Math.sin(t * walkSpeed)
-        bodyRef.current.position.y = 0.52 + Math.abs(step) * 0.035
+        bodyRef.current.position.y = 0.52 + Math.abs(step) * 0.04
         bodyRef.current.position.z = 0
-        bodyRef.current.rotation.z = Math.sin(t * (walkSpeed / 2)) * 0.025
-        bodyRef.current.rotation.x = 0.04
+        bodyRef.current.rotation.z = Math.sin(t * (walkSpeed / 2)) * 0.05
+        bodyRef.current.rotation.x = 0.08
 
         if (leftArmRef.current && rightArmRef.current) {
           leftArmRef.current.position.set(-0.25, 0.04, 0)
           rightArmRef.current.position.set(0.25, 0.04, 0)
-          leftArmRef.current.rotation.x = -Math.sin(t * walkSpeed) * 0.38
-          rightArmRef.current.rotation.x = Math.sin(t * walkSpeed) * 0.38
-          leftArmRef.current.rotation.z = 0.12
-          rightArmRef.current.rotation.z = -0.12
+          leftArmRef.current.rotation.x = -Math.sin(t * walkSpeed) * 0.72
+          rightArmRef.current.rotation.x = Math.sin(t * walkSpeed) * 0.72
+          leftArmRef.current.rotation.z = 0.14
+          rightArmRef.current.rotation.z = -0.14
         }
 
         if (leftLegRef.current && rightLegRef.current) {
           leftLegRef.current.position.set(-0.12, -0.24, 0)
           rightLegRef.current.position.set(0.12, -0.24, 0)
-          leftLegRef.current.rotation.x = Math.sin(t * walkSpeed) * 0.38
-          rightLegRef.current.rotation.x = -Math.sin(t * walkSpeed) * 0.38
+          // Ayunan langkah kaki nyata & tegas, melangkah bergantian kiri dan kanan
+          leftLegRef.current.rotation.x = Math.sin(t * walkSpeed) * 0.72
+          rightLegRef.current.rotation.x = -Math.sin(t * walkSpeed) * 0.72
           leftLegRef.current.rotation.z = 0
           rightLegRef.current.rotation.z = 0
         }
 
         if (headRef.current) {
-          headRef.current.rotation.x = 0.04
-          headRef.current.rotation.y = Math.sin(t * (walkSpeed / 2)) * 0.06
-          headRef.current.rotation.z = 0
+          headRef.current.rotation.x = 0.06
+          headRef.current.rotation.y = Math.sin(t * (walkSpeed / 2)) * 0.12
+          headRef.current.rotation.z = Math.sin(t * (walkSpeed / 2)) * 0.04
         }
       } else if (isSitting) {
         // =========================================================
