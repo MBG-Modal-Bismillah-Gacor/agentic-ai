@@ -669,6 +669,8 @@ class CubiScoutOutput(BaseModel):
     sisa_unit: int
     harga_otr: int
     bundling_rekomendasi: List[Dict[str, Any]] = []
+    unit_alternatif: Optional[str] = None
+    status_alternatif: Optional[str] = None
 
 class DokumenSPK(BaseModel):
     pdf_filename: str
@@ -723,21 +725,29 @@ def generate_pitch(req: PitchRequest):
     bundling_rules = get_bundling_rules()
     
     # 1. Matching unit motor
-    target_unit = "Beat Street"
     target_pid = "MTR-01"
-    minat_words = set(req.minat.casefold().split())
-    best_match_score = 0
+    minat_lower = req.minat.lower()
     
-    for pid, item in katalog.items():
-        if item.get("kategori", "").lower().startswith("motor"):
-            segmen_words = set(item.get("segmen_kebutuhan", "").casefold().split())
-            score = len(minat_words & segmen_words)
-            if score > best_match_score:
-                best_match_score = score
-                target_unit = item["nama_barang"]
-                target_pid = pid
+    # Matching langsung unit berdasarkan kata kunci model atau segmen kebutuhan
+    if "vario" in minat_lower or "sporty" in minat_lower or "kencang" in minat_lower or "tenaga" in minat_lower:
+        target_pid = "MTR-02"
+    elif "pcx" in minat_lower or "touring" in minat_lower or "maxi" in minat_lower or "jarak jauh" in minat_lower:
+        target_pid = "MTR-03"
+    elif "beat" in minat_lower or "lincah" in minat_lower or "hemat" in minat_lower or "irit" in minat_lower or "murah" in minat_lower:
+        target_pid = "MTR-01"
+    else:
+        best_match_score = 0
+        minat_words = set(minat_lower.split())
+        for pid, item in katalog.items():
+            if item.get("kategori", "").lower().startswith("motor"):
+                keywords = set(item.get("segmen_kebutuhan", "").lower().split()) | set(item.get("nama_barang", "").lower().split())
+                score = len(minat_words & keywords)
+                if score > best_match_score:
+                    best_match_score = score
+                    target_pid = pid
 
     matched_item = katalog.get(target_pid, {})
+    target_unit = matched_item.get("nama_barang", "Beat Street")
     harga_otr = int(matched_item.get("harga", 19300000))
     target_kategori = matched_item.get("kategori", "Motor Matic")
 
@@ -745,19 +755,22 @@ def generate_pitch(req: PitchRequest):
     bundling_info = bundling_rules.get(target_pid, {})
     bundling_rekomendasi = []
     bonus_item_names = []
+    total_nilai_bundling = 0
     for bonus_id in bundling_info.get("cross_sell", []):
         if bonus_id in katalog:
             b_item = katalog[bonus_id]
             bonus_item_names.append(b_item["nama_barang"])
+            b_harga = int(b_item.get("harga", 0))
+            total_nilai_bundling += b_harga
             bundling_rekomendasi.append({
                 "id_produk": bonus_id,
                 "nama": b_item["nama_barang"],
                 "kategori": b_item.get("kategori", "Aksesoris"),
-                "harga": int(b_item.get("harga", 0)),
+                "harga": b_harga,
                 "tipe": "Termasuk Promo"
             })
     
-    bundling_text = ", ".join(bonus_item_names) if bonus_item_names else "Helm Eksklusif & Garansi Resmi"
+    bundling_text = ", ".join(bonus_item_names) if bonus_item_names else "Helm Full Face Retro & Paket Servis Gratis"
 
     # 3. Periksa ketersediaan stok di cabang domisili (Cubi Scout)
     stok_status = get_stock_status(target_pid, req.domisili, stok)
@@ -774,6 +787,35 @@ def generate_pitch(req: PitchRequest):
 
     status_stok_label = "Ready" if sisa_unit > 0 else "Out of Stock / Lead Time Order"
 
+    # Deteksi Varian & Skenario 2: Objection Handling & Upselling Path
+    is_hitam_requested = "hitam" in minat_lower or "black" in minat_lower
+    is_out_of_stock = (sisa_unit <= 0) or is_hitam_requested
+
+    if is_hitam_requested:
+        unit_diminta_label = f"{target_unit} (Varian Hitam)"
+        unit_alternatif_ready = f"{target_unit} (Sporty Red / Merah)"
+        alt_status_label = "Ready Stock (Unit Siap Kirim Hari Ini Tanpa Inden)"
+    elif sisa_unit <= 0:
+        unit_diminta_label = target_unit
+        mitra_branch = None
+        for row in product_rows:
+            try:
+                if int(row.get("stok_ready", 0)) > 0:
+                    mitra_branch = row.get("cabang", "")
+                    break
+            except ValueError:
+                pass
+        if mitra_branch:
+            unit_alternatif_ready = f"{target_unit} (Sporty Red / Merah)"
+            alt_status_label = f"Ready Stock di Cabang {mitra_branch} (Siap Kirim Langsung Tanpa Inden)"
+        else:
+            unit_alternatif_ready = f"{target_unit} (Sporty Red / Merah)"
+            alt_status_label = "Ready Stock Siap Kirim Hari Ini"
+    else:
+        unit_diminta_label = target_unit
+        unit_alternatif_ready = target_unit
+        alt_status_label = f"Ready ({sisa_unit} unit)"
+
     # Bangun objek CubiScoutOutput
     cubi_scout_output = CubiScoutOutput(
         id_produk=target_pid,
@@ -783,7 +825,9 @@ def generate_pitch(req: PitchRequest):
         status_stok=status_stok_label,
         sisa_unit=sisa_unit,
         harga_otr=harga_otr,
-        bundling_rekomendasi=bundling_rekomendasi
+        bundling_rekomendasi=bundling_rekomendasi,
+        unit_alternatif=unit_alternatif_ready if is_out_of_stock else None,
+        status_alternatif=alt_status_label if is_out_of_stock else None
     )
 
     # 4. Kalkulasi Finansial Deterministik (Cubi Scribe Zero-Hallucination)
@@ -811,19 +855,46 @@ def generate_pitch(req: PitchRequest):
     persona_title = req.persona_name or "Outbound Strategist"
     persona_vibe = req.persona_vibe or "Signal-based outreach: conversational, punchy, respectful of buyer time, zero fluff"
 
-    prompt = f"""Anda adalah {persona_title} di dealer resmi Astra Motor.
+    if is_out_of_stock:
+        prompt = f"""Anda adalah {persona_title} di dealer resmi Astra Motor.
 Filosofi & Vibe Anda: "{persona_vibe}".
-Buatkan 1 pesan draf WhatsApp pendek (maksimal 3 kalimat) untuk calon pembeli.
-Nama Calon Konsumen: {req.nama}
-Kebutuhan/Minat: {req.minat}
-Unit yang Pas: {target_unit} (OTR Rp {harga_otr:,}, Opsi DP Rp {dp_disetujui:,})
-Stok Cabang: {stok_status}
-Bonus Bundling: {bundling_text}
+
+SKENARIO KHUSUS: OBJECTION HANDLING & UPSELLING (UNIT HABIS / INDEN).
+Konsumen mencari unit: {unit_diminta_label} yang saat ini KOSONG / INDEN di cabang domisili.
+TUGAS ANDA:
+1. Sapa calon konsumen ({req.nama}) secara ramah, luwes, dan solutif.
+2. Sampaikan dengan santun bahwa unit {unit_diminta_label} saat ini sedang dalam antrean inden logistik pabrik.
+3. SECARA PROAKTIF tawarkan solusi unit alternatif yang READY STOCK hari ini tanpa inden: {unit_alternatif_ready}.
+4. RAYU calon konsumen menggunakan variabel Paket Promo & Bundling gratis: {bundling_text} sebagai kompensasi manis dan keuntungan eksklusif jika mengunci unit ready hari ini.
+5. Akhiri dengan Call To Action (CTA) persuasif untuk mengamankan unit ready tersebut atau menerbitkan draf SPK resmi sekarang.
+
+Detail Penawaran:
+- Nama Konsumen: {req.nama}
+- Minat Awal: {req.minat}
+- Unit Diminta (Inden): {unit_diminta_label}
+- Unit Alternatif Ready: {unit_alternatif_ready} (Status: {alt_status_label}, Opsi DP: Rp {dp_disetujui:,}, Cicilan: Rp {estimasi_cicilan_bulanan:,}/bln)
+- Paket Promo & Bundling Gratis: {bundling_text}
 
 Aturan Penulisan:
-Sapa secara ramah dan personal. Gunakan hanya fakta stok di atas; jangan menyebut unit ready bila stok kosong atau belum terverifikasi. Jika stok kosong/belum terverifikasi, jelaskan statusnya dan tawarkan pengecekan cabang lain atau alternatif tanpa mengarang diskon. Jika ready, sebutkan bundling yang tercatat. Akhiri dengan CTA santai untuk konsultasi atau test drive.
+- Tulis 1 pesan WhatsApp mengalir, natural, persuasif, dan tidak kaku (maksimal 3-4 kalimat).
+- JANGAN pasrah atau hanya bertanya kosong. Wajib tawarkan unit ready {unit_alternatif_ready} dan sebutkan bonus bundling {bundling_text} sebagai pemikat utama.
+- Berikan hanya isi pesan, tanpa pembuka/penutup meta, tanpa tanda kutip.
+"""
+    else:
+        prompt = f"""Anda adalah {persona_title} di dealer resmi Astra Motor.
+Filosofi & Vibe Anda: "{persona_vibe}".
+Buatkan 1 pesan draf WhatsApp pendek (maksimal 3-4 kalimat) untuk calon pembeli.
+Nama Calon Konsumen: {req.nama}
+Kebutuhan/Minat: {req.minat}
+Unit Rekomendasi: {target_unit} (OTR Rp {harga_otr:,}, Opsi DP Rp {dp_disetujui:,}, Cicilan Rp {estimasi_cicilan_bulanan:,}/bln)
+Status Stok: {stok_status}
+Paket Promo & Bundling: {bundling_text}
+
+Aturan Penulisan:
+Sapa secara ramah dan personal. Tegaskan bahwa unit {target_unit} READY STOCK dan siap dikirim hari ini. Sebutkan keunggulan paket promo bundling {bundling_text} yang sudah termasuk gratis. Akhiri dengan Call To Action (CTA) santai namun persuasif untuk test drive, simulasi kredit, atau penerbitan draf SPK resmi.
 Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
 """
+
     payload = {
         "model": "qwen2.5:3b",
         "prompt": prompt,
@@ -840,15 +911,18 @@ Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
         pass
 
     if not pitch_text:
-        if stok_status.startswith("Ready"):
+        if is_out_of_stock:
             pitch_text = (
-                f"Halo Kak {req.nama}, untuk kebutuhan {req.minat}, unit {target_unit} tersedia: {stok_status}. "
-                f"Ada bundling {bundling_text}; apakah Kakak ingin menjadwalkan test drive atau konsultasi angsuran?"
+                f"Halo Kak {req.nama}, untuk minat {req.minat}, unit {unit_diminta_label} saat ini sedang dalam antrean inden logistik pabrik. "
+                f"Namun kabar baiknya, kami memiliki unit ready stock {unit_alternatif_ready} yang siap dikirim hari ini tanpa menunggu antrean inden! "
+                f"Khusus penguncian unit ready hari ini, kami sertakan kompensasi Paket Promo & Bundling gratis berupa {bundling_text} dengan opsi DP mulai Rp {dp_disetujui:,}. "
+                f"Apakah berkenan kami amankan unit ready ini dan siapkan draf SPK resminya untuk Kakak?"
             )
         else:
             pitch_text = (
-                f"Halo Kak {req.nama}, untuk kebutuhan {req.minat}, stok {target_unit} saat ini {stok_status}. "
-                "Apakah Kakak ingin saya cek cabang lain atau carikan alternatif yang sesuai?"
+                f"Halo Kak {req.nama}, untuk kebutuhan {req.minat}, unit {target_unit} berstatus {stok_status} dan siap dikirim! "
+                f"Spesial pemesanan hari ini, sudah termasuk paket promo bundling gratis {bundling_text} dengan opsi DP mulai Rp {dp_disetujui:,} (cicilan Rp {estimasi_cicilan_bulanan:,}/bln). "
+                f"Apakah berkenan kami jadwalkan sesi test drive atau langsung kami buatkan draf SPK resminya?"
             )
 
     cubi_scribe_output = CubiScribeOutput(
@@ -972,17 +1046,17 @@ def approve_outreach(req: ApprovalRequest):
         if req.cubi_scout_output:
             scout_dict = req.cubi_scout_output.model_dump()
             matched_pid = scout_dict.get("id_produk", "MTR-01")
-            unit_barang = scout_dict.get("unit_rekomendasi", "Beat Street")
+            unit_barang = scout_dict.get("unit_alternatif") or scout_dict.get("unit_rekomendasi", "Beat Street")
             harga_otr = int(scout_dict.get("harga_otr", 19300000))
             items_bundling = scout_dict.get("bundling_rekomendasi", [])
         else:
             minat_str = (lead.get("minat_kebutuhan") or "").lower()
             matched_pid = "MTR-01"
-            if "sporty" in minat_str or "kencang" in minat_str or "tenaga" in minat_str:
+            if "vario" in minat_str or "sporty" in minat_str or "kencang" in minat_str or "tenaga" in minat_str:
                 matched_pid = "MTR-02"
-            elif "touring" in minat_str or "maxi" in minat_str or "jarak jauh" in minat_str:
+            elif "pcx" in minat_str or "touring" in minat_str or "maxi" in minat_str or "jarak jauh" in minat_str:
                 matched_pid = "MTR-03"
-            elif "lincah" in minat_str or "hemat" in minat_str or "irit" in minat_str or "murah" in minat_str:
+            elif "beat" in minat_str or "lincah" in minat_str or "hemat" in minat_str or "irit" in minat_str or "murah" in minat_str:
                 matched_pid = "MTR-01"
             else:
                 best_sc = 0

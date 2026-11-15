@@ -217,15 +217,39 @@ def generate_pitch_for_lead(lead: dict) -> dict:
             b_item = katalog[bid]
             b_names.append(b_item["nama_barang"])
             b_items.append({"nama": b_item["nama_barang"], "harga": int(b_item.get("harga", 0)), "tipe": "Termasuk Promo"})
-    bundling_text = ", ".join(b_names) if b_names else "Helm Eksklusif & Garansi Servis Resmi"
+    bundling_text = ", ".join(b_names) if b_names else "Helm Full Face Retro & Paket Servis Gratis"
 
-    pitch_text = (
-        f"Halo Kak {nama}, salam hangat dari Astra Motor! "
-        f"Berdasarkan preferensi Anda yang mencari kendaraan {minat}, kami merekomendasikan unit {product_name} (OTR Rp {harga_otr:,}). "
-        f"Unit saat ini berstatus {status_stok} di cabang {domisili} lengkap dengan bonus promo bundling {bundling_text}. "
-        f"Simulasi uang muka mulai Rp {dp_approved:,} dengan angsuran ringan 36x Rp {c36:,}/bln. "
-        f"Apakah berkenan kami jadwalkan sesi konsultasi atau unit test drive di cabang terdekat?"
-    )
+    # Deteksi Varian & Skenario 2: Objection Handling & Upselling
+    is_hitam_requested = "hitam" in minat.lower() or "black" in minat.lower()
+    is_out_of_stock = (stok_ready <= 0) or is_hitam_requested
+
+    if is_hitam_requested:
+        unit_diminta = f"{product_name} (Hitam)"
+        alt_unit = f"{product_name} (Sporty Red / Merah)"
+    elif stok_ready <= 0:
+        unit_diminta = product_name
+        alt_unit = f"{product_name} (Sporty Red / Merah)"
+    else:
+        unit_diminta = product_name
+        alt_unit = product_name
+
+    if is_out_of_stock:
+        pitch_text = (
+            f"Halo Kak {nama}, salam hangat dari Astra Motor! "
+            f"Terkait preferensi Anda mencari unit {unit_diminta}, saat ini unit tersebut sedang dalam masa antrean inden logistik pabrik. "
+            f"Namun kabar baiknya, kami memiliki unit ready stock {alt_unit} yang siap kirim hari ini tanpa perlu menunggu inden! "
+            f"Khusus penguncian unit ready hari ini, kami sertakan kompensasi Paket Promo & Bundling gratis berupa {bundling_text}. "
+            f"Simulasi uang muka mulai Rp {dp_approved:,} dengan angsuran ringan 36x Rp {c36:,}/bln. "
+            f"Apakah berkenan kami amankan unit ready ini dan kami terbitkan draf SPK resminya sekarang?"
+        )
+    else:
+        pitch_text = (
+            f"Halo Kak {nama}, salam hangat dari Astra Motor! "
+            f"Berdasarkan preferensi Anda yang mencari kendaraan {minat}, kami merekomendasikan unit {product_name} (OTR Rp {harga_otr:,}). "
+            f"Unit saat ini berstatus {status_stok} di cabang {domisili} lengkap dengan bonus promo bundling {bundling_text}. "
+            f"Simulasi uang muka mulai Rp {dp_approved:,} dengan angsuran ringan 36x Rp {c36:,}/bln. "
+            f"Apakah berkenan kami jadwalkan sesi konsultasi atau unit test drive di cabang terdekat?"
+        )
 
     return {
         "lead_id": lead_id,
@@ -235,9 +259,12 @@ def generate_pitch_for_lead(lead: dict) -> dict:
         "minat": minat,
         "product_id": matched_pid,
         "product_name": product_name,
+        "unit_spk": alt_unit if is_out_of_stock else product_name,
         "harga_otr": harga_otr,
         "stok_ready": stok_ready,
         "status_stok": status_stok,
+        "is_out_of_stock": is_out_of_stock,
+        "unit_alternatif": alt_unit,
         "dp_approved": dp_approved,
         "c12": c12,
         "c24": c24,
@@ -399,7 +426,7 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
             spk_path = generate_spk_pdf(
                 nama_konsumen=nama,
                 domisili=dom,
-                unit_barang=p["product_name"],
+                unit_barang=p.get("unit_spk") or p["product_name"],
                 harga_otr=p["harga_otr"],
                 nominal_dp=p["dp_approved"],
                 tenor_bulan=36,
@@ -476,7 +503,7 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
                 generate_spk_pdf(
                     nama_konsumen=nama,
                     domisili=p["domisili"],
-                    unit_barang=p["product_name"],
+                    unit_barang=p.get("unit_spk") or p["product_name"],
                     harga_otr=p["harga_otr"],
                     nominal_dp=p["dp_approved"],
                     tenor_bulan=36,

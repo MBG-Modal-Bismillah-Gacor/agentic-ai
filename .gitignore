@@ -13,6 +13,8 @@ venv/
 # Generated Documents
 backend/output_dokumen/*.pdf
 !backend/output_dokumen/.gitkeep
+backend/output/*.pdf
+!backend/output/.gitkeep
 
 build/
 develop-eggs/
