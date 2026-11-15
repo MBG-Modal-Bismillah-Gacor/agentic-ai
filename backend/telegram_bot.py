@@ -68,18 +68,32 @@ def log_tele_event(agent: str, action: str, detail: str = ""):
             pass
 
 def send_telegram_reply(chat_id: str, text: str) -> bool:
-    """Mengirim pesan teks balasan ke customer di Telegram."""
+    """Mengirim pesan teks balasan ke customer di Telegram dengan fallback anti-gagal."""
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip() or TELEGRAM_BOT_TOKEN
     if not token:
         return False
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
     try:
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        # Coba kirim dengan format Markdown
         resp = requests.post(url, json={
             "chat_id": chat_id,
             "text": text,
             "parse_mode": "Markdown"
         }, timeout=10)
-        return resp.status_code == 200
+        if resp.status_code == 200:
+            return True
+        
+        # Fallback: jika Markdown ditolak Telegram (misal nama mengandung _ atau karakter khusus)
+        clean_text = text.replace("*", "").replace("_", "").replace("`", "")
+        resp2 = requests.post(url, json={
+            "chat_id": chat_id,
+            "text": clean_text
+        }, timeout=10)
+        if resp2.status_code == 200:
+            return True
+        else:
+            print(f"[TELEGRAM SEND FAILED HTTP {resp2.status_code}]: {resp2.text}")
+            return False
     except Exception as e:
         print(f"[TELEGRAM SEND ERROR]: {e}")
         return False
@@ -105,6 +119,10 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
     Memproses perintah & teks kebutuhan customer dari Telegram.
     Mengembalikan balasan teks yang ramah, profesional, dan deterministik.
     """
+    clean_sender = str(sender_name or "Konsumen").replace("*", "").replace("_", " ").replace("`", "").strip()
+    if not clean_sender:
+        clean_sender = "Konsumen"
+
     clean_text = text.strip()
     cmd = clean_text.lower()
     katalog = get_katalog_data()
@@ -113,14 +131,14 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
     # Log aktivitas masuk ke dashboard
     log_tele_event(
         "Telegram Gateway",
-        f"Pesan Masuk Customer: {sender_name}",
+        f"Pesan Masuk Customer: {clean_sender}",
         f"Chat ID: {chat_id} | Perintah: {clean_text[:60]}"
     )
 
     # 1. PERINTAH /start atau /help atau /bantuan
-    if cmd in ["/start", "/help", "/bantuan", "halo", "hai", "menu"]:
+    if cmd.startswith("/start") or cmd.startswith("/help") or cmd.startswith("/bantuan") or cmd in ["halo", "hai", "menu", "p", "start"]:
         return (
-            f"👋 *Halo Kak {sender_name}! Selamat datang di StelAgent Virtual Sales Hub.* 🏍️\n"
+            f"👋 *Halo Kak {clean_sender}! Selamat datang di StelAgent Virtual Sales Hub.* 🏍️\n"
             f"Layanan Penjualan Resmi Honda Astra Motor (Local-First Agentic AI).\n\n"
             f"*Perintah Cepat yang Dapat Digunakan:*\n"
             f"• `/katalog` — Lihat daftar motor Honda & harga OTR resmi\n"
@@ -291,12 +309,12 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
 
     log_tele_event(
         "Cubi Scribe",
-        f"Simulasi Finansial Telegram: {sender_name}",
+        f"Simulasi Finansial Telegram: {clean_sender}",
         f"Unit: {product_name} | DP: Rp {dp_approved:,} | Cicilan 36x: Rp {c36:,}/bln"
     )
 
     reply = (
-        f"Terima kasih Kak *{sender_name}*! Berikut rekomendasi resmi untuk kebutuhan Anda:\n\n"
+        f"Terima kasih Kak *{clean_sender}*! Berikut rekomendasi resmi untuk kebutuhan Anda:\n\n"
         f"🏍️ *Unit:* *{product_name}*\n"
         f"💰 *Harga OTR:* Rp {harga_otr:,}\n"
         f"📍 *Cabang Terdekat:* {cabang}\n"
@@ -335,15 +353,19 @@ def _telegram_polling_worker():
                 updates = data.get("result", [])
                 for upd in updates:
                     _last_update_id = max(_last_update_id, upd.get("update_id", 0))
-                    msg = upd.get("message", {})
-                    chat = msg.get("chat", {})
-                    chat_id = str(chat.get("id", ""))
-                    sender_name = chat.get("first_name", "Konsumen")
-                    text = msg.get("text", "")
+                    try:
+                        msg = upd.get("message") or upd.get("edited_message") or upd.get("channel_post") or {}
+                        chat = msg.get("chat", {})
+                        chat_id = str(chat.get("id", ""))
+                        user_obj = msg.get("from", {})
+                        sender_name = user_obj.get("first_name") or chat.get("first_name") or chat.get("title") or "Konsumen"
+                        text = msg.get("text", "").strip()
 
-                    if chat_id and text:
-                        balasan = handle_customer_command(chat_id, sender_name, text)
-                        send_telegram_reply(chat_id, balasan)
+                        if chat_id and text:
+                            balasan = handle_customer_command(chat_id, sender_name, text)
+                            send_telegram_reply(chat_id, balasan)
+                    except Exception as err:
+                        print(f"[TELEGRAM UPDATE PROCESS ERROR]: {err}")
             elif resp.status_code == 401:
                 print("[TELEGRAM ERROR] Token bot tidak valid (HTTP 401 Unauthorized).")
                 _stop_polling.wait(30.0)
