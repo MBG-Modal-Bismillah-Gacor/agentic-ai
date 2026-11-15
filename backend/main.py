@@ -503,7 +503,9 @@ def save_team_config(config: dict):
     with open(TEAM_FILE, mode="w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
 
-@app.get("/api/v1/system/health")
+@app.api_route("/api/v1/system/health", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD"])
+@app.api_route("/", methods=["GET", "HEAD"])
 def health_check():
     katalog, _ = get_katalog_and_stock()
     total_leads = 0
@@ -551,7 +553,7 @@ def update_team_config_endpoint(payload: TeamConfigUpdate):
     add_log(boss_name, "Memperbarui Konfigurasi Tim & Kantor", "Nama dan peran tim berhasil disinkronkan.")
     return {"status": "success", "config": current}
 
-@app.get("/api/v1/leads/queue")
+@app.api_route("/api/v1/leads/queue", methods=["GET", "HEAD"])
 def get_leads_queue():
     if not os.path.exists(LEADS_FILE):
         return {"total": 0, "leads": []}
@@ -1209,9 +1211,9 @@ def api_generate_spk(req: GenerateSPKRequest):
 # AUTONOMOUS SWARM DELIBERATIONS, SSE LIVE-STREAM & TELEMETRY ENDPOINTS
 # ==============================================================================
 
-@app.get("/api/v1/deliberations")
-@app.get("/deliberations")
-@app.get("/api/v1/swarm/deliberations")
+@app.api_route("/api/v1/deliberations", methods=["GET", "HEAD"])
+@app.api_route("/deliberations", methods=["GET", "HEAD"])
+@app.api_route("/api/v1/swarm/deliberations", methods=["GET", "HEAD"])
 def get_deliberations():
     if not deliberation_logs:
         scan_zero_stock_and_deliberate(trigger_source="api_request")
