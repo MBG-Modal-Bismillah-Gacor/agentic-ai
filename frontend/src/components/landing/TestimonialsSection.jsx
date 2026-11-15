@@ -137,33 +137,59 @@ export function TestimonialsSection() {
 
           {/* Testimonials Slider Row */}
           <div className="testimonials-slider-row bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+            <style>{`
+              .testimonials-button {
+                background-color: #FFFFFF !important;
+                border: 1px solid rgba(25, 42, 86, 0.2) !important;
+                transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease !important;
+              }
+              .testimonials-button:hover {
+                background-color: #192A56 !important;
+                border-color: #192A56 !important;
+                filter: none !important;
+              }
+            `}</style>
             <div className="testimonials-buttons">
-              <div
+              <button
+                type="button"
                 testimonial-slider-prev=""
-                className="testimonials-button"
+                className="testimonials-button group cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
                 onClick={handlePrev}
-                style={{ cursor: slideOffset > 0 ? 'pointer' : 'default', opacity: slideOffset > 0 ? 1 : 0.4 }}
+                disabled={slideOffset === 0}
+                style={{
+                  cursor: slideOffset > 0 ? 'pointer' : 'default',
+                  opacity: slideOffset > 0 ? 1 : 0.35
+                }}
+                title="Testimonial Sebelumnya"
+                aria-label="Previous Testimonial"
               >
-                <img
-                  src="/assets/webflow/664753c2515af09bef5b9826/664a3a099b0b49447af7fbec_arrow-prev.svg"
-                  loading="lazy"
-                  alt=""
-                  className="testimonials-button-image"
-                />
-              </div>
-              <div
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="w-5 h-5 text-[#192A56] group-hover:text-white transition-colors">
+                  <path
+                    d="M14.3208 2.91429C14.3208 2.40934 13.9115 2 13.4065 2H11.578C11.073 2 10.6637 2.40934 10.6637 2.91429V4.28571C10.6637 4.79066 10.2543 5.2 9.74938 5.2H8.37795C7.87301 5.2 7.46367 5.60934 7.46367 6.11429V7.48571C7.46367 7.99066 7.05433 8.4 6.54938 8.4H5.17795C4.67301 8.4 4.26367 8.80934 4.26367 9.31429V11.1429C4.26367 11.6478 4.67301 12.0571 5.17795 12.0571H7.00653C7.51147 12.0571 7.92081 12.4665 7.92081 12.9714V13.8857C7.92081 14.3907 8.33015 14.8 8.8351 14.8H10.2065C10.7115 14.8 11.1208 15.2093 11.1208 15.7143V17.0857C11.1208 17.5907 11.5302 18 12.0351 18H13.8637C14.3686 18 14.778 17.5907 14.778 17.0857V15.2571C14.778 14.7522 14.3686 14.3429 13.8637 14.3429H12.4922C11.9873 14.3429 11.578 13.9335 11.578 13.4286V12.0571C11.578 11.5522 11.1686 11.1429 10.6637 11.1429H8.8351C8.33015 11.1429 7.92081 10.7335 7.92081 10.2286V9.77143C7.92081 9.26648 8.33015 8.85714 8.8351 8.85714H10.2065C10.7115 8.85714 11.1208 8.4478 11.1208 7.94286V6.57143C11.1208 6.06648 11.5302 5.65714 12.0351 5.65714H13.4065C13.9115 5.65714 14.3208 5.2478 14.3208 4.74286V2.91429Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
                 testimonial-slider-next=""
-                className="testimonials-button testimonials-button-next"
+                className="testimonials-button testimonials-button-next group cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
                 onClick={handleNext}
-                style={{ cursor: slideOffset < maxOffset ? 'pointer' : 'default', opacity: slideOffset < maxOffset ? 1 : 0.4 }}
+                disabled={slideOffset >= maxOffset}
+                style={{
+                  cursor: slideOffset < maxOffset ? 'pointer' : 'default',
+                  opacity: slideOffset < maxOffset ? 1 : 0.35
+                }}
+                title="Testimonial Berikutnya"
+                aria-label="Next Testimonial"
               >
-                <img
-                  src="/assets/webflow/664753c2515af09bef5b9826/664a3a095776d1c4b102d088_arrow-next.svg"
-                  loading="lazy"
-                  alt=""
-                  className="testimonials-button-image"
-                />
-              </div>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="w-5 h-5 text-[#192A56] group-hover:text-white transition-colors">
+                  <path
+                    d="M5.67882 2.91429C5.67882 2.40934 6.08816 2 6.59311 2H8.42168C8.92663 2 9.33597 2.40934 9.33597 2.91429V4.28571C9.33597 4.79066 9.7453 5.2 10.2503 5.2H11.6217C12.1266 5.2 12.536 5.60934 12.536 6.11429V7.48571C12.536 7.99066 12.9453 8.4 13.4503 8.4H14.8217C15.3266 8.4 15.736 8.80934 15.736 9.31429V11.1429C15.736 11.6478 15.3266 12.0571 14.8217 12.0571H12.9931C12.4882 12.0571 12.0788 12.4665 12.0788 12.9714V13.8857C12.0788 14.3907 11.6695 14.8 11.1645 14.8H9.79311C9.28816 14.8 8.87882 15.2093 8.87882 15.7143V17.0857C8.87882 17.5907 8.46948 18 7.96454 18H6.13597C5.63102 18 5.22168 17.5907 5.22168 17.0857V15.2571C5.22168 14.7522 5.63102 14.3429 6.13597 14.3429H7.50739C8.01234 14.3429 8.42168 13.9335 8.42168 13.4286V12.0571C8.42168 11.5522 8.83102 11.1429 9.33597 11.1429H11.1645C11.6695 11.1429 12.0788 10.7335 12.0788 10.2286V9.77143C12.0788 9.26648 11.6695 8.85714 11.1645 8.85714H9.79311C9.28816 8.85714 8.87882 8.4478 8.87882 7.94286V6.57143C8.87882 6.06648 8.46948 5.65714 7.96454 5.65714H6.59311C6.08816 5.65714 5.67882 5.2478 5.67882 4.74286V2.91429Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
             </div>
 
             <div className="testimonials-slider" style={{ overflow: 'hidden' }}>
