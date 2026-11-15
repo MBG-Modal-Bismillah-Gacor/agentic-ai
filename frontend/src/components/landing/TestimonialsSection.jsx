@@ -3,45 +3,54 @@ import React, { useState } from 'react'
 export function TestimonialsSection() {
   const [slideOffset, setSlideOffset] = useState(0)
 
+  // Testimoni Bahasa Indonesia pimpinan & mitra enterprise StelAgent
   const reviews = [
     {
       id: 0,
-      name: 'Saulius Aleksa',
-      pos: 'Head of Operations, AutoHub',
+      name: 'Lord AIC',
+      pos: 'Head of Enterprise & Sovereign AI Infrastructure',
       photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/668691c8f2a9887479f76c68_IMG_7357%20(1).png',
-      quote: 'We started working with Kantor AI already 2 years into deployment. I immediately noticed a huge impact of the speed-to-signal, human-in-the-loop control, and honest engineering put into making our physical showroom workflows autonomous.',
-      social: 'https://linkedin.com'
+      quote: 'Implementasi swarm agen AI on-premise StelAgent (Agentic AI) mentransformasi seluruh efisiensi penjualan showroom motor kami. Data pelanggan tetap berada 100% di server lokal tanpa kebocoran cloud, dan kecepatan closing deal meningkat drastis.',
+      social: 'https://twitter.com'
     },
     {
       id: 1,
-      name: 'Paul Farhi',
-      pos: 'Founder of AITech',
+      name: 'Alfa',
+      pos: 'Showroom Digital Director & Sales Automation Lead',
       photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/668690fe0425e7f09e3bcc05_2024-07-04%2013.09.29.jpg',
-      quote: 'The Kantor AI team played a pivotal role in our operational modernization. They established on-premise NPU processing that ensures client records never leak to the public cloud while automating WhatsApp follow-ups in seconds.',
+      quote: 'Dengan arsitektur turnstile approval, pimpinan memiliki kendali veto penuh sebelum penawaran motor dikirim via WhatsApp. Tidak ada risiko salah harga atau diskon sepihak oleh AI.',
       social: 'https://linkedin.com'
     },
     {
       id: 2,
-      name: 'Tzahi Kanza',
-      pos: 'Managing Director, Kima Network',
+      name: 'Amirul',
+      pos: 'Chief Technology Officer, Dealer Group Network',
       photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/668690a922ccdba3f4e8b848_1631126686830.jpeg',
-      quote: 'Kantor AI has been an exceptional technology partner for our enterprise. The turnstile approval model gives management strict veto rights over high-value deals before anything is sent to prospective buyers.',
+      quote: 'Kemampuan integrasi NPU lokal dengan FastAPI sub-detik membuat armada agen bekerja tanpa biaya token API cloud bulanan. Solusi paling stabil, efisien, dan ekonomis untuk jaringan dealer.',
       social: 'https://linkedin.com'
     },
     {
       id: 3,
-      name: 'Cristian',
-      pos: 'Co-founder & CEO OMNIA',
+      name: 'Idham',
+      pos: 'VP of Automotive Operations & Dealer Growth',
       photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/666af59beb89fed9459b569d_Cristian.webp',
-      quote: 'Exceptional engineering leadership and high-density agent mesh. Their zero-latency local LLM stack eliminated our reliance on expensive cloud inference APIs while quadrupling closing velocity.',
-      social: 'https://twitter.com'
+      quote: 'Kualifikasi prospek otomatis (Hot, Warm, Cold) oleh agen analis memfilter ratusan nomor harian dengan sangat akurat. Tim sales kami sekarang hanya fokus mengeksekusi closing pelanggan siap beli.',
+      social: 'https://linkedin.com'
     },
     {
       id: 4,
-      name: 'Perry Kniest',
-      pos: 'Founder Spidersilk',
+      name: 'Jullystian',
+      pos: 'Head of Information Security & On-Premise Systems',
       photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/66869057d29156f451184962_2024-07-04%2013.06.41.jpg',
-      quote: 'Truly genuine professionals who understand brutalist performance. The 3D spatial telemetry combined with edge computing hardware makes Kantor AI an industry standard.',
+      quote: 'Sebagai penanggung jawab keamanan data, isolasi air-gapped dan enkripsi hardware SSD lokal pada StelAgent memberikan jaminan kedaulatan privasi data pelanggan yang sangat kami butuhkan.',
+      social: 'https://twitter.com'
+    },
+    {
+      id: 5,
+      name: 'M Hasbi',
+      pos: 'Business Development & Fleet Sales Executive',
+      photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/666af435483b5a1f90235cf0_Vlad-Balaban.webp',
+      quote: 'Respon cepat 24/7 untuk simulasi kredit motor Honda dan pencocokan unit gudang berjalan mulus. Pengalaman pelanggan showroom kami naik ke standar modern yang belum pernah ada sebelumnya.',
       social: 'https://twitter.com'
     }
   ]
@@ -74,7 +83,7 @@ export function TestimonialsSection() {
                   <div className="section-descr-info">
                     <div className="section-descr-info-decor" />
                     <h3 className="section-descr-title font-mono text-xs sm:text-sm text-[#192A56]">
-                      Don't take our word for it
+                      Pengalaman Nyata Mitra &amp; Pimpinan Enterprise
                     </h3>
                   </div>
                 </div>
