@@ -3167,7 +3167,7 @@ export const CURATED_OFFICE_PRESETS = [
         role: "AI Pitch Drafter",
         color: "#9333EA",
         emoji: "✍️",
-        vibe: "Menyusun draf WhatsApp personal via Qwen LLM.",
+        vibe: "Menyusun draf Telegram personal via Qwen LLM.",
         personaId: "cubi-scribe"
       },
       "green-agent": {

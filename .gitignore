@@ -44,6 +44,9 @@ dist/
 # Logs
 *.log
 npm-debug.log*
+backend/workspace/outreach_audit_log.jsonl
+backend/workspace/telegram_dispatch_proof.json
+backend/workspace/telegram_users.json
 
 # OS / IDE
 .DS_Store

@@ -44,7 +44,7 @@ elif [ -f "$BASE_DIR/backend/.venv/bin/python" ]; then
     PYTHON_BIN="$BASE_DIR/backend/.venv/bin/python"
 fi
 
-nohup "$PYTHON_BIN" -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > "$BASE_DIR/backend.log" 2>&1 &
+nohup "$PYTHON_BIN" -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload > "$BASE_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
 disown $BACKEND_PID 2>/dev/null || true
 sleep 3

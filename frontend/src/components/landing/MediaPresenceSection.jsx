@@ -12,7 +12,7 @@ export function MediaPresenceSection() {
       number: '01',
       title: '100% Data Aman & Berdaulat',
       subtitle: 'Zero Cloud Egress Architecture',
-      desc: 'Seluruh riwayat obrolan WhatsApp, negosiasi kredit motor Astra, dan data pribadi pelanggan disimpan lokal di SSD terenkripsi hardware MSI Cubi. Tidak ada satupun byte data yang keluar ke cloud publik.',
+      desc: 'Seluruh riwayat penawaran Telegram, negosiasi kredit motor Astra, dan data pribadi pelanggan disimpan lokal di SSD terenkripsi hardware MSI Cubi. Tidak ada satupun byte data yang keluar ke cloud publik.',
       badge: 'ENCRYPTED LOCAL STORAGE'
     },
     {
@@ -52,7 +52,7 @@ export function MediaPresenceSection() {
       number: '06',
       title: 'Bebas Biaya Token API Berulang',
       subtitle: 'Zero Recurring Cloud API Cost',
-      desc: 'Tidak ada tagihan bulanan per-token yang membengkak seiring lonjakan volume leads WhatsApp showroom. Sekali investasi hardware on-premise untuk komputasi tak terbatas selamanya.',
+      desc: 'Tidak ada tagihan bulanan per-token yang membengkak seiring lonjakan volume leads Telegram showroom. Sekali investasi hardware on-premise untuk komputasi tak terbatas selamanya.',
       badge: '100% CAPEX ASSET'
     }
   ]

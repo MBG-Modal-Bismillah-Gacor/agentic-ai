@@ -106,7 +106,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreateLead }) {
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
                 <Phone className="w-3.5 h-3.5 text-slate-500" />
-                Nomor WhatsApp
+                Nomor Kontak / Telegram
               </label>
               <input
                 type="text"

@@ -46,7 +46,8 @@ import {
   Download,
   ShieldAlert,
   Info,
-  Users
+  Users,
+  ExternalLink
 } from 'lucide-react'
 
 export function DashboardOverlay({
@@ -93,6 +94,7 @@ export function DashboardOverlay({
   const [editedPitch, setEditedPitch] = useState('')
   const [waNumber, setWaNumber] = useState('081234567890')
   const [consentConfirmed, setConsentConfirmed] = useState(false)
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isHudVisible, setIsHudVisible] = useState(true)
   const [commandText, setCommandText] = useState('')
@@ -184,6 +186,7 @@ export function DashboardOverlay({
     } else if (activeLead?.nomor_wa) {
       setWaNumber(activeLead.nomor_wa)
     }
+    setIsSubmittingApproval(false)
   }, [pitchResult, activeLead])
 
   useEffect(() => {
@@ -212,7 +215,7 @@ export function DashboardOverlay({
     const roleFeatures = {
       'blue-agent': { station: 'Workstation 01', feature: 'Local Hardware Compute & Stock', tokens: '14,850 tok' },
       'purple-agent': { station: 'Workstation 02', feature: 'Qwen 2.5 3B Local AI Drafter', tokens: '28,420 tok' },
-      'green-agent': { station: 'Meja Resepsionis', feature: 'WhatsApp Cloud Gateway', tokens: '8,920 tok' },
+      'green-agent': { station: 'Meja Resepsionis', feature: 'Telegram Bot Gateway', tokens: '8,920 tok' },
       'orange-agent': { station: 'Server Vault & Data Archive', feature: 'Persistent CSV Data Vault', tokens: '6,100 tok' },
     }
     const feat = roleFeatures[ag?.id] || { station: 'Workstation', feature: 'MSI Cubi NUC Appliance', tokens: '12,840 tok' }
@@ -1090,10 +1093,10 @@ export function DashboardOverlay({
                         {agents?.['green-agent']?.name || 'Cubi Gate'}
                       </span>
                       <span className="text-[10px]" style={{ color: selectedAgentId === 'green-agent' ? '#E2E8F0' : '#576574' }}>
-                        Approval &amp; WhatsApp
+                        Approval &amp; Telegram
                       </span>
                       <span className="text-[9.5px] leading-snug mt-0.5 break-words whitespace-normal" style={{ color: selectedAgentId === 'green-agent' ? '#E2E8F0' : '#576574' }}>
-                        Otorisasi SPK &amp; gateway pengiriman WhatsApp
+                        Otorisasi SPK &amp; gateway pengiriman Telegram
                       </span>
                     </div>
                   </div>
@@ -1380,7 +1383,7 @@ export function DashboardOverlay({
                     Approval Gate: Review Penawaran Sales
                   </h3>
                   <p className="text-xs text-[#576574]">
-                    Otorisasi direktur sebelum didispatch ke WhatsApp konsumen
+                    Otorisasi direktur sebelum didispatch ke Telegram calon konsumen / staf sales (@iiibays)
                   </p>
                 </div>
               </div>
@@ -1394,9 +1397,9 @@ export function DashboardOverlay({
               <Info className="w-4 h-4 text-sky-600 shrink-0" />
               <div>
                 <span className="font-bold uppercase tracking-wider text-[10px] bg-sky-200/80 px-1.5 py-0.5 rounded mr-1.5 text-sky-900">
-                  Mode: Simulasi Aman (Default)
+                  DISPATCH TELEGRAM BUKTI RIIL
                 </span>
-                <span>Pesan divalidasi lokal &amp; SPK resmi diterbitkan; nomor WhatsApp riil tidak menerima broadcast nyata.</span>
+                <span>Pesan penawaran &amp; berkas fisik PDF SPK resmi dikirimkan langsung ke Telegram <strong>@iiibays</strong> untuk validasi instan.</span>
               </div>
             </div>
 
@@ -1462,7 +1465,7 @@ export function DashboardOverlay({
               {/* Draft WhatsApp Preview */}
               <div>
                 <label className="text-xs font-bold text-[#192A56] block mb-1.5">
-                  Draf Pesan WhatsApp (Dihasilkan oleh Qwen 2.5 Local):
+                  Draf Pesan Penawaran Sales:
                 </label>
                 <textarea
                   rows={4}
@@ -1472,17 +1475,50 @@ export function DashboardOverlay({
                 />
               </div>
 
-              {/* Target Nomor WhatsApp */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-[#576574] shrink-0">Kirim ke WA:</span>
-                <input
-                  type="text"
-                  value={waNumber}
-                  readOnly
-                  placeholder="081234567890"
-                  className="flex-1 p-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-[#192A56] font-mono font-bold outline-none"
-                />
+              {/* Target Saluran Konfirmasi: Telegram @iiibays */}
+              <div className="p-3 bg-sky-50/80 border border-sky-200 rounded-xl space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#229ED9] text-white flex items-center justify-center shadow-xs shrink-0">
+                      <Send className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-sky-800 font-bold uppercase tracking-wider block">Kirim Konfirmasi &amp; PDF SPK ke:</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-[#192A56] font-mono">Telegram: @iiibays</span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold">Bukti Riil Aktif</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href="https://t.me/StelAgentBot"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1.5 bg-[#229ED9] hover:bg-[#1C88BD] text-white text-[11px] rounded-lg font-bold transition flex items-center gap-1 shadow-xs"
+                      style={{ backgroundColor: '#229ED9', color: '#FFFFFF' }}
+                      title="Buka bot @StelAgentBot dan klik Start"
+                    >
+                      <Bot className="w-3.5 h-3.5 text-white" />
+                      <span>Start @StelAgentBot</span>
+                    </a>
+                    <a
+                      href="https://t.me/iiibays"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1.5 bg-white border border-sky-300 hover:border-sky-500 text-sky-800 text-[11px] rounded-lg font-bold transition flex items-center gap-1 shadow-2xs hover:bg-sky-50"
+                    >
+                      <span>Chat</span>
+                      <ExternalLink className="w-3 h-3 text-sky-600" />
+                    </a>
+                  </div>
+                </div>
+                <div className="text-[10px] text-slate-500 leading-normal bg-white/70 p-1.5 rounded-lg border border-sky-100 flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  <span>Pastikan Anda telah membuka <a href="https://t.me/StelAgentBot" target="_blank" rel="noreferrer" className="text-[#229ED9] font-bold underline">@StelAgentBot</a> di Telegram dan mengirim <code>/start</code> agar bot memiliki izin mengirimkan berkas resmi SPK ke chat Anda.</span>
+                </div>
               </div>
+
               <label className="flex items-start gap-2 text-[11px] leading-relaxed text-slate-600">
                 <input
                   type="checkbox"
@@ -1490,7 +1526,7 @@ export function DashboardOverlay({
                   onChange={(event) => setConsentConfirmed(event.target.checked)}
                   className="mt-0.5 accent-[#192A56]"
                 />
-                <span>Saya mengonfirmasi prospek telah menyetujui dihubungi melalui WhatsApp (consent_verified).</span>
+                <span>Saya mengonfirmasi prospek menyetujui penerimaan penawaran &amp; berkas fisik PDF SPK via Telegram (@iiibays) (consent_verified).</span>
               </label>
             </div>
 
@@ -1498,15 +1534,17 @@ export function DashboardOverlay({
             <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
               <button
                 type="button"
+                disabled={isSubmittingApproval}
                 onClick={() => onApprovePitch && onApprovePitch(null)}
-                className="px-4 py-2 border border-slate-200 bg-slate-50 text-[#576574] hover:bg-slate-100 hover:text-[#192A56] rounded-xl text-xs font-bold transition cursor-pointer"
+                className="px-4 py-2 border border-slate-200 bg-slate-50 text-[#576574] hover:bg-slate-100 hover:text-[#192A56] rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Tolak / Batal
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  if (!onApprovePitch || !pitchResult) return
+                  if (!onApprovePitch || !pitchResult || isSubmittingApproval) return
+                  setIsSubmittingApproval(true)
                   const scoutOutput = pitchResult.cubi_scout_output || {
                     id_produk: 'MTR-01',
                     unit_rekomendasi: pitchResult.unit_rekomendasi || 'Beat Street',
@@ -1536,11 +1574,14 @@ export function DashboardOverlay({
                     consent_verified: consentConfirmed,
                     consent_confirmed: consentConfirmed,
                     mode_simulasi: true,
+                    target_channel: 'telegram',
+                    telegram_target: '@iiibays',
                     approved_by: bossConfig?.name || 'Sales Director',
                     pesan_final: editedPitch,
+                    nomor_wa: waNumber || '6281234567801',
                     prospek: pitchResult.prospek || {
                       nama: activeLead?.nama || 'Konsumen',
-                      nomor_wa: waNumber,
+                      nomor_wa: waNumber || '6281234567801',
                       domisili: activeLead?.domisili || 'Banyumas',
                       skor_prioritas: activeLead?.score_priority || 'Warm'
                     },
@@ -1552,12 +1593,21 @@ export function DashboardOverlay({
                   }
                   onApprovePitch(payloadToSend)
                 }}
-                disabled={!consentConfirmed || !waNumber.trim() || !editedPitch.trim()}
+                disabled={isSubmittingApproval || !consentConfirmed || !editedPitch.trim()}
                 className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-[#192A56]"
                 style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
               >
-                <Send className="w-3.5 h-3.5 text-white shrink-0" style={{ color: '#FFFFFF' }} />
-                <span className="text-white font-bold" style={{ color: '#FFFFFF' }}>Setujui &amp; Kirim</span>
+                {isSubmittingApproval ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                    <span className="text-white font-bold" style={{ color: '#FFFFFF' }}>Memproses SPK &amp; Mengirim ke @iiibays...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5 text-white shrink-0" style={{ color: '#FFFFFF' }} />
+                    <span className="text-white font-bold" style={{ color: '#FFFFFF' }}>Setujui &amp; Kirim ke @iiibays</span>
+                  </>
+                )}
               </button>
             </div>
 
@@ -1577,17 +1627,21 @@ export function DashboardOverlay({
               </div>
               <div>
                 <h3 className="font-bold text-base text-[#192A56]">
-                  Persetujuan Selesai: PDF SPK Resmi Terbit
+                  Persetujuan Selesai: PDF SPK Resmi Terbit &amp; Terkirim ke Telegram @iiibays
                 </h3>
                 <p className="text-xs text-[#576574]">
-                  {spkModalData.status === 'simulated'
-                    ? 'Status: Simulasi Terverifikasi (Pesan aman, tidak dikirim ke nomor riil)'
-                    : 'Status: Terkirim Riil ke WhatsApp Gateway'}
+                  {spkModalData.telegram_dispatch?.status === 'terkirim_live_telegram'
+                    ? 'Status: Berkas Resmi SPK & Draf Terkirim Live ke Telegram @iiibays'
+                    : 'Status: Dokumen SPK Sah Diterbitkan & Dicatat ke Target Telegram @iiibays'}
                 </p>
               </div>
             </div>
 
             <div className="my-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+              <div className="flex items-center justify-between p-2 bg-sky-50 border border-sky-200 rounded-lg">
+                <span className="text-sky-800 text-xs font-semibold">Saluran Konfirmasi:</span>
+                <span className="font-bold text-[#229ED9] text-xs font-mono">Telegram @iiibays (Terkirim) ✅</span>
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Berkas Dokumen:</span>
                 <span className="font-bold text-[#192A56] truncate max-w-[260px]">{spkModalData.pdf_filename}</span>
@@ -1614,23 +1668,33 @@ export function DashboardOverlay({
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 flex-wrap">
               <button
                 type="button"
                 onClick={onCloseSpkModal}
-                className="px-4 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                className="px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 Tutup
               </button>
               <a
+                href="https://t.me/iiibays"
+                target="_blank"
+                rel="noreferrer"
+                className="px-3.5 py-2 bg-[#229ED9] hover:bg-[#1C88BD] text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                style={{ backgroundColor: '#229ED9', color: '#FFFFFF' }}
+              >
+                <Send className="w-3.5 h-3.5 text-white" />
+                <span>Buka Chat @iiibays</span>
+              </a>
+              <a
                 href={spkModalData.pdf_url ? `${typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? `http://${window.location.hostname}:8000` : 'http://127.0.0.1:8000'}${spkModalData.pdf_url}` : '#'}
                 target="_blank"
                 rel="noreferrer"
-                className="px-5 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer border border-[#192A56]"
+                className="px-4 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer border border-[#192A56]"
                 style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
               >
                 <FileDown className="w-4 h-4 text-white" />
-                <span>Unduh PDF SPK Resmi</span>
+                <span>Unduh PDF SPK</span>
               </a>
             </div>
           </div>

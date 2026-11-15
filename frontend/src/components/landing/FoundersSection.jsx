@@ -56,15 +56,15 @@ export function FoundersSection({ onNavigate }) {
     {
       id: 2,
       name: 'Cubi Scribe',
-      role: 'AI WhatsApp Pitch Drafter',
+      role: 'AI Telegram Pitch Drafter',
       accentColor: '#4F46E5',
       npu: '48 TOPS NPU Engine',
       model: 'Qwen 2.5 Drafter Mesh',
       network: 'Internal IPC Mesh :8002',
       egress: '0 Byte (Air-Gapped)',
-      bio: 'Spesialis outbound & signal-based sales drafting. Menghasilkan draf percakapan WhatsApp yang ramah, ringkas, dan relevan menggunakan model on-device Qwen 2.5 tanpa latensi cloud.',
+      bio: 'Spesialis outbound & signal-based sales drafting. Menghasilkan draf percakapan penawaran yang ramah, ringkas, dan relevan menggunakan model on-device Qwen 2.5 tanpa latensi cloud.',
       capabilities: [
-        'Personalisasi draf pesan WhatsApp ramah & persuasif',
+        'Personalisasi draf pesan Telegram ramah & persuasif',
         'Follow-up berkala prospek hangat dengan konteks akurat',
         'Penerjemahan sinyal minat beli menjadi ajakan test-ride',
         'Bebas biaya token API bulanan untuk jutaan pesan'
@@ -83,7 +83,7 @@ export function FoundersSection({ onNavigate }) {
       capabilities: [
         'Kalkulasi skor minat prospek (Hot/Warm/Cold) otomatis',
         'Validasi kelayakan finansial & dokumen pengajuan kredit',
-        'Penyaringan leads spam WhatsApp sebelum masuk pipeline',
+        'Penyaringan leads spam sebelum masuk pipeline',
         'Penjaga gerbang Turnstile Gate persetujuan pimpinan'
       ]
     },
@@ -96,7 +96,7 @@ export function FoundersSection({ onNavigate }) {
       model: 'AES-256 Vault Engine',
       network: 'LAN 2 (Air-Gapped Mesh)',
       egress: '0 Byte (Air-Gapped)',
-      bio: 'Benteng pertahanan privasi data pelanggan showroom. Menjamin 100% nomor WhatsApp, riwayat penawaran, dan data transaksi tersimpan terenkripsi di drive lokal NUC tanpa risiko kebocoran.',
+      bio: 'Benteng pertahanan privasi data pelanggan showroom. Menjamin 100% kontak pelanggan, riwayat penawaran, dan data transaksi tersimpan terenkripsi di drive lokal NUC tanpa risiko kebocoran.',
       capabilities: [
         'Enkripsi lokal hardware SSD terhadap seluruh database leads',
         'Isolasi penuh dari internet publik dan crawler eksternal',

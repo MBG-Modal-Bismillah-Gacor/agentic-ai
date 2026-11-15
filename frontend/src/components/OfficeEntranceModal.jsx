@@ -100,12 +100,12 @@ export function OfficeEntranceModal({
       id: 'purple-agent',
       name: agents?.['purple-agent']?.name || 'Cubi Scribe',
       role: 'Qwen 2.5 3B AI Pitch Drafter',
-      desc: 'Penyusun draf penawaran WhatsApp otomatis lokal'
+      desc: 'Penyusun draf penawaran Telegram otomatis lokal'
     },
     {
       id: 'green-agent',
       name: agents?.['green-agent']?.name || 'Cubi Gate',
-      role: 'Pipeline Analyst & WhatsApp Dispatch',
+      role: 'Pipeline Analyst & Telegram Dispatch',
       desc: 'Otorisasi kontak keluar & supervisi lead'
     },
     {
