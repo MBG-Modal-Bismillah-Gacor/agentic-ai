@@ -11,7 +11,8 @@ import {
   LogOut, 
   Save, 
   Cpu, 
-  Fingerprint 
+  Fingerprint,
+  Download
 } from 'lucide-react'
 
 /**
@@ -26,7 +27,9 @@ export function DeviceSecurityModal({
   currentProfile = null,
   onSaveProfile,
   onResetDevice,
-  onClose
+  onClose,
+  onInstallPwa = null,
+  isPwaInstalled = false
 }) {
   const [userName, setUserName] = useState(currentProfile?.name || 'Pak Alfa')
   const [password, setPassword] = useState(currentProfile?.password || '')
@@ -226,6 +229,29 @@ export function DeviceSecurityModal({
               Password ini mengunci workstation virtual dan hanya berlaku di perangkat browser ini.
             </p>
           </div>
+
+          {/* Opsi Instal PWA Aplikasi Mandiri Desktop (Rapi di dalam Modal Perangkat) */}
+          {!isPwaInstalled && onInstallPwa && (
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#192A56] text-white flex items-center justify-center shrink-0">
+                  <Download className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[#192A56]">Aplikasi Desktop PWA</div>
+                  <div className="text-[10px] text-slate-500">Buka tanpa browser & pasang di Desktop</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onInstallPwa}
+                style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}
+                className="px-3.5 py-1.5 rounded-lg bg-[#192A56] hover:bg-[#0E1A38] text-white text-xs font-bold transition cursor-pointer shadow-xs shrink-0"
+              >
+                <span className="text-white font-bold" style={{ color: '#FFFFFF' }}>Instal</span>
+              </button>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">

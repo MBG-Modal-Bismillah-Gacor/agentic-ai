@@ -105,9 +105,54 @@ export function DashboardView({
     setConsentConfirmed(false)
   }, [pitchResult])
 
+  // Sinkronisasi data saat halaman dashboard dibuka
+  useEffect(() => {
+    onRefresh?.()
+  }, [])
+
+  // Dynamic Command Targets derived from live bossConfig and agents (Menyesuaikan otomatis nama & peran karakter)
+  const commandTargets = [
+    {
+      id: 'boss',
+      handle: `@${(bossConfig?.name || 'Boss').replace(/\s+/g, '')}`,
+      name: bossConfig?.name || 'Deal Strategist',
+      role: bossConfig?.role || 'Direktur Utama',
+      category: 'director'
+    },
+    {
+      id: 'scout',
+      handle: `@${(agents?.['blue-agent']?.name || 'Scout').replace(/\s+/g, '')}`,
+      name: agents?.['blue-agent']?.name || 'Cubi Scout',
+      role: agents?.['blue-agent']?.role || 'Compute & Stock',
+      category: 'agent'
+    },
+    {
+      id: 'scribe',
+      handle: `@${(agents?.['purple-agent']?.name || 'Scribe').replace(/\s+/g, '')}`,
+      name: agents?.['purple-agent']?.name || 'Cubi Scribe',
+      role: agents?.['purple-agent']?.role || 'AI Drafter',
+      category: 'agent'
+    },
+    {
+      id: 'gate',
+      handle: `@${(agents?.['green-agent']?.name || 'Gate').replace(/\s+/g, '')}`,
+      name: agents?.['green-agent']?.name || 'Cubi Gate',
+      role: agents?.['green-agent']?.role || 'Approval & Dispatch',
+      category: 'agent'
+    },
+    {
+      id: 'vault',
+      handle: `@${(agents?.['orange-agent']?.name || 'Vault').replace(/\s+/g, '')}`,
+      name: agents?.['orange-agent']?.name || 'Cubi Vault',
+      role: agents?.['orange-agent']?.role || 'Data Archivist',
+      category: 'agent'
+    }
+  ]
+
   // Interactive Command Prompt State
   const [commandInput, setCommandInput] = useState('')
-  const [commandTarget, setCommandTarget] = useState('@scout') // '@scout' | '@scribe' | '@gate' | '@vault' | '@Alfa' | '@Amirul' | '@Idham' | '@Jullystian' | '@Hasbi'
+  const [selectedTargetId, setSelectedTargetId] = useState('scout')
+  const activeTarget = commandTargets.find((t) => t.id === selectedTargetId) || commandTargets[1]
   const [customLogs, setCustomLogs] = useState([])
   const [streamTab, setStreamTab] = useState('logs') // 'logs' | 'deliberations'
 
@@ -148,32 +193,46 @@ export function DashboardView({
 
     const newLog = {
       id: Date.now(),
-      agent: commandTarget,
+      agent: activeTarget.handle,
       time: timeStr,
       action: `Perintah Diterima: "${commandInput}"`,
-      detail: `Menjalankan instruksi komando ke ${commandTarget} via mesh internal...`,
+      detail: `Menjalankan instruksi komando ke ${activeTarget.name} (${activeTarget.handle}) via mesh internal...`,
       type: 'command'
     }
 
     setCustomLogs((prev) => [newLog, ...prev])
     setCommandInput('')
 
-    // Simulasi respons agen sesuai nama di office
-    if (commandTarget === '@scout') {
+    // Simulasi respons agen sesuai karakter AI yang aktif
+    if (selectedTargetId === 'boss') {
       setTimeout(() => {
         setCustomLogs((prev) => [
           {
             id: Date.now() + 1,
-            agent: 'Cubi Scout',
+            agent: activeTarget.name,
             time: timeStr,
-            action: 'Analisis Stok Selesai',
-            detail: 'Database katalog unit cabang sinkron 100%. Data siap dialirkan ke Cubi Scribe.',
+            action: 'Instruksi Direktur Diproses',
+            detail: `${activeTarget.name} mengalokasikan prioritas pipeline & sinkronisasi komando tim.`,
             type: 'agent'
           },
           ...prev
         ])
       }, 1000)
-    } else if (commandTarget === '@scribe') {
+    } else if (selectedTargetId === 'scout') {
+      setTimeout(() => {
+        setCustomLogs((prev) => [
+          {
+            id: Date.now() + 1,
+            agent: activeTarget.name,
+            time: timeStr,
+            action: 'Analisis Stok Selesai',
+            detail: `Database katalog cabang dipindai oleh ${activeTarget.name}. Data unit sinkron 100%.`,
+            type: 'agent'
+          },
+          ...prev
+        ])
+      }, 1000)
+    } else if (selectedTargetId === 'scribe') {
       if (onRunAutoPipeline) {
         onRunAutoPipeline()
       }
@@ -181,38 +240,38 @@ export function DashboardView({
         setCustomLogs((prev) => [
           {
             id: Date.now() + 1,
-            agent: 'Cubi Scribe',
+            agent: activeTarget.name,
             time: timeStr,
             action: 'Draf Penawaran AI Dihasilkan',
-            detail: 'Qwen 2.5 3B lokal menyelesaikan draf pesan personal untuk verifikasi Cubi Gate.',
+            detail: `Qwen 2.5 3B lokal menyelesaikan draf pesan personal untuk verifikasi ${agents?.['green-agent']?.name || 'Gate'}.`,
             type: 'agent'
           },
           ...prev
         ])
       }, 1000)
-    } else if (commandTarget === '@gate') {
+    } else if (selectedTargetId === 'gate') {
       setTimeout(() => {
         setCustomLogs((prev) => [
           {
             id: Date.now() + 1,
-            agent: 'Cubi Gate',
+            agent: activeTarget.name,
             time: timeStr,
             action: 'Turnstile Gate Diperiksa',
-            detail: 'Verifikasi keamanan transmisi selesai. WhatsApp dispatch disetujui.',
+            detail: `Verifikasi keamanan transmisi oleh ${activeTarget.name} selesai. WhatsApp dispatch disetujui.`,
             type: 'agent'
           },
           ...prev
         ])
       }, 1000)
-    } else if (commandTarget === '@vault') {
+    } else if (selectedTargetId === 'vault') {
       setTimeout(() => {
         setCustomLogs((prev) => [
           {
             id: Date.now() + 1,
-            agent: 'Cubi Vault',
+            agent: activeTarget.name,
             time: timeStr,
             action: 'Arsip Data NVMe Tersinkron',
-            detail: 'Snapshot telemetri lokal tersimpan di brankas SSD berdaulat.',
+            detail: `Snapshot telemetri & database prospek diamankan ${activeTarget.name} ke brankas SSD berdaulat.`,
             type: 'agent'
           },
           ...prev
@@ -366,10 +425,10 @@ export function DashboardView({
 
               <button
                 onClick={onOpenCreateLead}
-                className="group px-3 py-1.5 bg-white hover:bg-[#192A56] hover:text-white border border-[#192A56] text-[#192A56] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs rounded-xl"
+                className="group px-3 py-1.5 bg-white hover:bg-[#192A56] border border-[#192A56] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs rounded-xl"
               >
                 <PlusCircle className="w-3.5 h-3.5 text-[#192A56] group-hover:text-white transition-colors" />
-                <span className="hidden sm:inline">Tambah Prospek</span>
+                <span className="hidden sm:inline text-[#192A56] group-hover:text-white transition-colors">Tambah Prospek</span>
               </button>
 
               <a
@@ -405,8 +464,11 @@ export function DashboardView({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold text-[#192A56] tracking-tight">
-                  PUSAT KOMANDO // OPERASIONAL KANTOR AI
+                <h1 className="text-base sm:text-lg font-bold text-[#192A56] tracking-tight flex items-center gap-2 flex-wrap">
+                  <span>PUSAT KOMANDO</span>
+                  <span className="font-mono text-xs sm:text-sm font-normal text-slate-400">
+                    // OPERASIONAL KANTOR AI
+                  </span>
                 </h1>
                 <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-md">
                   AKTIF
@@ -515,8 +577,11 @@ export function DashboardView({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56]">
-                    TELEMETRI PENGGUNAAN TOKEN // INFERENSI NPU REALTIME
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56] flex items-center gap-1.5 flex-wrap">
+                    <span>TELEMETRI PENGGUNAAN TOKEN</span>
+                    <span className="font-mono text-[11px] font-normal text-slate-400">
+                      // INFERENSI NPU REALTIME
+                    </span>
                   </h2>
                   <span className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-md">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
@@ -661,16 +726,19 @@ export function DashboardView({
           <div className="flex items-center justify-between pb-3 border-b border-[#192A56]/20 mb-5">
             <div className="flex items-center gap-2">
               <Cpu className="w-5 h-5 text-[#192A56]" />
-              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56]">
-                PANEL STASIUN KERJA AI // MESH AKTIF (5 STASIUN)
+              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56] flex items-center gap-1.5 flex-wrap">
+                <span>PANEL STASIUN KERJA AI</span>
+                <span className="font-mono text-[11px] font-normal text-slate-400">
+                  // MESH AKTIF (5 STASIUN)
+                </span>
               </h2>
             </div>
             <button
               onClick={() => onNavigate('office')}
-              className="text-xs font-mono text-[#192A56] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+              className="group text-xs font-mono px-3 py-1.5 rounded-xl border border-[#192A56] bg-white hover:bg-[#192A56] font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
             >
-              <span>INSPEKSI DI KANTOR 3D</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <span className="text-[#192A56] group-hover:text-white transition-colors">INSPEKSI DI KANTOR 3D</span>
+              <ChevronRight className="w-3.5 h-3.5 text-[#192A56] group-hover:text-white transition-colors" />
             </button>
           </div>
 
@@ -691,7 +759,7 @@ export function DashboardView({
                 </div>
                 <div className="flex items-center gap-2 font-bold text-sm text-[#192A56] mb-0.5">
                   <ShieldCheck className="w-4 h-4 text-[#192A56] shrink-0" />
-                  <span className="truncate">{bossConfig?.name || 'Pak Alfa'}</span>
+                  <span className="truncate">{bossConfig?.name || 'Deal Strategist'}</span>
                 </div>
                 <div className="text-[11px] text-[#576574] truncate mb-2 font-medium">
                   {bossConfig?.role || 'Direktur Utama & Strategi'}
@@ -904,9 +972,12 @@ export function DashboardView({
               {/* Table Header & Controls */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-[#192A56]/20 mb-4">
                 <div>
-                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56] flex items-center gap-2">
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56] flex items-center gap-2 flex-wrap">
                     <Layers className="w-4 h-4 text-[#192A56]" />
-                    <span>MANAJEMEN PROSPEK // ANTREAN KONSUMEN</span>
+                    <span>MANAJEMEN PROSPEK</span>
+                    <span className="font-mono text-[11px] font-normal text-slate-400">
+                      // ANTREAN KONSUMEN
+                    </span>
                   </h2>
                   <span className="text-xs text-[#576574] font-medium">
                     Pilih prospek untuk memicu alur verifikasi stok &amp; draf WhatsApp otonom
@@ -1012,13 +1083,13 @@ export function DashboardView({
                                 onClick={() => onSelectLead(lead)}
                                 disabled={isGenerating}
                                 style={!isDispatched ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
-                                className={`px-3 py-1.5 text-[11px] font-bold transition cursor-pointer rounded-xl ${
+                                className={`group px-3 py-1.5 text-[11px] font-bold transition-all cursor-pointer rounded-xl ${
                                   isDispatched
-                                    ? 'bg-white hover:bg-slate-100 border border-slate-200 text-[#192A56]'
+                                    ? 'bg-white hover:bg-[#192A56] border border-slate-200'
                                     : 'bg-[#192A56] hover:bg-[#0E1A38] text-white shadow-xs'
                                 }`}
                               >
-                                <span style={{ color: isDispatched ? '#192A56' : '#FFFFFF' }}>
+                                <span className={isDispatched ? 'text-[#192A56] group-hover:text-white transition-colors' : 'text-white'}>
                                   {isDispatched ? 'Lihat Draf' : 'Proses AI'}
                                 </span>
                               </button>
@@ -1038,115 +1109,114 @@ export function DashboardView({
             </div>
           </div>
 
-          {/* Kolom Kanan: Realtime Terminal Log & Autonomous Swarm Deliberation Stream (4 Kolom) */}
-          <div className="lg:col-span-4 p-5 sm:p-6 bg-[#192A56] text-white font-mono text-xs rounded-2xl shadow-md flex flex-col justify-between border border-[#192A56]">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-white/20 mb-4">
-                <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl">
-                  <button
-                    type="button"
-                    onClick={() => setStreamTab('logs')}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                      streamTab === 'logs' ? 'bg-white text-[#192A56] shadow-xs' : 'text-slate-300 hover:text-white'
-                    }`}
-                  >
-                    <Terminal className="w-3.5 h-3.5" />
-                    <span>STREAM LOG</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStreamTab('deliberations')}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                      streamTab === 'deliberations' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-300 hover:text-white'
-                    }`}
-                  >
-                    <Bot className="w-3.5 h-3.5" />
-                    <span>RAPAT SWARM ({deliberations.length})</span>
-                  </button>
-                </div>
-                <span className="text-[10px] text-emerald-400 font-bold tracking-widest flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  HEARTBEAT 30S
-                </span>
+          {/* Kolom Kanan: Realtime Terminal Log & Autonomous Swarm Deliberation Stream (4 Kolom) - Ketinggian Terkunci Konsisten & Bisa Di-scroll */}
+          <div className="lg:col-span-4 p-5 sm:p-6 bg-[#192A56] text-white font-mono text-xs rounded-2xl shadow-md flex flex-col border border-[#192A56] h-[520px] max-h-[520px]">
+            {/* Header dengan Tab Stream Log & Rapat Swarm */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/20 mb-3 shrink-0">
+              <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setStreamTab('logs')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    streamTab === 'logs' ? 'bg-white text-[#192A56] shadow-xs' : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>STREAM LOG</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStreamTab('deliberations')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    streamTab === 'deliberations' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>RAPAT SWARM ({deliberations.length})</span>
+                </button>
               </div>
-
-              {/* Feed List Terminal Monospaced */}
-              <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                {streamTab === 'logs' ? (
-                  allLogs.length === 0 ? (
-                    <div className="text-slate-400 py-8 text-center text-xs">
-                      Belum ada aktivitas baru tercatat.
-                    </div>
-                  ) : (
-                    allLogs.map((log, idx) => (
-                      <div
-                        key={log.id || idx}
-                        className="p-2.5 bg-white/10 border border-white/15 text-[11px] space-y-1 rounded-lg"
-                      >
-                        <div className="flex items-center justify-between text-slate-300 text-[10px]">
-                          <span className="text-amber-300 font-bold">{log.agent}</span>
-                          <span>{log.time}</span>
-                        </div>
-                        <div className="text-white font-medium">{log.action}</div>
-                        {log.detail && (
-                          <div className="text-slate-300 text-[10px] truncate">{log.detail}</div>
-                        )}
-                      </div>
-                    ))
-                  )
-                ) : (
-                  deliberations.length === 0 ? (
-                    <div className="text-slate-300 py-8 text-center text-xs space-y-2">
-                      <Bot className="w-7 h-7 mx-auto text-amber-300/70" />
-                      <p className="font-bold text-white">Belum Ada Sesi Rapat Tim</p>
-                      <p className="text-[10px] text-slate-300">
-                        Heartbeat otonom berdetak tiap 30 detik memindai defisit stok &amp; negosiasi ke Astra Hub.
-                      </p>
-                    </div>
-                  ) : (
-                    deliberations.map((delib, idx) => (
-                      <div
-                        key={delib.id || idx}
-                        className="p-3 bg-white/10 border border-white/15 text-[11px] space-y-2 rounded-xl"
-                      >
-                        <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
-                          <span className="font-bold text-amber-300 text-[11px]">
-                            {delib.unit} • {delib.cabang}
-                          </span>
-                          <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded font-bold">
-                            {delib.defisit === 'CRITICAL_EMPTY' ? 'Stok 0' : 'Defisit'}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-slate-300 font-sans">
-                          Prospek: <b className="text-white">{delib.konsumen}</b> ({delib.lead_target})
-                        </div>
-                        <div className="space-y-1.5 pt-1">
-                          {(delib.turns || []).map((t, tidx) => (
-                            <div key={tidx} className="bg-black/30 p-2 rounded-lg border border-white/10 text-[10.5px]">
-                              <div className="flex items-center justify-between mb-0.5">
-                                <span className="font-bold text-amber-300 text-[10px] uppercase">
-                                  {t.speaker}
-                                </span>
-                                <span className="text-[9px] text-slate-400 font-sans">{t.role}</span>
-                              </div>
-                              <p className="text-slate-200 font-sans leading-relaxed">{t.message}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  )
-                )}
-              </div>
+              <span className="text-[10px] text-emerald-400 font-bold tracking-widest flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                AKTIF
+              </span>
             </div>
 
-            <div className="pt-3 border-t border-white/20 text-[10px] text-slate-300 flex items-center justify-between">
+            {/* Feed List Terminal Monospaced - Expands smoothly to fill the card */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 min-h-0 custom-scrollbar mb-3">
+              {streamTab === 'logs' ? (
+                allLogs.length === 0 ? (
+                  <div className="text-slate-400 py-12 text-center text-xs">
+                    Belum ada aktivitas baru tercatat.
+                  </div>
+                ) : (
+                  allLogs.map((log, idx) => (
+                    <div
+                      key={log.id || idx}
+                      className="p-2.5 bg-white/10 border border-white/15 text-[11px] space-y-1 rounded-lg"
+                    >
+                      <div className="flex items-center justify-between text-slate-300 text-[10px]">
+                        <span className="text-amber-300 font-bold">{log.agent}</span>
+                        <span>{log.time}</span>
+                      </div>
+                      <div className="text-white font-medium">{log.action}</div>
+                      {log.detail && (
+                        <div className="text-slate-300 text-[10px] break-words">{log.detail}</div>
+                      )}
+                    </div>
+                  ))
+                )
+              ) : (
+                deliberations.length === 0 ? (
+                  <div className="text-slate-300 py-12 text-center text-xs space-y-2">
+                    <Bot className="w-7 h-7 mx-auto text-amber-300/70" />
+                    <p className="font-bold text-white">Belum Ada Sesi Rapat Tim</p>
+                    <p className="text-[10px] text-slate-300">
+                      Heartbeat otonom berdetak tiap 30 detik memindai defisit stok &amp; negosiasi ke Astra Hub.
+                    </p>
+                  </div>
+                ) : (
+                  deliberations.map((delib, idx) => (
+                    <div
+                      key={delib.id || idx}
+                      className="p-3 bg-white/10 border border-white/15 text-[11px] space-y-2 rounded-xl"
+                    >
+                      <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+                        <span className="font-bold text-amber-300 text-[11px]">
+                          {delib.unit} • {delib.cabang}
+                        </span>
+                        <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded font-bold">
+                          {delib.defisit === 'CRITICAL_EMPTY' ? 'Stok 0' : 'Defisit'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-300 font-sans">
+                        Prospek: <b className="text-white">{delib.konsumen}</b> ({delib.lead_target})
+                      </div>
+                      <div className="space-y-1.5 pt-1">
+                        {(delib.turns || []).map((t, tidx) => (
+                          <div key={tidx} className="bg-black/30 p-2 rounded-lg border border-white/10 text-[10.5px]">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="font-bold text-amber-300 text-[10px] uppercase">
+                                {t.speaker}
+                              </span>
+                              <span className="text-[9px] text-slate-400 font-sans">{t.role}</span>
+                            </div>
+                            <p className="text-slate-200 font-sans leading-relaxed">{t.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-3 border-t border-white/20 text-[10px] text-slate-300 flex items-center justify-between shrink-0">
               <span>{streamTab === 'logs' ? 'SISTEM EVENT BUS LOKAL' : 'AUTONOMOUS SWARM DELIBERATION'}</span>
               <span>POLLING: 3.5 DETIK</span>
             </div>
           </div>
         </div>
-
         {/* ========================================================================= */}
         {/* 5. INTERACTIVE COMMAND PROMPT (Pusat Komando) */}
         {/* ========================================================================= */}
@@ -1154,58 +1224,46 @@ export function DashboardView({
           <div className="flex items-center justify-between pb-3 border-b border-[#192A56]/20 mb-4">
             <div className="flex items-center gap-2">
               <Command className="w-5 h-5 text-[#192A56]" />
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56]">
-                PUSAT KOMANDO // PROMPT PERINTAH INTERAKTIF
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#192A56] flex items-center gap-1.5 flex-wrap">
+                <span>PUSAT KOMANDO</span>
+                <span className="font-mono text-[11px] font-normal text-slate-400">
+                  // PROMPT PERINTAH INTERAKTIF
+                </span>
               </h3>
             </div>
             <span className="text-[10px] font-mono text-[#576574]">
-              DISTRIBUSI TUGAS KE AGEN AI &amp; TIM PENDIRI
+              DISTRIBUSI TUGAS KE SELURUH CREW AI BERDAULAT
             </span>
           </div>
 
           <form onSubmit={handleExecuteCommand} className="space-y-3 font-mono text-xs">
             {/* Target Selector Buttons */}
-            <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+            <div className="flex items-center gap-2 flex-wrap text-[11px]">
               <span className="text-[#576574] font-bold mr-1">Target Penugasan:</span>
               
-              {/* AI Agents */}
-              {['@scout', '@scribe', '@gate', '@vault'].map((t) => {
-                const isSelected = commandTarget === t
+              {commandTargets.map((t) => {
+                const isSelected = selectedTargetId === t.id
                 return (
                   <button
-                    key={t}
+                    key={t.id}
                     type="button"
-                    onClick={() => setCommandTarget(t)}
-                    style={isSelected ? { backgroundColor: '#192A56', color: '#FFFFFF', borderColor: '#192A56' } : {}}
-                    className={`px-2.5 py-1 rounded-lg border transition cursor-pointer font-bold ${
+                    onClick={() => setSelectedTargetId(t.id)}
+                    className={`group px-3 py-1.5 rounded-xl border transition-all cursor-pointer font-bold flex items-center gap-1.5 ${
                       isSelected
-                        ? 'bg-[#192A56] text-white border-[#192A56]'
-                        : 'bg-white text-[#192A56] border-slate-200 hover:bg-[#192A56] hover:text-white hover:border-[#192A56]'
+                        ? 'bg-[#192A56] text-white border-[#192A56] shadow-xs'
+                        : 'bg-white text-[#192A56] border-slate-200 hover:bg-[#192A56] hover:border-[#192A56]'
                     }`}
                   >
-                    <span style={{ color: isSelected ? '#FFFFFF' : 'inherit' }}>{t}</span>
-                  </button>
-                )
-              })}
-
-              <span className="text-[#192A56]/30 mx-1">|</span>
-
-              {/* Founders */}
-              {['@Alfa', '@Amirul', '@Idham', '@Jullystian', '@Hasbi'].map((f) => {
-                const isSelected = commandTarget === f
-                return (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => setCommandTarget(f)}
-                    style={isSelected ? { backgroundColor: '#192A56', color: '#FFFFFF', borderColor: '#192A56' } : {}}
-                    className={`px-2.5 py-1 rounded-lg border transition cursor-pointer font-bold ${
+                    <span className={isSelected ? 'text-white' : 'text-[#192A56] group-hover:text-white transition-colors'}>
+                      {t.handle}
+                    </span>
+                    <span className={`text-[9px] font-normal px-1 py-0.2 rounded transition-colors ${
                       isSelected
-                        ? 'bg-[#192A56] text-white border-[#192A56]'
-                        : 'bg-white text-[#192A56] border-slate-200 hover:bg-[#192A56] hover:text-white hover:border-[#192A56]'
-                    }`}
-                  >
-                    <span style={{ color: isSelected ? '#FFFFFF' : 'inherit' }}>{f}</span>
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 text-[#576574] group-hover:bg-white/20 group-hover:text-white'
+                    }`}>
+                      {t.name}
+                    </span>
                   </button>
                 )
               })}
@@ -1213,12 +1271,12 @@ export function DashboardView({
 
             {/* Input Bar */}
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 focus-within:bg-white transition-all shadow-xs">
-              <span className="text-[#192A56] font-bold pl-2 shrink-0">{commandTarget} &gt;</span>
+              <span className="text-[#192A56] font-bold pl-2 shrink-0">{activeTarget.handle} &gt;</span>
               <input
                 type="text"
                 value={commandInput}
                 onChange={(e) => setCommandInput(e.target.value)}
-                placeholder="Ketik instruksi komando... (contoh: Pindai ketersediaan unit cabang Purwokerto untuk prospek Budi)"
+                placeholder={`Ketik instruksi komando ke ${activeTarget.name}... (contoh: Pindai ketersediaan unit cabang untuk prospek)`}
                 className="w-full bg-transparent text-xs text-[#192A56] placeholder-[#576574] focus:outline-none py-1"
               />
               <button

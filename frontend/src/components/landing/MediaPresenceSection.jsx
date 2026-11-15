@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 export function MediaPresenceSection() {
   const [slideOffset, setSlideOffset] = useState(0)
   const [hoveredAdvId, setHoveredAdvId] = useState(null)
   const [selectedAdvId, setSelectedAdvId] = useState(null)
+  const [visibleCols, setVisibleCols] = useState(4)
 
   const advantageList = [
     {
@@ -56,8 +57,18 @@ export function MediaPresenceSection() {
     }
   ]
 
-  // On desktop 4 columns visible, so maxOffset is advantageList.length - 4 = 2
-  const maxOffset = Math.max(0, advantageList.length - 4)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) setVisibleCols(1)
+      else if (window.innerWidth < 1024) setVisibleCols(2)
+      else setVisibleCols(4)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const maxOffset = Math.max(0, advantageList.length - visibleCols)
 
   const handlePrev = () => {
     setSlideOffset((prev) => Math.max(0, prev - 1))
@@ -146,9 +157,9 @@ export function MediaPresenceSection() {
         {/* 4 Columns Slider Row matching ai/keunggulan ekosistem.png */}
         <div className="w-full overflow-hidden border-l border-r border-b border-[#192A56]/20 bg-white">
           <div
-            className="flex transition-transform duration-500 ease-out"
+            className="flex transition-transform duration-500 ease-out items-stretch"
             style={{
-              transform: `translateX(-${slideOffset * 25}%)`
+              transform: `translateX(-${slideOffset * (100 / visibleCols)}%)`
             }}
           >
             {advantageList.map((adv) => {
@@ -156,14 +167,14 @@ export function MediaPresenceSection() {
               return (
                 <div
                   key={adv.id}
-                  className="shrink-0 w-full sm:w-1/2 lg:w-1/4"
+                  className="shrink-0 w-full sm:w-1/2 lg:w-1/4 flex flex-col self-stretch"
                 >
                   {/* Authentic Minimalist Card with 4 Corner Ticks [   ] & Hover/Click Blue State */}
                   <div
                     onClick={() => setSelectedAdvId((prev) => (prev === adv.id ? null : adv.id))}
                     onMouseEnter={() => setHoveredAdvId(adv.id)}
                     onMouseLeave={() => setHoveredAdvId(null)}
-                    className={`media-item border-r border-b border-[#192A56]/20 p-6 sm:p-7 relative min-h-[340px] flex flex-col justify-between transition-all cursor-pointer ${
+                    className={`media-item border-r border-b border-[#192A56]/20 p-6 sm:p-7 relative min-h-[340px] h-full flex flex-col justify-between transition-all cursor-pointer ${
                       isActive ? 'bg-white shadow-md' : 'bg-white hover:bg-slate-50'
                     }`}
                   >

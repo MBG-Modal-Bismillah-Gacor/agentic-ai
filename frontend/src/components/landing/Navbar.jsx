@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ChevronDown, LayoutGrid, Building2, MonitorDot, Terminal, Sparkles, ExternalLink } from 'lucide-react'
+import { ChevronDown, LayoutGrid, Building2, MonitorDot, Terminal, Sparkles, ExternalLink, Send } from 'lucide-react'
 
 export function Navbar({ onNavigate }) {
   const [ecosystemOpen, setEcosystemOpen] = useState(false)
@@ -58,16 +58,15 @@ export function Navbar({ onNavigate }) {
       
       {/* Outer Border Layer Full 100% Width with Angled Chamfers & Crisp Strokes */}
       <div className="w-full relative pointer-events-auto">
-        {/* Inner Canvas Navbar with 28px Inset Chamfers (Background non-clipping wrapper) */}
-        <div className="w-full flex items-center justify-between px-6 sm:px-10 md:px-14 h-16 sm:h-20 relative">
-          
-          {/* Background Layer with Chamfer Polygon (Separated to allow popups/dropdowns to overflow freely) */}
-          <div
-            className="absolute inset-0 bg-white pointer-events-none z-0"
-            style={{
-              clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 28px 100%, 0 calc(100% - 28px))',
-            }}
-          />
+        {/* Background Layer with 28px Inset Chamfers */}
+        <div
+          className="absolute inset-0 bg-white pointer-events-none"
+          style={{
+            clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 28px 100%, 0 calc(100% - 28px))',
+          }}
+        />
+        {/* Inner Content Flex (Unclipped so dropdown menus render properly) */}
+        <div className="w-full flex items-center justify-between px-4 sm:px-6 md:px-8 xl:px-10 2xl:px-14 h-16 sm:h-20 relative">
           {/* Continuous Bottom & Chamfer Border Stroke Overlay */}
           <div 
             className="absolute pointer-events-none z-30"
@@ -106,7 +105,7 @@ export function Navbar({ onNavigate }) {
                 {/* Typography: StelAgent (Using Space Grotesk Bold, 100% Crisp & Fully Visible W) */}
                 <div className="flex items-center leading-none select-none">
                   <span 
-                    className="font-extrabold text-2xl sm:text-3xl tracking-wider text-[#192A56] uppercase"
+                    className="font-extrabold text-xl sm:text-2xl xl:text-3xl tracking-wider text-[#192A56] uppercase"
                     style={{ 
                       fontFamily: "'Space Grotesk', 'Inter', sans-serif",
                       letterSpacing: '0.04em'
@@ -120,9 +119,9 @@ export function Navbar({ onNavigate }) {
           </div>
 
           {/* Main Navigation Menu with Active Corner Indicators (HANYA Kanan Atas & Kiri Bawah) */}
-          <div className="header-main-nav hidden lg:flex items-center">
+          <div className="hidden xl:flex items-center mx-3 2xl:mx-5">
             <nav role="navigation" className="nav-menu w-nav-menu">
-              <ul role="list" className="header-menu flex items-center gap-2 xl:gap-3">
+              <ul role="list" className="header-menu flex items-center gap-1.5 2xl:gap-3">
                 
                 {/* 1. Ekosistem */}
                 <li className="header-menu-item">
@@ -212,23 +211,34 @@ export function Navbar({ onNavigate }) {
           </div>
 
           {/* Right Header Actions: Ecosystem Dropdown & Masuk ke StelAgent */}
-          <div className="header-actions flex items-center gap-2.5 sm:gap-3.5">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 !m-0 !p-0">
             
             {/* User-Friendly Ecosystem & Hub Dropdown */}
             <div className="relative" ref={ecosystemRef}>
               <button
                 type="button"
                 onClick={() => setEcosystemOpen(!ecosystemOpen)}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-bold transition-all border select-none cursor-pointer ${
+                className={`hidden sm:flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-bold transition-all border select-none cursor-pointer ${
                   ecosystemOpen
-                    ? 'bg-[#192A56] text-white border-[#192A56] shadow-md shadow-[#192A56]/20'
-                    : 'bg-white hover:bg-slate-50 text-[#192A56] border-slate-300 hover:border-[#192A56]/60 shadow-xs'
+                    ? 'shadow-md shadow-[#192A56]/20'
+                    : 'hover:bg-slate-50 border-slate-300 hover:border-[#192A56]/60 shadow-xs'
                 }`}
+                style={{
+                  backgroundColor: ecosystemOpen ? '#192A56' : '#FFFFFF',
+                  color: ecosystemOpen ? '#FFFFFF' : '#192A56',
+                  borderColor: ecosystemOpen ? '#192A56' : '#CBD5E1',
+                }}
                 title="Buka Navigasi Ekosistem StelAgent"
               >
-                <LayoutGrid className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-transform duration-200 ${ecosystemOpen ? 'text-white rotate-90' : 'text-[#192A56]'}`} />
-                <span className="tracking-wide">Our Ecosystem</span>
-                <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${ecosystemOpen ? 'rotate-180 text-white' : 'text-[#192A56]/70'}`} />
+                <LayoutGrid 
+                  className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-transform duration-200 ${ecosystemOpen ? 'rotate-90' : ''}`}
+                  style={{ color: ecosystemOpen ? '#FFFFFF' : '#192A56' }} 
+                />
+                <span className="tracking-wide" style={{ color: ecosystemOpen ? '#FFFFFF' : '#192A56' }}>Our Ecosystem</span>
+                <ChevronDown 
+                  className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${ecosystemOpen ? 'rotate-180' : ''}`}
+                  style={{ color: ecosystemOpen ? '#FFFFFF' : 'rgba(25, 42, 86, 0.7)' }} 
+                />
               </button>
 
               {/* Dropdown Menu Popover (Modern, Clean, User-Friendly) */}
@@ -239,12 +249,15 @@ export function Navbar({ onNavigate }) {
                     boxShadow: '0 20px 40px -15px rgba(25, 42, 86, 0.25), 0 0 0 1px rgba(25, 42, 86, 0.08)'
                   }}
                 >
-                  <div className="px-3 py-2 border-b border-slate-100 mb-1.5 flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#192A56]/80 flex items-center gap-1.5">
-                      <Sparkles className="w-3 h-3 text-amber-500" /> Pusat Ekosistem StelAgent
-                    </span>
-                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                      Local AI Ready
+                  <div className="px-3 py-2 border-b border-[#192A56]/15 mb-2 flex items-center justify-between font-mono bg-slate-50/70 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-[#192A56]" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#192A56]">
+                        EKOSISTEM STELAGENT
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-[#192A56]/70 uppercase tracking-wider">
+                      v2.5 // LOCAL
                     </span>
                   </div>
 
@@ -293,23 +306,23 @@ export function Navbar({ onNavigate }) {
                       </div>
                     </a>
 
-                    {/* Item 3: Backend Swagger API Docs */}
+                    {/* Item 3: Telegram Bot @StelAgentBot */}
                     <a
-                      href={typeof window !== 'undefined' && window.location.hostname ? `http://${window.location.hostname}:8000/docs` : 'http://127.0.0.1:8000/docs'}
+                      href="https://t.me/StelAgentBot"
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => setEcosystemOpen(false)}
                       className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-200/80 cursor-pointer text-left"
                     >
-                      <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 group-hover:bg-purple-600 group-hover:text-white transition">
-                        <Terminal className="w-5 h-5" />
+                      <div className="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 group-hover:bg-[#0088cc] group-hover:text-white transition">
+                        <Send className="w-5 h-5" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-xs text-[#192A56]">API Docs (FastAPI)</span>
-                          <span className="text-[9px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-bold">Port 8000</span>
+                          <span className="font-bold text-xs text-[#192A56]">@StelAgentBot</span>
+                          <span className="text-[9px] bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded font-bold">Telegram</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 truncate">Dokumentasi REST API & schema Swagger</p>
+                        <p className="text-[11px] text-slate-500 truncate">Bot asisten sales &amp; notifikasi WA deal closing</p>
                       </div>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#192A56] shrink-0" />
                     </a>
@@ -325,10 +338,17 @@ export function Navbar({ onNavigate }) {
                 e.preventDefault()
                 onNavigate?.('office')
               }}
-              className="button-primary w-inline-block"
+              className="button-primary w-inline-block shrink-0 no-underline"
             >
               <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
-                <div className="button-primary-text font-bold" style={{ padding: '0.75rem 1.6rem', backgroundColor: '#192A56', color: '#FFFFFF' }}>
+                <div
+                  className="button-primary-text font-bold text-[11px] sm:text-xs tracking-wider"
+                  style={{
+                    padding: '0.55rem 1.1rem',
+                    backgroundColor: '#192A56',
+                    color: '#FFFFFF'
+                  }}
+                >
                   MASUK KE STELAGENT
                 </div>
               </div>
@@ -336,15 +356,14 @@ export function Navbar({ onNavigate }) {
 
             {/* Mobile Hamburger Button */}
             <div
-              className="menu-button w-nav-button lg:hidden ml-1"
+              className="xl:hidden ml-1 p-1.5 flex items-center justify-center shrink-0 cursor-pointer rounded-lg hover:bg-slate-100 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{ cursor: 'pointer' }}
             >
               <img
                 src="/assets/webflow/664753c2515af09bef5b9826/667aad97eecb4ce5dfdd8f30_ico-hamburger-open.svg"
                 loading="lazy"
                 alt="Menu"
-                className="menu-icon-burger"
+                className="w-5 h-5 block"
               />
             </div>
           </div>
@@ -354,7 +373,7 @@ export function Navbar({ onNavigate }) {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-[#192A56]/20 px-4 py-3 font-mono pointer-events-auto">
+        <div className="xl:hidden bg-white border-b border-[#192A56]/20 px-4 py-3 font-mono pointer-events-auto">
           {/* Quick Ecosystem Shortcuts in Mobile */}
           <div className="p-2 bg-slate-50 rounded-xl border border-slate-200 mb-2.5 space-y-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#192A56]/70 px-1 block">Navigasi Ekosistem Cepat</span>

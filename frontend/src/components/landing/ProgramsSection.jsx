@@ -26,19 +26,19 @@ export function ProgramsSection({ onNavigate }) {
     }
   ]
 
-  // 11 Incubation support steps (Cara Kerja)
+  // 11 Langkah Eksekusi Swarm StelAgent (Bahasa Indonesia Singkat & Tepat)
   const incubationSlides = [
-    { num: '01', name: 'Fundraise management', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aac7967116988122e445c_Fundraise-management.svg' },
-    { num: '02', name: 'Treasury building', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aac89f3c816a71e90c096_Treasury-building.svg' },
-    { num: '03', name: 'Strategic partnerships', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aac9d63e28ae1e1034a96_Strategic-partnerships.svg' },
-    { num: '04', name: 'KOLs Management', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacb349c345d241a0bc9f_KOLs-Management.svg' },
-    { num: '05', name: 'Intro to Top CEXs', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacca4748929ef2d7590c_Top-CEXs.svg' },
-    { num: '06', name: 'Tokenization Strategy & Design', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aace04f85ccf9a4f3361d_Tokenization-Strategy-Design.svg' },
-    { num: '07', name: 'GTM & Marketing support', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacf559a32012ab873e83_GTM-Marketing-support.svg' },
-    { num: '08', name: 'Website Design & Development', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad0bba648054c1bd5bde_Website-Design-Development.svg' },
-    { num: '09', name: 'PR strategy', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad34133a6f4f73f76568_PR-strategy.svg' },
-    { num: '10', name: 'Post TGE strategies', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad4a28225aa07c06018d_Post-TGE-strategies.svg' },
-    { num: '11', name: 'Social media growth', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad5d6c148bfd7afd82c5_Social-media-growth.svg' }
+    { num: '01', name: 'Kualifikasi Prospek', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aac7967116988122e445c_Fundraise-management.svg' },
+    { num: '02', name: 'Analisis Stok Unit', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aac89f3c816a71e90c096_Treasury-building.svg' },
+    { num: '03', name: 'Simulasi Kredit & DP', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aac9d63e28ae1e1034a96_Strategic-partnerships.svg' },
+    { num: '04', name: 'Draf Penawaran AI', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacb349c345d241a0bc9f_KOLs-Management.svg' },
+    { num: '05', name: 'Verifikasi Swarm', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacca4748929ef2d7590c_Top-CEXs.svg' },
+    { num: '06', name: 'Otorisasi Pimpinan', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aace04f85ccf9a4f3361d_Tokenization-Strategy-Design.svg' },
+    { num: '07', name: 'Kirim Pesan WhatsApp', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aacf559a32012ab873e83_GTM-Marketing-support.svg' },
+    { num: '08', name: 'Negosiasi & Follow-up', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad0bba648054c1bd5bde_Website-Design-Development.svg' },
+    { num: '09', name: 'Penerbitan SPK', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad34133a6f4f73f76568_PR-strategy.svg' },
+    { num: '10', name: 'Enkripsi Berkas Lokal', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad4a28225aa07c06018d_Post-TGE-strategies.svg' },
+    { num: '11', name: 'Telemetri & Analitik', icon: '/assets/webflow/6649e26c9fdc8739cefdc48e/666aad5d6c148bfd7afd82c5_Social-media-growth.svg' }
   ]
 
   const handleNextIncubation = () => {
@@ -151,16 +151,16 @@ export function ProgramsSection({ onNavigate }) {
 
               <div className="mt-6 pt-4 border-t border-[#192A56]/15">
                 <a
-                  href="/office"
+                  href="/dashboard"
                   onClick={(e) => {
                     e.preventDefault()
-                    onNavigate?.('office')
+                    onNavigate?.('dashboard')
                   }}
                   className="button-primary w-inline-block"
                 >
                   <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
                     <div className="button-primary-text font-bold" style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}>
-                      MASUK KE STELAGENT
+                      BUKA TELEMETRI DASHBOARD ➔
                     </div>
                   </div>
                 </a>
@@ -413,7 +413,7 @@ export function ProgramsSection({ onNavigate }) {
                 >
                   <div className="button-primary-border" style={{ backgroundColor: '#192A56' }}>
                     <div className="button-primary-text font-bold" style={{ backgroundColor: '#192A56', color: '#FFFFFF' }}>
-                      MASUK KE STELAGENT
+                      SIMULASIKAN ALUR KERJA ➔
                     </div>
                   </div>
                 </a>

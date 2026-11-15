@@ -55,7 +55,13 @@ echo " Pusat Kontrol Hub   : http://localhost:3000/dashboard (LAN: http://192.16
 echo " Backend Swagger API : http://localhost:8000/docs (LAN: http://192.168.1.11:8000/docs)"
 echo "========================================================"
 
-# Buka Browser Kiosk jika ada DISPLAY
+# Buka Aplikasi Mandiri (Standalone PWA / App Mode) jika ada display
 if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
-    google-chrome --kiosk --noerrdialogs --disable-infobars --no-first-run http://127.0.0.1:3000/office &
+    if command -v google-chrome >/dev/null 2>&1; then
+        google-chrome --app=http://127.0.0.1:3000/office --no-first-run &
+    elif command -v chromium-browser >/dev/null 2>&1; then
+        chromium-browser --app=http://127.0.0.1:3000/office --no-first-run &
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open http://127.0.0.1:3000/office &
+    fi
 fi

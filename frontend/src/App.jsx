@@ -378,6 +378,7 @@ export default function App() {
   const [activeLead, setActiveLead] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [pitchResult, setPitchResult] = useState(null)
+  const consecutiveFailuresRef = useRef(0)
 
   // Device Detection & Security Authentication State
   const [deviceProfile, setDeviceProfile] = useState(() => {
@@ -404,6 +405,37 @@ export default function App() {
       return 'setup'
     }
   })
+
+  // PWA Install state & trigger
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null)
+  const [isPwaInstalled, setIsPwaInstalled] = useState(false)
+
+  useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault()
+      setDeferredInstallPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
+
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      setIsPwaInstalled(true)
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
+  }, [])
+
+  const handleInstallPwa = async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt()
+      const { outcome } = await deferredInstallPrompt.userChoice
+      if (outcome === 'accepted') {
+        setIsPwaInstalled(true)
+      }
+      setDeferredInstallPrompt(null)
+    } else {
+      alert('Petunjuk Instalasi StelAgent PWA di Laptop:\n\n1. Di bilah alamat URL browser (Google Chrome atau Microsoft Edge), klik ikon "Instal Aplikasi" (ikon komputer dengan panah ke bawah di sebelah kanan kolom URL).\n2. Atau klik menu titik tiga (⋮) di kanan atas browser -> pilih "Aplikasi" / "Apps" -> klik "Instal StelAgent".\n3. Klik tombol "Instal". StelAgent akan langsung terbuka dalam jendela mandiri tanpa tab browser dan shortcut ikon robot biru akan otomatis ditambahkan ke Desktop & Taskbar!')
+    }
+  }
 
   // Sinkronkan nama pengguna ke Boss jika sudah ada profil tersimpan
   useEffect(() => {
@@ -804,7 +836,7 @@ export default function App() {
     setCurrentRoute(route)
     const path = route === 'landing' ? '/' : `/${route}`
     window.history.pushState({}, '', path)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
   useEffect(() => {
@@ -960,24 +992,38 @@ export default function App() {
     return () => clearInterval(interval)
   }, [currentRoute, isEntranceOpen, isGenerating, pitchResult, selectedAgentId])
 
-  // Fetch data dari FastAPI Backend secara Riil
+  // Fetch data dari FastAPI Backend secara Riil (Debounced Health Check agar stabil & tidak putus-nyambung)
   const fetchData = async () => {
     let connected = false
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 4000)
+
       // 1. Health Check Riil
-      const healthRes = await safeApiFetch('/api/v1/system/health', { cache: 'no-store' })
+      const healthRes = await safeApiFetch('/api/v1/system/health', {
+        cache: 'no-store',
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
       if (healthRes.ok) {
         const data = await healthRes.json()
         setSystemInfo(data)
         setIsBackendConnected(true)
+        consecutiveFailuresRef.current = 0
         connected = true
       } else {
+        consecutiveFailuresRef.current += 1
+        if (consecutiveFailuresRef.current >= 3) {
+          setIsBackendConnected(false)
+          setSystemInfo(null)
+        }
+      }
+    } catch {
+      consecutiveFailuresRef.current += 1
+      if (consecutiveFailuresRef.current >= 3) {
         setIsBackendConnected(false)
         setSystemInfo(null)
       }
-    } catch {
-      setIsBackendConnected(false)
-      setSystemInfo(null)
     }
 
     if (!connected) {
@@ -1545,6 +1591,8 @@ export default function App() {
                   onResetPOV={handleResetPOV}
                   onTogglePure3D={handleTogglePure3D}
                   userProfile={deviceProfile}
+                  onInstallPwa={handleInstallPwa}
+                  isPwaInstalled={isPwaInstalled}
                   onOpenProfileSettings={() => {
                     setDeviceModalMode('profile')
                     setIsDeviceModalOpen(true)
@@ -1596,6 +1644,8 @@ export default function App() {
           currentProfile={deviceProfile}
           onSaveProfile={handleSaveDeviceProfile}
           onResetDevice={handleResetDevice}
+          onInstallPwa={handleInstallPwa}
+          isPwaInstalled={isPwaInstalled}
           onClose={() => setIsDeviceModalOpen(false)}
         />
       </Suspense>
