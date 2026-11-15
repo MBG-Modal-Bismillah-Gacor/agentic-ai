@@ -12,7 +12,7 @@ header[class*="grid"], aside[class*="grid"], nav[class*="grid"], section[class*=
 }
 
 /* Ensure text-white on buttons is never overridden by inherited reset colors */
-button.text-white, button.text-white span, [class*="text-white"] {
+button.text-white, button.text-white span, .text-white {
   color: #FFFFFF !important;
 }
 
