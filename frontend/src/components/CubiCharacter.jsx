@@ -75,7 +75,7 @@ export function CubiCharacter({
         destPos.current.x - groupRef.current.position.x,
         destPos.current.z - groupRef.current.position.z
       )
-      if (distToCurrentWp < 0.28 && waypointIdxRef.current < targetPosition.length - 1) {
+      if (distToCurrentWp < 0.38 && waypointIdxRef.current < targetPosition.length - 1) {
         waypointIdxRef.current += 1
         const nextWp = targetPosition[waypointIdxRef.current]
         destPos.current.set(nextWp[0], nextWp[1], nextWp[2])
@@ -97,8 +97,8 @@ export function CubiCharacter({
       const dist = Math.hypot(dirX, dirZ)
 
       if (dist > 0.04) {
-        // Kecepatan jalan normal berbobot alami (bukan super cepat seperti The Flash)
-        const speed = Math.min(0.035, (delta || 0.016) * 1.35)
+        // Kecepatan jalan responsif, berbobot alami & mencapai ruangan rapat secara presisi
+        const speed = Math.min(0.065, (delta || 0.016) * 2.4)
         const step = Math.min(speed, dist)
         groupRef.current.position.x += (dirX / dist) * step
         groupRef.current.position.z += (dirZ / dist) * step
@@ -122,7 +122,7 @@ export function CubiCharacter({
         // Saat diklik/terpilih: Menoleh ramah menghadap sudut pandang kamera (Isometric [26, 22, 26])
         finalTargetRot = Math.atan2(26 - groupRef.current.position.x, 26 - groupRef.current.position.z)
       } else if (isTyping) {
-        finalTargetRot = Math.PI
+        finalTargetRot = rotationY
       }
 
       let diff = (finalTargetRot - groupRef.current.rotation.y) % (Math.PI * 2)

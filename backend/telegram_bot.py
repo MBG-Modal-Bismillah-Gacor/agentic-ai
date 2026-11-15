@@ -370,7 +370,10 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
             f"⚡ `/autopipeline` — Jalankan otomatisasi penawaran ke semua prospek pending\n"
             f"➕ `/tambah [Data]` — Daftarkan prospek baru dari lapangan\n"
             f"🏢 `/stok` — Cek ketersediaan fisik showroom per cabang\n"
-            f"🤝 `/rapat` — Pantau sesi negosiasi restock otonom dengan Astra Hub\n\n"
+            f"🤝 `/rapat` — Pantau sesi negosiasi restock otonom dengan Astra Hub\n"
+            f"🤖 `/status` — Cek status live seluruh agen robot kantor 3D\n"
+            f"📡 `/perintah [Aksi]` — Beri perintah ke seluruh tim (contoh: `/perintah rapat`, `/perintah kerja`)\n"
+            f"🎯 `/agen [Warna] [Aksi]` — Perintah khusus agen tertentu (contoh: `/agen ungu susun penawaran`)\n\n"
             f"💡 *Alur Kerja Cepat:* Ketik `/prospek` ➔ pilih ID ➔ ketik `/tawarkan LD-xxx` ➔ periksa draf ➔ ketik `/kirim LD-xxx`!"
         )
 
@@ -782,6 +785,125 @@ def handle_customer_command(chat_id: str, sender_name: str, text: str) -> str:
             "✅ Nomor Surat Jalan: `DO-ASTRA-PUR-901` (Prioritas Logistik Hari Ini).\n"
             "✅ Promo Komplementer: Apparel Jaket Touring & Extended Warranty Mesin.\n\n"
             "Ketik `/stok` untuk melihat ketersediaan unit terbaru di semua cabang!"
+        )
+
+    # PERINTAH /status: CEK STATUS LIVE SELURUH ARMADA AGEN KANTOR 3D
+    if cmd.startswith("/status") or cmd.startswith("/swarm") or cmd.startswith("/tim"):
+        log_tele_event(
+            "Telegram Telemetry",
+            f"Audit Status Swarm Agen via Telegram",
+            f"Diminta oleh {clean_sender}"
+        )
+        return (
+            "🤖 *STATUS ARMADA AGEN // KANTOR 3D STELAGENT* 🤖\n\n"
+            "1. 👑 *Pak Alfa (Sales Director)*\n"
+            "   • Stasiun: Meja Direktur | Status: `Supervising Deals` ✅\n"
+            "2. 🤖 *Cubi Scout (Biru - Compute & Stock)*\n"
+            "   • Stasiun: Workstation 01 | Status: `Monitoring Stock & NPU` 💻\n"
+            "3. ✍️ *Cubi Scribe (Ungu - AI Pitch Drafter)*\n"
+            "   • Stasiun: Workstation 02 | Status: `Fokus Mengetik Penawaran (Qwen 2.5)` 📝\n"
+            "4. 🛡️ *Cubi Gate (Hijau - Gatekeeper)*\n"
+            "   • Stasiun: Meja Resepsionis | Status: `Standby WhatsApp Dispatch` 🌐\n"
+            "5. 💾 *Cubi Vault (Slate - Data Archivist)*\n"
+            "   • Stasiun: Server Vault | Status: `Database & Storage Synced` ⚡\n\n"
+            "💡 *Ingin memerintah agen?*\n"
+            "• `/perintah [aksi]` — contoh: `/perintah rapat` atau `/perintah kembali kerja`\n"
+            "• `/agen [warna] [aksi]` — contoh: `/agen ungu susun penawaran`"
+        )
+
+    # PERINTAH /perintah: INSTRUKSI LANGSUNG KE SELURUH TIM AGEN
+    if cmd.startswith("/perintah") or cmd.startswith("/cmd") or cmd.startswith("/instruksi"):
+        instruction = clean_text.split(maxsplit=1)[1].strip() if len(clean_text.split()) > 1 else ""
+        if not instruction:
+            return "⚠️ Mohon sertakan instruksi perintah. Contoh: `/perintah rapat` atau `/perintah kembali kerja`"
+
+        log_tele_event(
+            "Telegram Remote",
+            f"Instruksi Swarm Telegram: {instruction}",
+            f"Pengirim: {clean_sender} | Chat ID: {chat_id}"
+        )
+
+        ins_lower = instruction.lower()
+        if "rapat" in ins_lower or "meeting" in ins_lower or "kumpul" in ins_lower:
+            return (
+                f"🤝 *[PERINTAH TELEGRAM DITERIMA]: Seluruh Tim AI Menuju Meja Rapat!*\n\n"
+                f"• Instruksi: _{instruction}_\n"
+                f"• Status: Direktur Pak Alfa memimpin rapat, Cubi Scout & Scribe bergerak ke ruang rapat.\n"
+                f"• Kamera Kantor 3D: Bergeser memantau Meja Konferensi & Kanban Screen."
+            )
+        elif "kerja" in ins_lower or "kembali" in ins_lower or "meja" in ins_lower or "stasiun" in ins_lower:
+            return (
+                f"💻 *[PERINTAH TELEGRAM DITERIMA]: Seluruh Agen Kembali ke Stasiun Kerja!*\n\n"
+                f"• Instruksi: _{instruction}_\n"
+                f"• Status: Seluruh agen kembali duduk fokus dan mengetik di workstation masing-masing."
+            )
+        elif "auto" in ins_lower or "pipeline" in ins_lower or "proses" in ins_lower:
+            return (
+                f"⚡ *[PERINTAH TELEGRAM DITERIMA]: Memicu Auto-Pipeline Penjualan!*\n\n"
+                f"• Menginstruksikan Cubi Scribe menyusun penawaran otomatis dan Cubi Gatekeeper menyiapkan SPK."
+            )
+        else:
+            return (
+                f"📡 *[PERINTAH TELEGRAM TERCATAT]*\n\n"
+                f"• Instruksi: \"{instruction}\"\n"
+                f"• Diteruskan ke: Direktur Pak Alfa & Sistem Koordinasi Swarm NUC B206."
+            )
+
+    # PERINTAH /agen: INSTRUKSI SPESIFIK KE SATU AGEN TERTENTU (MISAL: UNGU, BIRU, HIJAU, VAULT)
+    if cmd.startswith("/agen") or cmd.startswith("/robot"):
+        parts = clean_text.split(maxsplit=2)
+        if len(parts) < 3:
+            return (
+                "⚠️ *Format Perintah Agen Khusus:*\n"
+                "`/agen [warna/nama] [perintah]`\n\n"
+                "Contoh:\n"
+                "• `/agen ungu rapat` (Hanya Cubi Scribe Ungu yang ke ruang rapat)\n"
+                "• `/agen ungu susun penawaran` (Cubi Scribe fokus mengetik penawaran)\n"
+                "• `/agen biru cek stok` (Cubi Scout memindai stok)\n"
+                "• `/agen hijau siaga di gate` (Cubi Gate siaga di resepsionis)\n"
+                "• `/agen vault sinkron database` (Cubi Vault backup database)"
+            )
+
+        target_agent = parts[1].lower().strip()
+        sub_cmd = parts[2].strip()
+
+        agent_map = {
+            "ungu": ("Cubi Scribe", "AI Pitch Drafter", "purple-agent"),
+            "scribe": ("Cubi Scribe", "AI Pitch Drafter", "purple-agent"),
+            "purple": ("Cubi Scribe", "AI Pitch Drafter", "purple-agent"),
+            "biru": ("Cubi Scout", "Compute & Stock", "blue-agent"),
+            "scout": ("Cubi Scout", "Compute & Stock", "blue-agent"),
+            "blue": ("Cubi Scout", "Compute & Stock", "blue-agent"),
+            "hijau": ("Cubi Gate", "Gatekeeper", "green-agent"),
+            "gate": ("Cubi Gate", "Gatekeeper", "green-agent"),
+            "green": ("Cubi Gate", "Gatekeeper", "green-agent"),
+            "orange": ("Cubi Vault", "Data Archivist", "orange-agent"),
+            "vault": ("Cubi Vault", "Data Archivist", "orange-agent"),
+            "abu": ("Cubi Vault", "Data Archivist", "orange-agent"),
+            "boss": ("Pak Alfa", "Sales Director", "boss"),
+            "direktur": ("Pak Alfa", "Sales Director", "boss"),
+            "alfa": ("Pak Alfa", "Sales Director", "boss"),
+        }
+
+        agent_info = agent_map.get(target_agent)
+        if not agent_info:
+            return (
+                f"⚠️ Agen `{target_agent}` tidak dikenali.\n"
+                f"Pilihan agen yang tersedia: `ungu` (Scribe), `biru` (Scout), `hijau` (Gate), `vault` (Archivist), `boss` (Direktur)."
+            )
+
+        agent_name, agent_role, agent_id = agent_info
+        log_tele_event(
+            agent_name,
+            f"Perintah Khusus Agen: {sub_cmd}",
+            f"Diberikan oleh {clean_sender} via Telegram Bot."
+        )
+
+        return (
+            f"🎯 *[INSTRUKSI KHUSUS DITERIMA: {agent_name.upper()}]* 🎯\n\n"
+            f"• *Agen Sasaran:* *{agent_name}* ({agent_role})\n"
+            f"• *Perintah Khusus:* _{sub_cmd}_\n"
+            f"• *Status Eksekusi:* ✅ Perintah aktif, hanya {agent_name} yang mengeksekusi aksi ini sementara agen lain tetap fokus di posisinya!"
         )
 
     # 2. PERINTAH /katalog

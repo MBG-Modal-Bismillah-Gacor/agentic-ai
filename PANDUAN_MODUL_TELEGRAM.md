@@ -34,6 +34,9 @@ Staf sales dapat mengelola seluruh alur penjualan langsung dari aplikasi Telegra
 | **`/autopipeline`** | Menjalankan otomatisasi penuh untuk menawarkan motor ke seluruh antrean prospek pending sekaligus. | `/autopipeline` | Agen AI memproses seluruh prospek pending secara beruntun dengan jeda aman anti-banned. |
 | **`/tambah [Data]`** | Mendaftarkan prospek baru yang baru ditemui sales di pameran/lapangan. | `/tambah Doni, 0812998877, vario sporty, Purwokerto Timur, 4000000` | Prospek otomatis tersimpan ke Data Vault dan langsung siap dibuatkan penawaran AI. |
 | **`/rapat`** | Memantau sesi negosiasi restock darurat otonom antara Cubi Supply dengan Pemasok Astra Hub. | `/rapat` | Menampilkan transkrip persetujuan alokasi unit dan nomor Surat Jalan resmi (`DO-ASTRA-XXX`). |
+| **`/status`** | Memeriksa status live seluruh armada agen robot di Kantor 3D secara real-time. | `/status` | Menampilkan kesiapan Pak Alfa, Cubi Scout, Cubi Scribe, Cubi Gate, dan Cubi Vault. |
+| **`/perintah [Aksi]`** | Mengirim instruksi global ke seluruh tim agen robot kantor. | `/perintah rapat` / `/perintah kerja` | Seluruh tim AI mengeksekusi instruksi (ke ruang rapat atau kembali fokus di stasiun kerja). |
+| **`/agen [Warna] [Aksi]`** | Memerintahkan agen spesifik secara individu tanpa mengganggu agen lain. | `/agen ungu susun penawaran` / `/agen ungu rapat` | Hanya agen yang ditargetkan (misal: Scribe Ungu) yang bergerak atau fokus mengetik penawaran! |
 
 ---
 
@@ -57,6 +60,9 @@ kirim - Sahkan penawaran & cetak PDF SPK
 autopipeline - Eksekusi otomatis seluruh antrean
 tambah - Daftarkan prospek baru dari lapangan
 rapat - Pantau hasil negosiasi restock Astra Hub
+status - Cek status live armada agen kantor 3D
+perintah - Beri instruksi global ke seluruh tim robot
+agen - Perintah khusus ke agen tertentu (misal: ungu)
 ```
 
 5. Selesai! Sekarang saat mengetik tanda `/` di chat bot, daftar tombol perintah di atas akan langsung muncul di keyboard HP pengguna.

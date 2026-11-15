@@ -45,7 +45,8 @@ import {
   FileDown,
   Download,
   ShieldAlert,
-  Info
+  Info,
+  Users
 } from 'lucide-react'
 
 export function DashboardOverlay({
@@ -1251,18 +1252,45 @@ export function DashboardOverlay({
             {/* Top Row: Interactive Command Input */}
             <form
               onSubmit={handleSendCommand}
-              className="flex items-center gap-2.5 w-full"
+              className="flex items-center gap-2.5 w-full flex-wrap sm:flex-nowrap"
             >
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#192A56] shrink-0">
                 <Terminal className="w-4 h-4 text-[#192A56]" />
                 <span>Perintah:</span>
               </div>
+
+              {/* Targeted Agent Pill Badge */}
+              {selectedAgentId && selectedAgentId !== 'all' && selectedAgentId !== 'boss' ? (
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white shadow-xs shrink-0 cursor-pointer transition hover:opacity-95 active:scale-95"
+                  style={{ backgroundColor: currentAgent.color || '#9333ea' }}
+                  onClick={() => onSelectAgent?.('all')}
+                  title="Target khusus aktif! Klik untuk beralih memerintah seluruh tim."
+                >
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                  <span>Target: {currentAgent.name}</span>
+                  <span className="ml-1 px-1 rounded bg-black/25 text-[10px] hover:bg-black/40">✕ Semua</span>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#192A56]/10 text-[#192A56] border border-[#192A56]/20 shrink-0"
+                  title="Perintah aktif untuk seluruh armada AI."
+                >
+                  <Users className="w-3.5 h-3.5 text-[#192A56]" />
+                  <span>Target: Seluruh Tim</span>
+                </div>
+              )}
+
               <input
                 type="text"
                 value={commandText}
                 onChange={(e) => setCommandText(e.target.value)}
-                placeholder="Ketik instruksi terminal (contoh: auto pipeline, proses prospek, sinkronkan data)..."
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs text-[#192A56] placeholder:text-[#192A56]/40 outline-none focus:border-[#192A56] focus:bg-white transition"
+                placeholder={
+                  selectedAgentId && selectedAgentId !== 'all' && selectedAgentId !== 'boss'
+                    ? `Ketik perintah khusus untuk ${currentAgent.name} (contoh: rapat, kerja di meja, susun penawaran)...`
+                    : "Ketik instruksi terminal (contoh: rapat tim, kembali kerja, auto pipeline, sinkronkan data)..."
+                }
+                className="flex-1 min-w-[200px] bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs text-[#192A56] placeholder:text-[#192A56]/50 outline-none focus:border-[#192A56] focus:bg-white transition"
               />
               <div className="hidden lg:flex items-center gap-1 text-[11px] text-emerald-800 font-semibold truncate max-w-sm">
                 <span>{commandFeedback}</span>

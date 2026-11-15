@@ -1,5 +1,26 @@
 import React, { useState } from 'react'
 
+// Generator Default Profile Picture (PP) yang tajam, kontras tinggi & presisi Webflow chamfer
+function getDefaultAvatar(initials = 'AI') {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+    <rect width="120" height="120" fill="#E2E8F0"/>
+    <defs>
+      <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#192A56" stop-opacity="0.10"/>
+        <stop offset="100%" stop-color="#0284C7" stop-opacity="0.22"/>
+      </linearGradient>
+    </defs>
+    <rect width="120" height="120" fill="url(#avatarGrad)"/>
+    <!-- Executive Silhouette (Deep Navy Kontras Tinggi) -->
+    <circle cx="60" cy="42" r="21" fill="#192A56"/>
+    <path d="M22 108 C22 76, 38 66, 60 66 C82 66, 98 76, 98 108 Z" fill="#192A56"/>
+    <!-- Initials Badge Pill -->
+    <rect x="34" y="86" width="52" height="22" rx="11" fill="#192A56" stroke="#FFFFFF" stroke-width="2.5"/>
+    <text x="60" y="101" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">${initials}</text>
+  </svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
 export function TestimonialsSection() {
   const [slideOffset, setSlideOffset] = useState(0)
 
@@ -8,48 +29,48 @@ export function TestimonialsSection() {
     {
       id: 0,
       name: 'Lord AIC',
+      initials: 'LA',
       pos: 'Head of Enterprise & Sovereign AI Infrastructure',
-      photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/668691c8f2a9887479f76c68_IMG_7357%20(1).png',
       quote: 'Implementasi swarm agen AI on-premise StelAgent (Agentic AI) mentransformasi seluruh efisiensi penjualan showroom motor kami. Data pelanggan tetap berada 100% di server lokal tanpa kebocoran cloud, dan kecepatan closing deal meningkat drastis.',
       social: 'https://twitter.com'
     },
     {
       id: 1,
       name: 'Alfa',
+      initials: 'AF',
       pos: 'Showroom Digital Director & Sales Automation Lead',
-      photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/668690fe0425e7f09e3bcc05_2024-07-04%2013.09.29.jpg',
       quote: 'Dengan arsitektur turnstile approval, pimpinan memiliki kendali veto penuh sebelum penawaran motor dikirim via WhatsApp. Tidak ada risiko salah harga atau diskon sepihak oleh AI.',
       social: 'https://linkedin.com'
     },
     {
       id: 2,
       name: 'Amirul',
+      initials: 'AM',
       pos: 'Chief Technology Officer, Dealer Group Network',
-      photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/668690a922ccdba3f4e8b848_1631126686830.jpeg',
       quote: 'Kemampuan integrasi NPU lokal dengan FastAPI sub-detik membuat armada agen bekerja tanpa biaya token API cloud bulanan. Solusi paling stabil, efisien, dan ekonomis untuk jaringan dealer.',
       social: 'https://linkedin.com'
     },
     {
       id: 3,
       name: 'Idham',
+      initials: 'ID',
       pos: 'VP of Automotive Operations & Dealer Growth',
-      photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/666af59beb89fed9459b569d_Cristian.webp',
       quote: 'Kualifikasi prospek otomatis (Hot, Warm, Cold) oleh agen analis memfilter ratusan nomor harian dengan sangat akurat. Tim sales kami sekarang hanya fokus mengeksekusi closing pelanggan siap beli.',
       social: 'https://linkedin.com'
     },
     {
       id: 4,
       name: 'Jullystian',
+      initials: 'JL',
       pos: 'Head of Information Security & On-Premise Systems',
-      photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/66869057d29156f451184962_2024-07-04%2013.06.41.jpg',
       quote: 'Sebagai penanggung jawab keamanan data, isolasi air-gapped dan enkripsi hardware SSD lokal pada StelAgent memberikan jaminan kedaulatan privasi data pelanggan yang sangat kami butuhkan.',
       social: 'https://twitter.com'
     },
     {
       id: 5,
       name: 'M Hasbi',
+      initials: 'MH',
       pos: 'Business Development & Fleet Sales Executive',
-      photo: '/assets/webflow/6649e26c9fdc8739cefdc48e/666af435483b5a1f90235cf0_Vlad-Balaban.webp',
       quote: 'Respon cepat 24/7 untuk simulasi kredit motor Honda dan pencocokan unit gudang berjalan mulus. Pengalaman pelanggan showroom kami naik ke standar modern yang belum pernah ada sebelumnya.',
       social: 'https://twitter.com'
     }
@@ -167,10 +188,16 @@ export function TestimonialsSection() {
                           <div className="testimonial-card-photo">
                             <div className="testimonial-card-photo-inner">
                               <img
-                                src={r.photo}
+                                src={getDefaultAvatar(r.initials)}
                                 loading="lazy"
                                 alt={r.name}
                                 className="testimonial-card-photo-image"
+                                style={{
+                                  objectFit: 'cover',
+                                  backgroundColor: '#E2E8F0',
+                                  border: '1.5px solid rgba(25, 42, 86, 0.2)',
+                                  display: 'block'
+                                }}
                               />
                             </div>
                           </div>
