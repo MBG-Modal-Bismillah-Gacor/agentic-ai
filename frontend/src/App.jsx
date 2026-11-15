@@ -986,24 +986,114 @@ export default function App() {
     // Default: Perintah Bebas Khusus Agen Terpilih atau Tim
     if (!isGlobal && selectedAgentId && agents[selectedAgentId]) {
       const targetName = agents[selectedAgentId]?.name || (selectedAgentId === 'purple-agent' ? 'Cubi Scribe (Ungu)' : selectedAgentId)
+      
+      // Tahap 1: Mulai mengeksekusi tugas khusus
       setAgents((prev) => ({
         ...prev,
         [selectedAgentId]: {
           ...prev[selectedAgentId],
           isTyping: true,
           isWalking: false,
-          statusText: `Mengeksekusi perintah khusus: "${commandStr}"`,
+          statusText: `Sedang memproses instruksi: "${commandStr}"...`,
         },
       }))
+
+      const timeNow = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      setActivities((prev) => [
+        {
+          id: `act-${Date.now()}`,
+          time: timeNow,
+          agent: targetName,
+          action: `Perintah Khusus: ${commandStr}`,
+          detail: `Agen ${targetName} mulai memproses tugas langsung dari pimpinan.`,
+        },
+        ...prev.slice(0, 49),
+      ])
+
+      // Tahap 2: Tugas selesai dalam 3.5 detik (menghilangkan kondisi terjebak di status "mengeksekusi doang")
+      setTimeout(() => {
+        setAgents((prev) => ({
+          ...prev,
+          [selectedAgentId]: {
+            ...prev[selectedAgentId],
+            isTyping: selectedAgentId === 'purple-agent' || selectedAgentId === 'blue-agent',
+            statusText: `✅ Selesai: "${commandStr}" berhasil dikerjakan.`,
+          },
+        }))
+
+        const doneTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        setActivities((prev) => [
+          {
+            id: `act-${Date.now()}`,
+            time: doneTime,
+            agent: targetName,
+            action: `Tugas Selesai: ${commandStr}`,
+            detail: `Instruksi "${commandStr}" berhasil diselesaikan dengan sukses oleh ${targetName}.`,
+          },
+          ...prev.slice(0, 49),
+        ])
+      }, 3500)
+
+      // Tahap 3: Kembalikan status stasiun kerja normal setelah 8.5 detik
+      setTimeout(() => {
+        setAgents((prev) => ({
+          ...prev,
+          [selectedAgentId]: {
+            ...prev[selectedAgentId],
+            statusText:
+              selectedAgentId === 'purple-agent'
+                ? 'Fokus Mengetik Penawaran (Qwen 2.5)'
+                : selectedAgentId === 'blue-agent'
+                ? 'Monitoring Stock & Catalog'
+                : selectedAgentId === 'green-agent'
+                ? 'WhatsApp Gateway Standby'
+                : 'Database & Inventory Synced',
+          },
+        }))
+      }, 8500)
+
       return {
         success: true,
         feedback: `[PERINTAH KHUSUS DITERIMA]: "${commandStr}" -> Hanya ${targetName} yang mengeksekusi instruksi ini.`,
       }
     }
 
+    // Perintah untuk Direktur Pak Alfa (jika dipilih) atau Seluruh Tim
+    const bossName = bossConfig?.name || 'Pak Alfa'
+    setBossConfig((prev) => ({
+      ...prev,
+      statusText: `Sedang memproses: "${commandStr}"...`,
+    }))
+
+    const timeNow = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    setActivities((prev) => [
+      {
+        id: `act-${Date.now()}`,
+        time: timeNow,
+        agent: bossName,
+        action: `Instruksi Tim: ${commandStr}`,
+        detail: `Dikoordinasikan ke ${bossName} & Tim AI.`,
+      },
+      ...prev.slice(0, 49),
+    ])
+
+    setTimeout(() => {
+      setBossConfig((prev) => ({
+        ...prev,
+        statusText: `✅ Selesai: "${commandStr}" berhasil dikoordinasikan.`,
+      }))
+    }, 3500)
+
+    setTimeout(() => {
+      setBossConfig((prev) => ({
+        ...prev,
+        statusText: 'Supervising Office & Deals',
+      }))
+    }, 8500)
+
     return {
       success: true,
-      feedback: `[PERINTAH TIM DITERIMA]: "${commandStr}" -> Dikoordinasikan ke ${bossConfig?.name || 'Direktur'} & Tim AI.`,
+      feedback: `[PERINTAH TIM DITERIMA]: "${commandStr}" -> Dikoordinasikan ke ${bossName} & Tim AI.`,
     }
   }
 

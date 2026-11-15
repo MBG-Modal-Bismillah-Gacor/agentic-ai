@@ -981,8 +981,11 @@ export function DashboardOverlay({
                       <span className="font-bold text-xs truncate" style={{ color: selectedAgentId === 'boss' ? '#FFFFFF' : '#192A56' }}>
                         {bossConfig?.name || 'Pak Alfa'}
                       </span>
-                      <span className="text-[10px]" style={{ color: selectedAgentId === 'boss' ? '#E2E8F0' : '#576574' }}>
+                      <span className="text-[10px] font-semibold" style={{ color: selectedAgentId === 'boss' ? '#93C5FD' : '#192A56' }}>
                         Direktur Sales
+                      </span>
+                      <span className="text-[9px] leading-tight mt-0.5 line-clamp-1" style={{ color: selectedAgentId === 'boss' ? '#E2E8F0' : '#64748B' }}>
+                        Supervisi operasional &amp; keputusan closing tim
                       </span>
                     </div>
                   </div>
@@ -1014,8 +1017,11 @@ export function DashboardOverlay({
                       <span className="font-bold text-xs truncate" style={{ color: selectedAgentId === 'blue-agent' ? '#FFFFFF' : '#192A56' }}>
                         {agents?.['blue-agent']?.name || 'Cubi Scout'}
                       </span>
-                      <span className="text-[10px]" style={{ color: selectedAgentId === 'blue-agent' ? '#E2E8F0' : '#576574' }}>
+                      <span className="text-[10px] font-semibold" style={{ color: selectedAgentId === 'blue-agent' ? '#93C5FD' : '#192A56' }}>
                         Hardware &amp; Stock
+                      </span>
+                      <span className="text-[9px] leading-tight mt-0.5 line-clamp-1" style={{ color: selectedAgentId === 'blue-agent' ? '#E2E8F0' : '#64748B' }}>
+                        Analisis stok unit cabang &amp; spesifikasi motor
                       </span>
                     </div>
                   </div>
@@ -1047,8 +1053,11 @@ export function DashboardOverlay({
                       <span className="font-bold text-xs truncate" style={{ color: selectedAgentId === 'purple-agent' ? '#FFFFFF' : '#192A56' }}>
                         {agents?.['purple-agent']?.name || 'Cubi Scribe'}
                       </span>
-                      <span className="text-[10px]" style={{ color: selectedAgentId === 'purple-agent' ? '#E2E8F0' : '#576574' }}>
+                      <span className="text-[10px] font-semibold" style={{ color: selectedAgentId === 'purple-agent' ? '#93C5FD' : '#192A56' }}>
                         AI Pitch Drafter
+                      </span>
+                      <span className="text-[9px] leading-tight mt-0.5 line-clamp-1" style={{ color: selectedAgentId === 'purple-agent' ? '#E2E8F0' : '#64748B' }}>
+                        Menyusun draf penawaran personal via Qwen 2.5
                       </span>
                     </div>
                   </div>
@@ -1080,8 +1089,11 @@ export function DashboardOverlay({
                       <span className="font-bold text-xs truncate" style={{ color: selectedAgentId === 'green-agent' ? '#FFFFFF' : '#192A56' }}>
                         {agents?.['green-agent']?.name || 'Cubi Gate'}
                       </span>
-                      <span className="text-[10px]" style={{ color: selectedAgentId === 'green-agent' ? '#E2E8F0' : '#576574' }}>
+                      <span className="text-[10px] font-semibold" style={{ color: selectedAgentId === 'green-agent' ? '#93C5FD' : '#192A56' }}>
                         Approval &amp; WhatsApp
+                      </span>
+                      <span className="text-[9px] leading-tight mt-0.5 line-clamp-1" style={{ color: selectedAgentId === 'green-agent' ? '#E2E8F0' : '#64748B' }}>
+                        Otorisasi SPK &amp; gateway pengiriman WhatsApp
                       </span>
                     </div>
                   </div>
@@ -1113,8 +1125,11 @@ export function DashboardOverlay({
                       <span className="font-bold text-xs truncate" style={{ color: selectedAgentId === 'orange-agent' ? '#FFFFFF' : '#192A56' }}>
                         {agents?.['orange-agent']?.name || 'Cubi Vault'}
                       </span>
-                      <span className="text-[10px]" style={{ color: selectedAgentId === 'orange-agent' ? '#E2E8F0' : '#576574' }}>
+                      <span className="text-[10px] font-semibold" style={{ color: selectedAgentId === 'orange-agent' ? '#93C5FD' : '#192A56' }}>
                         CSV &amp; Memory Vault
+                      </span>
+                      <span className="text-[9px] leading-tight mt-0.5 line-clamp-1" style={{ color: selectedAgentId === 'orange-agent' ? '#E2E8F0' : '#64748B' }}>
+                        Arsip basis data prospek &amp; histori penjualan
                       </span>
                     </div>
                   </div>
@@ -1292,9 +1307,6 @@ export function DashboardOverlay({
                 }
                 className="flex-1 min-w-[200px] bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs text-[#192A56] placeholder:text-[#192A56]/50 outline-none focus:border-[#192A56] focus:bg-white transition"
               />
-              <div className="hidden lg:flex items-center gap-1 text-[11px] text-emerald-800 font-semibold truncate max-w-sm">
-                <span>{commandFeedback}</span>
-              </div>
               <button
                 type="submit"
                 className="px-4 py-1.5 bg-[#192A56] hover:bg-[#0E1A38] text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs border border-[#192A56]"
@@ -1305,17 +1317,26 @@ export function DashboardOverlay({
               </button>
             </form>
 
+            {/* Respon / Feedback Terminal Interaktif (Selalu Terlihat di Semua Resolusi Layar) */}
+            {commandFeedback && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50/80 border border-blue-200/90 rounded-xl text-xs text-[#192A56] shadow-2xs transition-all">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="font-bold text-[#192A56] shrink-0">Respon:</span>
+                <span className="font-semibold text-emerald-800 truncate">{commandFeedback}</span>
+              </div>
+            )}
+
             {/* Bottom Row: Agent Status & Runtime Telemetry */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs pt-1.5 border-t border-slate-200/80">
               {/* Karakter Status */}
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-lg font-bold text-[#192A56]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-lg font-bold text-[#192A56] shrink-0">
                   <Cpu className="w-3.5 h-3.5 text-[#192A56]" />
                   <span>{currentAgent.name}</span>
                   <span className="text-[11px] text-[#576574] font-normal">({currentAgent.role})</span>
                 </div>
-                <span className="text-xs text-[#192A56] hidden md:inline truncate max-w-lg">
-                  Status: {isGenerating ? 'Menyusun draf penawaran via Qwen 2.5 Local...' : currentAgent.statusText || 'Siap bertugas'}
+                <span className="text-xs text-[#192A56] truncate max-w-lg font-medium">
+                  Status: <strong className="text-emerald-700 font-semibold">{isGenerating ? 'Menyusun draf penawaran via Qwen 2.5 Local...' : currentAgent.statusText || 'Siap bertugas'}</strong>
                 </span>
               </div>
 
