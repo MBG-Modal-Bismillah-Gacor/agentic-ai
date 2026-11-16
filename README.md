@@ -1,17 +1,45 @@
-# 🤖 Agentic AI — StelAgent (Autonomous Intelligence Hub)
-### Local-First Enterprise Sales Appliance for MSI Cubi NUC AI+ B206
-**Showcase:** PSAJ 2026 Showcase  
-**Supervisi & Bimbingan:** Agus Indra Cahaya (Lord AIC)  
-**Branding UI / Produk:** StelAgent  
-**Nama Proyek Induk:** Agentic AI  
+<div align="center">
+
+# 🤖 STELAGENT
+### **Local-First Enterprise Autonomous Sales Appliance**
+**Showcase PSAJ 2026 // Air-Gapped Multi-Agent Intelligence Hub**
+
+[![Hardware MSI Cubi NUC](https://img.shields.io/badge/Hardware-MSI%20Cubi%20NUC%20AI%2B%20B206-000000?style=for-the-badge&logo=msi&logoColor=white)](https://id.msi.com/)
+[![Intel NPU 48 TOPS](https://img.shields.io/badge/Dedicated%20NPU-48%20TOPS%20AI%20Boost-0071C5?style=for-the-badge&logo=intel&logoColor=white)](https://www.intel.co.id/)
+[![Local LLM](https://img.shields.io/badge/Local%20LLM-Qwen%202.5%203B%20%7C%20Hermes%203-7B1FA2?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com/)
+[![FastAPI Backend](https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.11-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React Three Fiber](https://img.shields.io/badge/Frontend-React%2019%20%7C%20Three.js%20Fiber-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://threejs.org/)
+[![Zero Cloud Egress](https://img.shields.io/badge/Security-Air--Gapped%20Zero%20Egress-2E7D32?style=for-the-badge&logo=shield&logoColor=white)](#-keamanan-kredensial--kebijakan-data)
+[![Telegram Gateway](https://img.shields.io/badge/Gateway-Telegram%20%40StelAgentBot-229ED9?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/StelAgentBot)
 
 ---
 
+### **Supervisi & Bimbingan:** Agus Indra Cahaya (Lord AIC)  
+**Organisasi / Tim:** MBG (Modal Bismillah Gacor)  
+**Nama Proyek:** Agentic AI // **Nama Produk:** StelAgent  
+
+[📌 Ringkasan](#-ringkasan-eksekutif) • [🏛️ 4 Pilar Utama](#️-4-pilar-utama-arsitektur-stelagent) • [🤖 Pasukan Swarm](#-pasukan-agen-swarm-personil--peran) • [🖥️ Mode Antarmuka](#️-dua-mode-antarmuka-pengguna-uiux) • [⚡ Spesifikasi Hardware](#-arsitektur-hardware-msi-cubi-nuc-ai-b206) • [🚀 Cara Menjalankan](#-panduan-menjalankan-sistem) • [👥 Tim Pengembang](#-tim-pengembang--pembagian-peran)
+
+---
+
+</div>
+
 ## 📌 Ringkasan Eksekutif
 
-**Agentic AI** dengan antarmuka produk **StelAgent** adalah platform orkestrasi multi-agen AI otonom (*autonomous agentic swarm*) tingkat *enterprise* yang dirancang dengan paradigma **Local-First & Air-Gapped Ready**. Seluruh pemrosesan kecerdasan buatan, komputasi finansial deterministik, penyimpanan basis data prospek, dan penerbitan dokumen hukum dijalankan 100% secara lokal di dalam unit mini PC **MSI Cubi NUC AI+ B206** tanpa ketergantungan API cloud berbayar (*zero cloud egress*).
+**StelAgent** adalah sistem orkestrasi multi-agen AI otonom (*autonomous agentic swarm*) tingkat *enterprise* yang dirancang dengan paradigma **Local-First & Air-Gapped Ready**. Seluruh pemrosesan kecerdasan buatan, komputasi finansial deterministik, penyimpanan basis data prospek, dan penerbitan dokumen hukum dijalankan 100% secara lokal di dalam unit mini PC **MSI Cubi NUC AI+ B206** tanpa ketergantungan API cloud pihak ketiga (*zero cloud egress*).
 
 Dalam studi kasus implementasinya, StelAgent bertindak sebagai **kantor operasional digital untuk showroom dealer otomotif modern** (studi kasus: jaringan dealer Astra Motor Honda), mengotomatiskan seluruh siklus penjualan mulai dari kualifikasi prospek masuk hingga penerbitan berkas fisik hukum Surat Pesanan Kendaraan (SPK).
+
+### ⚖️ Perbandingan: Cloud AI Konvensional vs StelAgent Appliance
+
+| Parameter | Solusi Cloud AI Konvensional | **StelAgent On-Premise Appliance** |
+|:---|:---|:---|
+| **Kedaulatan Data** | Rentan bocor ke server pihak ketiga di luar negeri | **100% On-Premise (SSD Terenkripsi Lokal, UU PDP Ready)** |
+| **Biaya Operasional** | Tagihan API membengkak per token (*Recurring OPEX*) | **Nol Biaya API Selamanya (*100% Fixed CAPEX Asset*)** |
+| **Keandalan Jaringan** | Lumpuh total jika internet showroom putus | **Air-Gapped Ready (Tetap aktif 100% saat offline)** |
+| **Akurasi Finansial** | Rawan halusinasi nominal uang dan tenor kredit | **Zero-Hallucination (Perhitungan matematis deterministik)** |
+| **Kontrol & Keamanan** | Bot bertindak otonom tanpa supervisi pimpinan | **Turnstile Human-in-the-Loop (Hak Veto Direktur Wajib)** |
+| **Latensi Respon** | 3.0s – 8.0s (tergantung antrean server cloud) | **< 0.8s (Akselerasi dedicated NPU 48 TOPS)** |
 
 ---
 
@@ -37,6 +65,19 @@ Dalam studi kasus implementasinya, StelAgent bertindak sebagai **kantor operasio
                                                   │ (@StelAgentBot)  │
                                                   │ & PDF SPK Resmi  │
                                                   └──────────────────┘
+```
+
+```mermaid
+flowchart LR
+    A["📥 Prospek Masuk<br/>(Antrean Leads)"] --> B["🔵 Cubi Scout<br/>(Cek Stok Fisik)"]
+    B --> C["🟣 Cubi Scribe<br/>(Draf Qwen 2.5)"]
+    C --> D["📐 Scribe Math<br/>(Hitung Kredit DP Min 15%)"]
+    D --> E{"🛡️ Turnstile Gate<br/>(Review Direktur)"}
+    E -- Ditolak / Koreksi --> C
+    E -- Disetujui + Consent --> F["🟢 Cubi Gate<br/>(Dispatcher)"]
+    F --> G["✈️ Telegram @StelAgentBot<br/>(Pesan Penawaran)"]
+    F --> H["📄 PDF SPK Astra Motor<br/>(ReportLab Engine)"]
+    F --> I["🟠 Cubi Vault<br/>(Arsip Enkripsi Lokal)"]
 ```
 
 1. **Local-First AI Swarm (Kedaulatan Data Penuh & Zero Cloud Egress):**
@@ -73,6 +114,21 @@ Di dalam ekosistem StelAgent, tugas operasional dibagi ke dalam swarm agen spesi
 ---
 
 ## 🖥️ Dua Mode Antarmuka Pengguna (UI/UX)
+
+```
+Virtual Office 3D (/office)                     SaaS Executive Dashboard (/dashboard)
+┌──────────────────────────────────────┐       ┌──────────────────────────────────────┐
+│  [🎥 CCTV CAM-01]  [⚡ NPU 48 TOPS]  │       │ METRIK DEAL    ANTREAN PROSPEK       │
+│                                      │       │ ┌──────────┐   ┌────────────────────┐ │
+│     🔵 Scout ───▶ 🟣 Scribe          │       │ │ 12 Closed│   │ 🟢 Budi Santoso    │ │
+│           │            │             │       │ └──────────┘   │ 🟡 Siti Aminah     │ │
+│           ▼            ▼             │       │                                      │
+│     🟠 Vault ◀─── 🟢 Gate           │       │ [ APPROVAL GATE: REVIEW PENAWARAN ]  │
+│                                      │       │ Unit: Beat Street  | DP: Rp 2.895.000│
+│  [ MEJA RAPAT: DELIBERASI SWARM ]    │       │ Saluran: Telegram @StelAgentBot      │
+│  "Stok Vario 160 habis -> Restock"   │       │ [ Tolak / Batal ] [ Setujui & Kirim ]│
+└──────────────────────────────────────┘       └──────────────────────────────────────┘
+```
 
 1. **Virtual Office 3D (`/office`):**
    - Representasi spasial isometrik 3D ruang kantor dealer interaktif menggunakan Three.js dan React Three Fiber.
@@ -190,16 +246,22 @@ python hardware_benchmark\benchmark_b206.py
 
 ## 📑 Dokumentasi Endpoint Utama Backend
 
-- `GET /api/v1/system/health`: Telemetri kesehatan appliance, status mode simulasi/live, dan koneksi NPU.
-- `GET /api/v1/leads/queue`: Daftar antrean prospek dengan penilaian prioritas (*Hot*, *Warm*, *Cold*).
-- `POST /api/v1/leads/generate-pitch`: Peracikan draf penawaran personal berbasis data stok cabang lokal.
-- `POST /api/v1/leads/approve-and-send`: Otorisasi direktur dengan validasi *consent*, perhitungan cicilan deterministik, dan penerbitan berkas PDF SPK resmi serta pengiriman ke Telegram.
-- `GET /api/v1/documents/{filename}`: Endpoint pengunduhan berkas fisik PDF SPK resmi dari browser.
-- `GET /api/v1/deliberations`: Transkrip koordinasi rapat internal multi-agen (`Scout` -> `Cubi Supply` -> `Gate` -> `Scribe`) saat defisit stok unit 0 terdeteksi.
-- `POST /api/v1/sales/simulasi-kredit`: Simulasi cicilan pembiayaan leasing deterministik (tenor 12, 24, 36 bulan).
-- `POST /api/v1/system/cicd-deploy`: Endpoint webhook penerima sinyal CI/CD deploy otomatis untuk Mini PC Cubi NUC.
+| Method | Endpoint | Deskripsi Fungsi |
+|:---|:---|:---|
+| `GET` | `/api/v1/system/health` | Telemetri kesehatan appliance, status mode simulasi/live, dan koneksi NPU. |
+| `GET` | `/api/v1/leads/queue` | Daftar antrean prospek showroom dengan penilaian prioritas (*Hot*, *Warm*, *Cold*). |
+| `POST` | `/api/v1/leads/generate-pitch` | Peracikan draf penawaran personal berbasis analisis unit dan ketersediaan stok fisik cabang. |
+| `POST` | `/api/v1/leads/approve-and-send` | Otorisasi direktur dengan validasi *consent*, kalkulasi kredit deterministik, dan penerbitan PDF SPK resmi ke Telegram. |
+| `GET` | `/api/v1/documents/{filename}` | Endpoint pengunduhan berkas fisik resmi PDF SPK dari browser. |
+| `GET` | `/api/v1/deliberations` | Transkrip koordinasi rapat internal multi-agen (`Scout` -> `Cubi Supply` -> `Gate` -> `Scribe`) saat defisit stok unit 0 terdeteksi. |
+| `POST` | `/api/v1/sales/simulasi-kredit` | Simulasi cicilan pembiayaan leasing deterministik (tenor 12, 24, 36 bulan). |
+| `POST` | `/api/v1/system/cicd-deploy` | Endpoint webhook penerima sinyal CI/CD deploy otomatis untuk Mini PC Cubi NUC. |
 
 ---
 
-© 2026 StelAgent // Agentic AI Enterprise Labs. All Rights Reserved.  
-Showcase PSAJ 2026 — Mini PC MSI Cubi NUC AI+ B206.
+<div align="center">
+
+© 2026 **StelAgent // Agentic AI Enterprise Labs**. All Rights Reserved.  
+*Showcase PSAJ 2026 — Mini PC MSI Cubi NUC AI+ B206.*
+
+</div>
