@@ -8,6 +8,7 @@ const isWin = process.platform === 'win32';
 const frontendDir = path.resolve(__dirname, '..');
 const distDir = path.resolve(frontendDir, 'dist');
 const logFile = path.resolve(frontendDir, '..', 'frontend.log');
+const viteJs = path.resolve(frontendDir, 'node_modules', 'vite', 'bin', 'vite.js');
 
 // Pastikan dist sudah ada sebelum preview dijalankan
 if (!fs.existsSync(distDir)) {
@@ -38,17 +39,20 @@ try {
   // fallback
 }
 
-// Jalankan vite preview di port 3000 (HTTPS aktif di vite.config.js)
-const subprocess = spawn(
-  isWin ? 'npx.cmd' : 'npx',
-  ['vite', 'preview', '--host', '0.0.0.0', '--port', '3000'],
-  {
-    cwd: frontendDir,
-    detached: true,
-    stdio: ['ignore', outFd, errFd],
-    env: process.env
-  }
-);
+// Jalankan vite preview di port 3000 menggunakan Node langsung
+const subprocess = fs.existsSync(viteJs)
+  ? spawn(process.execPath, [viteJs, 'preview', '--host', '0.0.0.0', '--port', '3000'], {
+      cwd: frontendDir,
+      detached: true,
+      stdio: ['ignore', outFd, errFd],
+      env: process.env
+    })
+  : spawn(isWin ? 'npx.cmd' : 'npx', ['vite', 'preview', '--host', '0.0.0.0', '--port', '3000'], {
+      cwd: frontendDir,
+      detached: true,
+      stdio: ['ignore', outFd, errFd],
+      env: process.env
+    });
 
 subprocess.unref();
 

@@ -1825,7 +1825,7 @@ def trigger_cicd_deploy(req: CICDDeployRequest):
     # 1. Git Pull (dengan stash terlebih dahulu agar aman dari file output/log lokal)
     if req.pull_git:
         try:
-            subprocess.run(["git", "stash"], cwd=repo_dir, capture_output=True, timeout=10)
+            subprocess.run(["git", "stash", "-u"], cwd=repo_dir, capture_output=True, timeout=10)
             pull_proc = subprocess.run(
                 ["git", "pull", "origin", req.branch or "main"],
                 cwd=repo_dir,
@@ -1833,6 +1833,18 @@ def trigger_cicd_deploy(req: CICDDeployRequest):
                 text=True,
                 timeout=45
             )
+            # Jika pull gagal karena konflik file untracked/lokal, lakukan hard reset bersih ke remote
+            if pull_proc.returncode != 0 and ("overwritten by merge" in pull_proc.stderr or "Cannot fast-forward" in pull_proc.stderr):
+                subprocess.run(["git", "fetch", "origin", req.branch or "main"], cwd=repo_dir, capture_output=True, timeout=15)
+                subprocess.run(["git", "reset", "--hard", f"origin/{req.branch or 'main'}"], cwd=repo_dir, capture_output=True, timeout=10)
+                subprocess.run(["git", "clean", "-fd"], cwd=repo_dir, capture_output=True, timeout=10)
+                pull_proc = subprocess.run(
+                    ["git", "pull", "origin", req.branch or "main"],
+                    cwd=repo_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=45
+                )
             results["git_pull"] = {
                 "exit_code": pull_proc.returncode,
                 "stdout": pull_proc.stdout.strip(),
@@ -1881,9 +1893,14 @@ def trigger_cicd_deploy(req: CICDDeployRequest):
     if os.path.exists(dist_dir):
         try:
             if os.name != "nt":
-                subprocess.run("command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite preview' || true", shell=True)
-                start_cmd = "nohup npx vite preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &"
-                subprocess.Popen(start_cmd, cwd=frontend_dir, shell=True, preexec_fn=getattr(os, "setpgrp", None))
+                bash_cmd = (
+                    "source ~/.nvm/nvm.sh 2>/dev/null || true; "
+                    "source ~/.bashrc 2>/dev/null || true; "
+                    "export PATH=$PATH:/usr/local/bin:/usr/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin; "
+                    "command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite preview' || true; "
+                    f"cd '{frontend_dir}' && nohup npx vite preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &"
+                )
+                subprocess.Popen(["/bin/bash", "-c", bash_cmd], preexec_fn=getattr(os, "setpgrp", None))
             else:
                 subprocess.Popen("node scripts/start-preview.cjs", cwd=frontend_dir, shell=True)
             results["frontend_service"] = {
@@ -1946,19 +1963,35 @@ def get_frontend_status():
         }
     }
 
+@app.get("/api/v1/system/frontend-log")
+def get_frontend_log():
+    repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    log_file = os.path.join(repo_dir, "frontend.log")
+    if not os.path.exists(log_file):
+        return {"exists": False, "lines": []}
+    try:
+        with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+            return {"exists": True, "tail": lines[-80:]}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/api/v1/system/restart-frontend")
 def restart_frontend():
     repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     frontend_dir = os.path.join(repo_dir, "frontend")
     dist_dir = os.path.join(frontend_dir, "dist")
     
-    if not os.path.exists(dist_dir):
-        subprocess.run("npm install --prefer-offline --no-audit --no-fund && npm run build", cwd=frontend_dir, shell=True, timeout=300)
-        
     try:
         if os.name != "nt":
-            subprocess.run("command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite preview' || true", shell=True)
-            subprocess.Popen("nohup npx vite preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &", cwd=frontend_dir, shell=True, preexec_fn=getattr(os, "setpgrp", None))
+            bash_cmd = (
+                "source ~/.nvm/nvm.sh 2>/dev/null || true; "
+                "source ~/.bashrc 2>/dev/null || true; "
+                "export PATH=$PATH:/usr/local/bin:/usr/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin; "
+                "command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite preview' || true; "
+                f"cd '{frontend_dir}' && nohup npx vite preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &"
+            )
+            subprocess.Popen(["/bin/bash", "-c", bash_cmd], preexec_fn=getattr(os, "setpgrp", None))
         else:
             subprocess.Popen("node scripts/start-preview.cjs", cwd=frontend_dir, shell=True)
         return {"status": "success", "message": "Frontend HTTPS preview server started on port 3000"}
