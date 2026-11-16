@@ -546,6 +546,47 @@ export default function App() {
       cmd.includes('kembali semua') ||
       cmd.includes('bubar')
 
+    const targetName = !isGlobal && selectedAgentId && agents[selectedAgentId]
+      ? (agents[selectedAgentId]?.name || selectedAgentId)
+      : (bossConfig?.name || 'Pak Alfa & Tim AI')
+
+    // Kirim instruksi ke AI Backend & Docker Container secara real-time!
+    safeApiFetch('/api/v1/office/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        command: commandStr,
+        target_agent_id: selectedAgentId || 'all',
+        target_agent_name: targetName,
+      }),
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.ai_response) {
+            const respText = data.ai_response
+            if (!isGlobal && selectedAgentId) {
+              setAgents((prev) => ({
+                ...prev,
+                [selectedAgentId]: {
+                  ...prev[selectedAgentId],
+                  statusText: `✅ ${respText}`,
+                },
+              }))
+            } else {
+              setBossConfig((prev) => ({
+                ...prev,
+                statusText: `✅ ${respText}`,
+              }))
+            }
+          }
+          fetchData()
+        }
+      })
+      .catch((e) => {
+        console.warn('[Command Dispatch Warning]:', e)
+      })
+
     // Deteksi apakah perintah adalah kembali/selesai/bubar (prioritas tinggi di atas rapat agar 'selesai rapat' tidak memicu rapat baru)
     const isReturnCmd =
       cmd.includes('selesai') ||
