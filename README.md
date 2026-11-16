@@ -9,13 +9,87 @@
 
 ## 📌 Ringkasan Eksekutif
 
-**Agentic AI** dengan antarmuka **StelAgent** adalah sistem orkestrasi multi-agen otonom (*autonomous agentic swarm*) tingkat *enterprise* yang dirancang dengan paradigma **Local-First & Air-Gapped Ready**. Seluruh pemrosesan kecerdasan buatan, komputasi finansial deterministik, penyimpanan basis data prospek, dan penerbitan dokumen hukum dijalankan 100% secara lokal di dalam unit mini PC **MSI Cubi NUC AI+ B206** tanpa ketergantungan API cloud berbayar (*zero cloud egress*).
+**Agentic AI** dengan antarmuka produk **StelAgent** adalah platform orkestrasi multi-agen AI otonom (*autonomous agentic swarm*) tingkat *enterprise* yang dirancang dengan paradigma **Local-First & Air-Gapped Ready**. Seluruh pemrosesan kecerdasan buatan, komputasi finansial deterministik, penyimpanan basis data prospek, dan penerbitan dokumen hukum dijalankan 100% secara lokal di dalam unit mini PC **MSI Cubi NUC AI+ B206** tanpa ketergantungan API cloud berbayar (*zero cloud egress*).
 
-Solusi ini mentransformasi ruang pamer (*showroom*) otomotif modern (studi kasus: jaringan dealer Astra Motor Honda) dengan menghadirkan:
-1. **Virtual Office 3D & Diorama Isometrik Interaktif:** Visualisasi spasial arsitektur kantor, stasiun kerja agen AI, dan kamera pengawas 360° CCTV lokal.
-2. **Deterministic Financial & SPK Engine:** Perhitungan uang muka (DP), batas minimum leasing, dan skema angsuran 12/24/36 bulan dengan akurasi matematika mutlak (*zero-hallucination*), serta penerbitan berkas fisik PDF Surat Pesanan Kendaraan (SPK) ber-kop resmi.
-3. **Autonomous Swarm Deliberation:** Tim agen (`Scout` -> `Cubi Supply` -> `Gate` -> `Scribe`) yang berdetak setiap 30 detik secara otonom untuk mendeteksi defisit unit berstatus stok `0` di cabang lokal dan menegosiasikan alokasi restock darurat ke Pusat Distribusi Astra tanpa memalsukan status ketersediaan barang.
-4. **Human-in-the-Loop Safe Outreach Gate:** Gerbang persetujuan direktur sales dengan kotak konfirmasi persetujuan (*consent*), pembatasan frekuensi pengiriman (maksimal 30 pesan/jam), jeda acak manusiawi (4–9 detik), pencatatan audit log ter-masking, dan *mode simulasi aman* secara *default*.
+Dalam studi kasus implementasinya, StelAgent bertindak sebagai **kantor operasional digital untuk showroom dealer otomotif modern** (studi kasus: jaringan dealer Astra Motor Honda), mengotomatiskan seluruh siklus penjualan mulai dari kualifikasi prospek masuk hingga penerbitan berkas fisik hukum Surat Pesanan Kendaraan (SPK).
+
+---
+
+## 🏛️ 4 Pilar Utama Arsitektur StelAgent
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        STELAGENT APPLIANCE HUB                         │
+│               (MSI Cubi NUC AI+ B206 — Intel Core Ultra)               │
+└──────────────────────────────────┬─────────────────────────────────────┘
+                                   │
+      ┌────────────────────────────┼────────────────────────────┐
+      ▼                            ▼                            ▼
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  Local AI Swarm  │     │  Deterministic   │     │ Turnstile Gate   │
+│  (Qwen 2.5 3B /  │────▶│  SPK Engine      │────▶│ (Human-in-the-   │
+│  NPU 48 TOPS)    │     │  (Zero-Halluc.)  │     │  Loop Approval)  │
+└──────────────────┘     └──────────────────┘     └────────┬─────────┘
+                                                           │
+                                                           ▼
+                                                  ┌──────────────────┐
+                                                  │ Dispatch Telegram│
+                                                  │ (@StelAgentBot)  │
+                                                  │ & PDF SPK Resmi  │
+                                                  └──────────────────┘
+```
+
+1. **Local-First AI Swarm (Kedaulatan Data Penuh & Zero Cloud Egress):**
+   - Memanfaatkan model LLM lokal (*Qwen 2.5 3B* dan *Hermes 3 8B*) yang diakselerasi langsung di dedicated hardware NPU 48 TOPS mini PC.
+   - Bebas biaya langganan token API cloud bulanan (*Zero Recurring OPEX*) dan tetap beroperasi normal 100% meskipun koneksi internet pameran/kantor offline (*air-gapped ready*).
+
+2. **Kalkulasi Finansial Deterministik & SPK Engine (Zero-Hallucination Guarantee):**
+   - Perhitungan uang muka (DP minimal 15%), pokok hutang, plafon kredit, dan simulasi angsuran (tenor 12, 24, 36 bulan) dihitung menggunakan rumus finansial matematis murni (bukan estimasi probabilistik LLM) untuk menjamin akurasi 100%.
+   - Menerbitkan berkas fisik resmi **PDF Surat Pesanan Kendaraan (SPK)** ber-kop Astra Motor lengkap dengan nomor registrasi unik, rincian unit, simulasi kredit, dan tanda tangan digital.
+
+3. **Turnstile Human-in-the-Loop Approval Gate:**
+   - Menghilangkan risiko AI bertindak liar (*uncontrolled rogue actions*). Direktur atau pimpinan memegang hak veto mutlak melalui jendela otorisasi *Approval Gate* sebelum penawaran didispatch.
+   - Dilengkapi validasi *consent_verified*, proteksi anti-spam (jeda acak manusiawi 4–9 detik), serta masking identitas pribadi (*PII Masking*) pada log audit.
+
+4. **Live Outreach Gateway (Telegram Integration):**
+   - Setelah disetujui direktur, notifikasi penawaran personal dan berkas fisik PDF SPK resmi dikirimkan secara langsung melalui gateway bot Telegram resmi (**`@StelAgentBot`**) ke calon konsumen atau staf sales.
+
+---
+
+## 🤖 Pasukan Agen Swarm (Personil & Peran)
+
+Di dalam ekosistem StelAgent, tugas operasional dibagi ke dalam swarm agen spesialis yang berkolaborasi secara terkoordinasi:
+
+| Avatar / Agen | Nama Agen | Peran & Spesialisasi | Stasiun Kerja | Tugas & Kontribusi Utama |
+|:---|:---|:---|:---|:---|
+| 🔵 **Blue Agent** | **Cubi Scout** | *Sales Engineer & Inventory Specialist* | Workstation 01 | Membaca profil prospek, menganalisis ketersediaan stok fisik di cabang showroom, dan merekomendasikan unit motor yang paling tepat. |
+| 🟣 **Purple Agent** | **Cubi Scribe** | *AI Pitch & Financing Drafter* | Workstation 02 | Menghitung simulasi kredit, meracik paket promo/bundling aksesoris, dan menyusun draf penawaran personal yang persuasif via model Qwen 2.5 lokal. |
+| 🟢 **Green Agent** | **Cubi Gate** | *Turnstile Security & Dispatcher* | Meja Resepsionis | Menjaga gerbang otorisasi pimpinan, memvalidasi kepatuhan *consent*, dan mengeksekusi transmisi pesan serta PDF SPK ke Telegram. |
+| 🟠 **Orange Agent** | **Cubi Vault** | *Data Archivist & Compliance* | Server Vault | Menyimpan seluruh riwayat transaksi secara persisten ke database lokal terenkripsi, sinkronisasi stok, dan pencatatan audit log transaksi. |
+| 👔 **Director** | **Pak Alfa (Boss)** | *Executive Approver* | Meja Direktur / Rapat | Pimpinan showroom yang memegang kendali otorisasi akhir sebelum SPK diterbitkan dan dikirimkan ke pihak eksternal. |
+
+> 🔄 **Otonom Swarm Deliberation:** Setiap 30 detik agen melakukan *heartbeat check*. Jika stok unit di cabang showroom lokal habis (`0 unit`), agen *Cubi Scout*, *Cubi Supply*, dan *Cubi Gate* berembuk secara otonom di ruang rapat (*Deliberation Room*) untuk menegosiasikan relokasi unit dari Pusat Distribusi tanpa memalsukan data ketersediaan barang kepada konsumen.
+
+---
+
+## 🖥️ Dua Mode Antarmuka Pengguna (UI/UX)
+
+1. **Virtual Office 3D (`/office`):**
+   - Representasi spasial isometrik 3D ruang kantor dealer interaktif menggunakan Three.js dan React Three Fiber.
+   - Pengguna dapat menyaksikan agen AI berjalan antar stasiun kerja, mengetik draf penawaran, berkumpul di meja rapat saat sesi deliberasi, serta memantau ruangan melalui sudut pandang kamera pengawas CCTV 360°.
+2. **SaaS Executive Dashboard (`/dashboard`):**
+   - Antarmuka produktivitas data-dense untuk pimpinan dan tim sales: antrean prospek (*Hot, Warm, Cold*), ringkasan KPI konversi deal, grafik telemetri penggunaan token & utilisasi NPU/RAM lokal, log audit aktivitas real-time, dan jendela modal *Approval Gate*.
+3. **PWA Ready:**
+   - Desain responsif bertaraf Progressive Web App (PWA) yang dapat diinstal langsung di layar desktop, tablet, maupun smartphone staf pameran.
+
+---
+
+## 🌟 Keunggulan Kompetitif & Value Proposition
+
+* **Kedaulatan & Keamanan Data Mutlak (UU PDP Ready):** Seluruh data pelanggan, riwayat penawaran, dan dokumen SPK tersimpan lokal di media penyimpanan SSD terenkripsi hardware B206 (*0 Byte cloud egress*).
+* **Nol Biaya Operasional Cloud API (*Zero Recurring OPEX*):** Sekali investasi hardware on-premise (*100% CAPEX Asset*), tanpa tagihan bulanan per-token yang membengkak seiring lonjakan volume leads.
+* **Latensi Inferensi Sub-Detik (< 0.8s):** Akselerasi NPU 48 TOPS memberikan respons instan tanpa antrean rate-limit internet publik.
+* **Nol Risiko Halusinasi Finansial:** Logika pembiayaan leasing dan dokumen kontrak menggunakan formula deterministik yang terverifikasi hukum.
 
 ---
 
@@ -42,7 +116,7 @@ Sistem didesain khusus agar dapat berjalan mandiri (*standalone appliance*) pada
 - **Konektivitas & Keamanan:** Dual 2.5GbE LAN (Port 8000 Backend), isolasi air-gapped total, tanpa transmisi data sensitif konsumen ke server pihak ketiga.
 
 ### Profil Model Lokal:
-- **`qwen2.5:3b` (Default Fast Pipeline):** Menangani ekstraksi kebutuhan prospek, peracikan draf WhatsApp, dan negosiasi pengadaan unit ke pemasok dengan latensi rata-rata $\le 2.3\text{ detik}$ dan kecepatan $\ge 30\text{ tokens/detik}$.
+- **`qwen2.5:3b` (Default Fast Pipeline):** Menangani ekstraksi kebutuhan prospek, peracikan draf penawaran Telegram, dan negosiasi pengadaan unit ke pemasok dengan latensi rata-rata $\le 2.3\text{ detik}$ dan kecepatan $\ge 30\text{ tokens/detik}$.
 - **`hermes3:8b` (Deep Reasoning):** Menangani evaluasi komparasi multi-cabang kompleks dan audit legal saat dibutuhkan daya penalaran tingkat lanjut.
 
 ---
@@ -88,7 +162,7 @@ powershell -ExecutionPolicy Bypass -File scripts\auto_updater.ps1 -Branch main -
 # Dari direktori root:
 python run_backend.py
 # Atau via uvicorn langsung:
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ### 3. Menjalankan Frontend (StelAgent UI)
@@ -96,8 +170,8 @@ python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 cd frontend
 npm install
 npm run dev
-# Akses Virtual Office: http://localhost:5173/office
-# Akses Dashboard SaaS: http://localhost:5173/dashboard
+# Akses Virtual Office 3D: http://localhost:5173/office
+# Akses SaaS Dashboard: http://localhost:5173/dashboard
 ```
 
 ### 4. Menjalankan Pengujian Kualitas (QA Test Suite)
@@ -119,11 +193,13 @@ python hardware_benchmark\benchmark_b206.py
 - `GET /api/v1/system/health`: Telemetri kesehatan appliance, status mode simulasi/live, dan koneksi NPU.
 - `GET /api/v1/leads/queue`: Daftar antrean prospek dengan penilaian prioritas (*Hot*, *Warm*, *Cold*).
 - `POST /api/v1/leads/generate-pitch`: Peracikan draf penawaran personal berbasis data stok cabang lokal.
-- `POST /api/v1/leads/approve-and-send`: Otorisasi direktur dengan validasi *consent*, perhitungan cicilan deterministik, dan penerbitan berkas PDF SPK resmi.
+- `POST /api/v1/leads/approve-and-send`: Otorisasi direktur dengan validasi *consent*, perhitungan cicilan deterministik, dan penerbitan berkas PDF SPK resmi serta pengiriman ke Telegram.
 - `GET /api/v1/documents/{filename}`: Endpoint pengunduhan berkas fisik PDF SPK resmi dari browser.
 - `GET /api/v1/deliberations`: Transkrip koordinasi rapat internal multi-agen (`Scout` -> `Cubi Supply` -> `Gate` -> `Scribe`) saat defisit stok unit 0 terdeteksi.
 - `POST /api/v1/sales/simulasi-kredit`: Simulasi cicilan pembiayaan leasing deterministik (tenor 12, 24, 36 bulan).
+- `POST /api/v1/system/cicd-deploy`: Endpoint webhook penerima sinyal CI/CD deploy otomatis untuk Mini PC Cubi NUC.
 
 ---
-© 2026 StelAgent // Agentic AI Enterprise Labs. All Rights Reserved.
+
+© 2026 StelAgent // Agentic AI Enterprise Labs. All Rights Reserved.  
 Showcase PSAJ 2026 — Mini PC MSI Cubi NUC AI+ B206.
