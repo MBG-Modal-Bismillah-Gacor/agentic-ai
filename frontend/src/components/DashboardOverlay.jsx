@@ -1687,7 +1687,7 @@ export function DashboardOverlay({
                 <span>Buka Chat @iiibays</span>
               </a>
               <a
-                href={spkModalData.pdf_url ? `${typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? `http://${window.location.hostname}:8000` : 'http://127.0.0.1:8000'}${spkModalData.pdf_url}` : '#'}
+                href={spkModalData.pdf_url || '#'}
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2 bg-[#192A56] hover:bg-[#0E1A38] text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer border border-[#192A56]"

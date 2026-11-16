@@ -23,6 +23,11 @@ function RouteLoadingFallback() {
 
 export const getApiBase = () => {
   if (typeof window === 'undefined') return 'http://127.0.0.1:8000'
+  // Jika dibuka via HTTPS (SSL Secure Context PWA), gunakan relative path proxy ('')
+  // untuk mencegah browser memblokir request karena Mixed Content (HTTPS -> HTTP:8000).
+  if (window.location.protocol === 'https:') {
+    return ''
+  }
   const hostname = window.location.hostname
   if (hostname) {
     return `http://${hostname}:8000`

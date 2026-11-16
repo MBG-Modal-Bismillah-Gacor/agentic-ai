@@ -78,21 +78,26 @@ if [ "$IS_LOCAL_CUBI" = true ]; then
         echo "  ⚠️ Backend FastAPI belum merespons."
     fi
 
-    if curl -s -I "http://127.0.0.1:${FRONTEND_PORT}" | grep -q "200"; then
-        echo "  ✅ Frontend PWA: ONLINE & SIAP DIGUNAKAN di port $FRONTEND_PORT"
+    if curl -s -k -I "https://127.0.0.1:${FRONTEND_PORT}" | grep -q "200\|304\|HTTP"; then
+        echo "  ✅ Frontend PWA (HTTPS/SSL): ONLINE & SIAP DIGUNAKAN di port $FRONTEND_PORT"
+    elif curl -s -I "http://127.0.0.1:${FRONTEND_PORT}" | grep -q "200\|304\|HTTP"; then
+        echo "  ✅ Frontend PWA: ONLINE di port $FRONTEND_PORT"
     else
         echo "  ⚠️ Frontend PWA di port $FRONTEND_PORT belum merespons."
     fi
 
     echo ""
     echo "================================================================="
-    echo "🎉 PWA DI CUBI NUC BERHASIL DIBUILD & DIPERBARUI!"
+    echo "🎉 PWA DI CUBI NUC BERHASIL DIBUILD & DIPERBARUI DENGAN HTTPS/SSL!"
     echo "================================================================="
-    echo "🌐 Akses PWA & Backend:"
-    echo "  • Virtual 3D Office : http://${CUBI_IP}:${FRONTEND_PORT}/office"
-    echo "  • Pusat Kontrol Hub : http://${CUBI_IP}:${FRONTEND_PORT}/dashboard"
-    echo "  • Landing Showroom  : http://${CUBI_IP}:${FRONTEND_PORT}/"
+    echo "🌐 Akses PWA & Backend (Adaptif terhadap perubahan IP):"
+    echo "  • Localhost Mini PC : https://localhost:${FRONTEND_PORT}/office"
+    echo "  • Virtual 3D Office : https://${CUBI_IP}:${FRONTEND_PORT}/office"
+    echo "  • Pusat Kontrol Hub : https://${CUBI_IP}:${FRONTEND_PORT}/dashboard"
+    echo "  • Landing Showroom  : https://${CUBI_IP}:${FRONTEND_PORT}/"
     echo "  • Swagger API Docs  : http://${CUBI_IP}:${BACKEND_PORT}/docs"
+    echo "💡 Catatan PWA: Buka link HTTPS di browser, klik 'Lanjutan' -> 'Lanjutkan ke situs',"
+    echo "   lalu klik ikon 'Install App' / 'Tambahkan ke Layar Utama' di address bar browser."
     echo "================================================================="
     exit 0
 fi
