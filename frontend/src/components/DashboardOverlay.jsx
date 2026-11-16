@@ -1640,8 +1640,21 @@ export function DashboardOverlay({
             <div className="my-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
               <div className="flex items-center justify-between p-2 bg-sky-50 border border-sky-200 rounded-lg">
                 <span className="text-sky-800 text-xs font-semibold">Saluran Konfirmasi:</span>
-                <span className="font-bold text-[#229ED9] text-xs font-mono">Telegram @iiibays (Terkirim) ✅</span>
+                <span className="font-bold text-[#229ED9] text-xs font-mono">
+                  {spkModalData.telegram_dispatch?.delivery_mode === 'live'
+                    ? 'Telegram @iiibays (Terkirim Live) ✅'
+                    : 'Telegram @iiibays (Mode Simulasi Bukti) ⚠️'}
+                </span>
               </div>
+              {spkModalData.telegram_dispatch?.delivery_mode !== 'live' && (
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900 leading-normal flex items-start gap-2">
+                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block mb-0.5">Catatan Pengiriman Telegram:</span>
+                    <span>{spkModalData.telegram_dispatch?.error || 'Chat ID untuk @iiibays belum terdeteksi. Buka @StelAgentBot di Telegram dan klik Start agar bot memiliki izin mengirimkan berkas ke HP Anda.'}</span>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Berkas Dokumen:</span>
                 <span className="font-bold text-[#192A56] truncate max-w-[260px]">{spkModalData.pdf_filename}</span>
@@ -1676,6 +1689,16 @@ export function DashboardOverlay({
               >
                 Tutup
               </button>
+              <a
+                href="https://t.me/StelAgentBot"
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-2 bg-[#229ED9] hover:bg-[#1C88BD] text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5"
+                style={{ backgroundColor: '#229ED9', color: '#FFFFFF' }}
+              >
+                <Bot className="w-3.5 h-3.5 text-white" />
+                <span>Start @StelAgentBot</span>
+              </a>
               <a
                 href="https://t.me/iiibays"
                 target="_blank"
