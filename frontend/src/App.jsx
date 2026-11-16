@@ -1381,7 +1381,8 @@ export default function App() {
   }
 
   // Koreografi Eksekusi & Gerakan Berjalan Robot Sesuai Logika BE
-  const handleSelectLead = async (lead) => {
+  const handleSelectLead = async (lead, options = {}) => {
+    const { directApproval = false } = options
     setActiveLead(lead)
     setIsGenerating(true)
     setPitchResult(null)
@@ -1390,6 +1391,7 @@ export default function App() {
     const isDashboard = currentRoute === 'dashboard'
 
     // Core async fetcher
+    let fetchedData = null
     const fetchPitchData = async () => {
       try {
         const res = await safeApiFetch('/api/v1/leads/generate-pitch', {
@@ -1406,34 +1408,14 @@ export default function App() {
           }),
         })
 
-        let data
         if (res.ok) {
-          data = await res.json()
+          fetchedData = await res.json()
         } else {
           throw new Error('API Generate Failed')
         }
-
-        setPitchResult(data)
-        setIsGenerating(false)
-        setSelectedAgentId('green-agent')
-
-        setAgents((prev) => ({
-          ...prev,
-          'purple-agent': {
-            ...prev['purple-agent'],
-            isTyping: false,
-            statusText: `Draf pitch selesai disusun untuk ${lead.nama}`,
-          },
-          'green-agent': {
-            ...prev['green-agent'],
-            isScanning: true,
-            statusText: `Draf siap! Menunggu otorisasi Direktur untuk Telegram Dispatch`,
-          },
-        }))
-        fetchData()
       } catch {
         // Fallback cerdas saat backend offline
-        const fallbackData = {
+        fetchedData = {
           id_lead: lead.id_lead,
           unit_rekomendasi: 'Beat Street CBS',
           bundling_promo: 'Helm Retro Astra & Voucher Gratis Servis 1 Tahun',
@@ -1441,39 +1423,35 @@ export default function App() {
           draft_pitch: `Halo Kak ${lead.nama}, salam hangat dari Astra Motor! Kami perhatikan Kakak sedang mencari kendaraan untuk ${lead.minat}. Unit Beat Street CBS sedang ready di cabang ${lead.domisili} lengkap dengan promo bundling Helm Retro & Gratis Servis 1 Tahun serta diskon DP spesial. Apakah berkenan kami kirimkan rincian simulasi angsurannya?`,
           approval_required: true,
         }
-        setPitchResult(fallbackData)
-        setIsGenerating(false)
-        setSelectedAgentId('green-agent')
-
-        setAgents((prev) => ({
-          ...prev,
-          'purple-agent': {
-            ...prev['purple-agent'],
-            isTyping: false,
-            statusText: `Draf pitch siap (Simulated)`,
-          },
-          'green-agent': {
-            ...prev['green-agent'],
-            isScanning: true,
-            statusText: `Draf siap! Menunggu otorisasi Direktur untuk Telegram Dispatch`,
-          },
-        }))
       }
+      return fetchedData
     }
 
-    // Jika pada dashboard atau melihat draf yang sudah selesai, eksekusi instan tanpa delay animasi 3D
-    if (isDashboard || isDispatched) {
-      await fetchPitchData()
+    // Jika prospek sudah terkirim atau user memilih mode approval cepat di dashboard
+    if (isDispatched || (isDashboard && directApproval)) {
+      const data = await fetchPitchData()
+      setPitchResult(data)
+      setIsGenerating(false)
+      setSelectedAgentId('green-agent')
       return
     }
 
-    // Pada 3D Office: Transisi cepat dan responsif ke agen-agen
+    // Default alur spektakuler: Bawa user ke Kantor Virtual 3D agar aksi kolaborasi robot terlihat nyata!
+    if (currentRoute !== 'office') {
+      setCurrentRoute('office')
+    }
+
+    // Mulai panggilan API di background saat animasi berjalan
+    const pitchPromise = fetchPitchData()
+
+    // 1. Meja Direktur (Pak Alfa) memberikan instruksi tugas
     setSelectedAgentId('boss')
     setBossConfig((prev) => ({
       ...prev,
-      statusText: `Menugaskan prospek ${lead.nama} ke tim StelAgent`,
+      statusText: `Menugaskan prospek ${lead.nama} (${lead.minat}) ke tim StelAgent...`,
     }))
 
+    // 2. Cubi Scout (Robot Biru) memindai katalog & stok cabang
     setTimeout(() => {
       setSelectedAgentId('blue-agent')
       setAgents((prev) => ({
@@ -1485,8 +1463,9 @@ export default function App() {
           statusText: `Menganalisis stok cabang & unit rekomendasi untuk ${lead.nama}...`,
         },
       }))
-    }, 300)
+    }, 1400)
 
+    // 3. Cubi Supply (Robot Oranye) memvalidasi data vault & bundling
     setTimeout(() => {
       setSelectedAgentId('orange-agent')
       setAgents((prev) => ({
@@ -1494,35 +1473,58 @@ export default function App() {
         'orange-agent': {
           ...prev['orange-agent'],
           isScanning: true,
-          statusText: `Memvalidasi database & aturan bundling untuk ${lead.minat}...`,
+          statusText: `Memvalidasi database harga & aturan bundling untuk ${lead.minat}...`,
+        },
+        'blue-agent': {
+          ...prev['blue-agent'],
+          isScanning: false,
+          isTyping: false,
+          statusText: `Unit & spesifikasi siap!`,
         },
       }))
-    }, 650)
+    }, 3000)
 
-    setTimeout(async () => {
+    // 4. Cubi Scribe (Robot Ungu) meracik draf penawaran personal via model Qwen 2.5
+    setTimeout(() => {
       setSelectedAgentId('purple-agent')
       setAgents((prev) => ({
         ...prev,
         'purple-agent': {
           ...prev['purple-agent'],
           isTyping: true,
-          statusText: `Menyusun draf Telegram personal via model Qwen 2.5...`,
-        },
-        'blue-agent': {
-          ...prev['blue-agent'],
-          isScanning: false,
-          isTyping: true,
-          statusText: `Analisis spesifikasi & stok selesai. Unit siap!`,
+          statusText: `Menyusun draf penawaran personal via model Qwen 2.5...`,
         },
         'orange-agent': {
           ...prev['orange-agent'],
           isScanning: false,
-          statusText: `Histori & bundling siap dipakai.`,
+          statusText: `Aturan bundling & histori diskon siap dipakai.`,
+        },
+      }))
+    }, 4600)
+
+    // 5. Cubi Gate (Robot Hijau) menerima berkas dan mengajukan ke Approval Gate
+    setTimeout(async () => {
+      setSelectedAgentId('green-agent')
+      setAgents((prev) => ({
+        ...prev,
+        'green-agent': {
+          ...prev['green-agent'],
+          isScanning: true,
+          statusText: `Draf SPK resmi siap! Menyerahkan berkas ke Meja Direktur untuk otorisasi...`,
+        },
+        'purple-agent': {
+          ...prev['purple-agent'],
+          isTyping: false,
+          statusText: `Draf pitch selesai disusun untuk ${lead.nama}`,
         },
       }))
 
-      await fetchPitchData()
-    }, 1000)
+      // Tunggu hasil data dari Ollama / backend selesai
+      const finalData = await pitchPromise
+      setPitchResult(finalData)
+      setIsGenerating(false)
+      fetchData()
+    }, 6200)
   }
 
   // Aksi: Setujui & Dispatch Telegram ke Calon Konsumen

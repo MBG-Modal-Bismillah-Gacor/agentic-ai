@@ -1110,31 +1110,65 @@ export function DashboardView({
                               )}
                             </td>
                             <td className="py-3 text-right whitespace-nowrap">
-                              <button
-                                onClick={() => {
-                                  setLoadingLeadId(lead.id_lead)
-                                  onSelectLead(lead)
-                                }}
-                                disabled={isGenerating}
-                                style={!isDispatched && !isGenerating ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
-                                className={`group px-3 py-1.5 text-[10px] font-bold transition-all cursor-pointer rounded-lg inline-flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap shrink-0 ${
-                                  isDispatched
-                                    ? 'bg-white hover:bg-[#192A56] text-[#192A56] hover:text-white border border-[#192A56]/30'
-                                    : 'bg-[#192A56] hover:bg-[#0E1A38] text-white'
-                                } ${isGenerating && loadingLeadId === lead.id_lead ? 'opacity-90' : ''}`}
-                                title={isDispatched ? 'Lihat Draf Penawaran' : 'Proses Analisis AI'}
-                              >
-                                {isGenerating && loadingLeadId === lead.id_lead ? (
-                                  <>
-                                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
-                                    <span className="whitespace-nowrap">Memproses...</span>
-                                  </>
+                              <div className="inline-flex items-center gap-1.5 justify-end">
+                                {isDispatched ? (
+                                  <button
+                                    onClick={() => {
+                                      setLoadingLeadId(lead.id_lead)
+                                      onSelectLead(lead, { directApproval: true })
+                                    }}
+                                    disabled={isGenerating}
+                                    className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg inline-flex items-center gap-1.5 bg-white hover:bg-[#192A56] text-[#192A56] hover:text-white border border-[#192A56]/30 transition-all cursor-pointer shadow-xs"
+                                    title="Buka kembali berkas penawaran & draf SPK resmi"
+                                  >
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    <span>Buka Berkas</span>
+                                  </button>
                                 ) : (
-                                  <span className={`whitespace-nowrap ${isDispatched ? 'text-[#192A56] group-hover:text-white transition-colors' : 'text-white'}`}>
-                                    {isDispatched ? 'Lihat Draf' : 'Proses AI'}
-                                  </span>
+                                  <>
+                                    {/* Tombol Utama: Tonton Robot Bekerja di Kantor 3D */}
+                                    <button
+                                      onClick={() => {
+                                        setLoadingLeadId(lead.id_lead)
+                                        onSelectLead(lead, { viewIn3D: true })
+                                      }}
+                                      disabled={isGenerating}
+                                      style={!isGenerating ? { backgroundColor: '#192A56', color: '#FFFFFF' } : {}}
+                                      className={`px-3 py-1.5 text-[10px] font-bold rounded-lg inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
+                                        isGenerating && loadingLeadId === lead.id_lead
+                                          ? 'opacity-85 bg-slate-700 text-white cursor-wait'
+                                          : 'hover:bg-[#0E1A38] text-white hover:shadow-md'
+                                      }`}
+                                      title="Masuk ke Kantor Virtual 3D dan tonton kolaborasi robot secara langsung sebelum Approval Gate"
+                                    >
+                                      {isGenerating && loadingLeadId === lead.id_lead ? (
+                                        <>
+                                          <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                                          <span className="whitespace-nowrap">Masuk 3D...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Box className="w-3 h-3 text-sky-300" />
+                                          <span className="whitespace-nowrap">Tonton di Kantor 3D</span>
+                                        </>
+                                      )}
+                                    </button>
+
+                                    {/* Tombol Cepat: Langsung buka Approval Gate tanpa animasi 3D */}
+                                    <button
+                                      onClick={() => {
+                                        setLoadingLeadId(lead.id_lead)
+                                        onSelectLead(lead, { directApproval: true })
+                                      }}
+                                      disabled={isGenerating}
+                                      className="px-2 py-1.5 text-[10px] font-semibold text-slate-500 hover:text-[#192A56] hover:bg-slate-100 border border-slate-200 rounded-lg transition-all cursor-pointer"
+                                      title="Langsung buka jendela Approval Gate tanpa animasi 3D"
+                                    >
+                                      <span>Cepat</span>
+                                    </button>
+                                  </>
                                 )}
-                              </button>
+                              </div>
                             </td>
                           </tr>
                         )
