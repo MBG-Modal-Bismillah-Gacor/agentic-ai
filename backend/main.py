@@ -1425,23 +1425,27 @@ def approve_outreach(req: ApprovalRequest):
 
 @app.get("/api/v1/documents/{filename}")
 def download_document(filename: str):
-    allowed_exts = (".pdf", ".md", ".json")
+    allowed_exts = (".pdf", ".md", ".json", ".txt")
     if filename != os.path.basename(filename) or not any(filename.lower().endswith(ext) for ext in allowed_exts):
         raise HTTPException(status_code=404, detail="Berkas dokumen tidak ditemukan.")
-    repo_dir = os.path.dirname(BASE_DIR)
+    
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_dir = os.path.dirname(backend_dir)
     candidate_dirs = [
         OUTPUT_DIR,
-        os.path.join(BASE_DIR, "output"),
-        os.path.join(BASE_DIR, "output_dokumen"),
-        BASE_DIR,
-        repo_dir
+        os.path.join(backend_dir, "output"),
+        os.path.join(backend_dir, "output_dokumen"),
+        os.path.join(backend_dir, "workspace"),
+        backend_dir,
+        repo_dir,
+        os.getcwd()
     ]
     for c_dir in candidate_dirs:
         file_path = os.path.join(c_dir, filename)
         if os.path.isfile(file_path):
-            media = "application/pdf" if filename.lower().endswith(".pdf") else ("text/markdown" if filename.lower().endswith(".md") else "application/json")
+            media = "application/pdf" if filename.lower().endswith(".pdf") else ("text/markdown; charset=utf-8" if filename.lower().endswith(".md") else "application/octet-stream")
             return FileResponse(file_path, media_type=media, filename=filename)
-    raise HTTPException(status_code=404, detail="Berkas SPK / dokumen tidak ditemukan.")
+    raise HTTPException(status_code=404, detail=f"Berkas '{filename}' tidak ditemukan di server.")
 
 @app.get("/api/v1/sales/download-spk/{filename}")
 def download_spk(filename: str):
