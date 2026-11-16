@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && node scripts/start-preview.cjs",
+    "dev": "node node_modules/vite/bin/vite.js",
+    "build": "node node_modules/vite/bin/vite.js build && node scripts/start-preview.cjs",
     "lint": "oxlint",
-    "preview": "vite preview",
+    "preview": "node node_modules/vite/bin/vite.js preview",
     "start-preview": "node scripts/start-preview.cjs"
   },
   "dependencies": {

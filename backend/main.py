@@ -1801,6 +1801,48 @@ def get_appliance_ip() -> str:
     except Exception:
         return "127.0.0.1"
 
+def get_node_bin() -> str:
+    """Temukan binary executable node di environment lokal atau appliance."""
+    home = os.path.expanduser("~")
+    nvm_dir = os.path.join(home, ".nvm", "versions", "node")
+    if os.path.exists(nvm_dir):
+        try:
+            versions = sorted(os.listdir(nvm_dir), reverse=True)
+            for v in versions:
+                cand = os.path.join(nvm_dir, v, "bin", "node")
+                if os.path.exists(cand):
+                    return cand
+        except Exception:
+            pass
+    try:
+        p = subprocess.run(["which", "node"], capture_output=True, text=True)
+        if p.returncode == 0 and p.stdout.strip():
+            return p.stdout.strip()
+    except Exception:
+        pass
+    for cand in ["/usr/bin/node", "/usr/local/bin/node", "/snap/bin/node"]:
+        if os.path.exists(cand):
+            return cand
+    return "node"
+
+def get_npm_bin() -> str:
+    """Temukan binary executable npm di environment lokal atau appliance."""
+    node_bin = get_node_bin()
+    if os.path.isabs(node_bin):
+        npm_cand = os.path.join(os.path.dirname(node_bin), "npm")
+        if os.path.exists(npm_cand):
+            return npm_cand
+    try:
+        p = subprocess.run(["which", "npm"], capture_output=True, text=True)
+        if p.returncode == 0 and p.stdout.strip():
+            return p.stdout.strip()
+    except Exception:
+        pass
+    for cand in ["/usr/bin/npm", "/usr/local/bin/npm"]:
+        if os.path.exists(cand):
+            return cand
+    return "npm"
+
 class CICDDeployRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
     secret_token: Optional[str] = "stelagent-b206"
@@ -1869,9 +1911,13 @@ def trigger_cicd_deploy(req: CICDDeployRequest):
     # 2. Build PWA Frontend jika diminta
     frontend_dir = os.path.join(repo_dir, "frontend")
     dist_dir = os.path.join(frontend_dir, "dist")
+    node_bin = get_node_bin()
+    npm_bin = get_npm_bin()
+    vite_js = os.path.join(frontend_dir, "node_modules", "vite", "bin", "vite.js")
+
     if req.build_pwa:
         try:
-            build_cmd = "npm install --prefer-offline --no-audit --no-fund && npm run build"
+            build_cmd = f"{npm_bin} install --prefer-offline --no-audit --no-fund && {node_bin} {vite_js} build && {node_bin} scripts/start-preview.cjs"
             build_proc = subprocess.run(
                 build_cmd,
                 cwd=frontend_dir,
@@ -1893,20 +1939,16 @@ def trigger_cicd_deploy(req: CICDDeployRequest):
     if os.path.exists(dist_dir):
         try:
             if os.name != "nt":
-                bash_cmd = (
-                    "source ~/.nvm/nvm.sh 2>/dev/null || true; "
-                    "source ~/.bashrc 2>/dev/null || true; "
-                    "export PATH=$PATH:/usr/local/bin:/usr/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin; "
-                    "command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite preview' || true; "
-                    f"cd '{frontend_dir}' && nohup npx vite preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &"
-                )
-                subprocess.Popen(["/bin/bash", "-c", bash_cmd], preexec_fn=getattr(os, "setpgrp", None))
+                subprocess.run("command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite' || true", shell=True)
+                start_cmd = f"nohup {node_bin} {vite_js} preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &"
+                subprocess.Popen(start_cmd, cwd=frontend_dir, shell=True, preexec_fn=getattr(os, "setpgrp", None))
             else:
-                subprocess.Popen("node scripts/start-preview.cjs", cwd=frontend_dir, shell=True)
+                subprocess.Popen(f"{node_bin} scripts/start-preview.cjs", cwd=frontend_dir, shell=True)
             results["frontend_service"] = {
                 "port": 3000,
                 "protocol": "https",
-                "status": "launched"
+                "status": "launched",
+                "node": node_bin
             }
         except Exception as fe_err:
             results["frontend_service"] = {"error": str(fe_err)}
@@ -1980,20 +2022,16 @@ def get_frontend_log():
 def restart_frontend():
     repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     frontend_dir = os.path.join(repo_dir, "frontend")
-    dist_dir = os.path.join(frontend_dir, "dist")
+    node_bin = get_node_bin()
+    vite_js = os.path.join(frontend_dir, "node_modules", "vite", "bin", "vite.js")
     
     try:
         if os.name != "nt":
-            bash_cmd = (
-                "source ~/.nvm/nvm.sh 2>/dev/null || true; "
-                "source ~/.bashrc 2>/dev/null || true; "
-                "export PATH=$PATH:/usr/local/bin:/usr/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin; "
-                "command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite preview' || true; "
-                f"cd '{frontend_dir}' && nohup npx vite preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &"
-            )
-            subprocess.Popen(["/bin/bash", "-c", bash_cmd], preexec_fn=getattr(os, "setpgrp", None))
+            subprocess.run("command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite' || true", shell=True)
+            start_cmd = f"nohup {node_bin} {vite_js} preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &"
+            subprocess.Popen(start_cmd, cwd=frontend_dir, shell=True, preexec_fn=getattr(os, "setpgrp", None))
         else:
-            subprocess.Popen("node scripts/start-preview.cjs", cwd=frontend_dir, shell=True)
-        return {"status": "success", "message": "Frontend HTTPS preview server started on port 3000"}
+            subprocess.Popen(f"{node_bin} scripts/start-preview.cjs", cwd=frontend_dir, shell=True)
+        return {"status": "success", "message": "Frontend HTTPS preview server started on port 3000", "node": node_bin}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
