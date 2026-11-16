@@ -1428,11 +1428,13 @@ def download_document(filename: str):
     allowed_exts = (".pdf", ".md", ".json")
     if filename != os.path.basename(filename) or not any(filename.lower().endswith(ext) for ext in allowed_exts):
         raise HTTPException(status_code=404, detail="Berkas dokumen tidak ditemukan.")
+    repo_dir = os.path.dirname(BASE_DIR)
     candidate_dirs = [
         OUTPUT_DIR,
         os.path.join(BASE_DIR, "output"),
         os.path.join(BASE_DIR, "output_dokumen"),
-        BASE_DIR
+        BASE_DIR,
+        repo_dir
     ]
     for c_dir in candidate_dirs:
         file_path = os.path.join(c_dir, filename)
