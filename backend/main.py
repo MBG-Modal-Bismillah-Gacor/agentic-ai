@@ -1917,7 +1917,7 @@ def trigger_cicd_deploy(req: CICDDeployRequest):
 
     if req.build_pwa:
         try:
-            build_cmd = f"{npm_bin} install --prefer-offline --no-audit --no-fund && {node_bin} {vite_js} build && {node_bin} scripts/start-preview.cjs"
+            build_cmd = f"{npm_bin} install --include=dev --no-audit --no-fund && npm run build"
             build_proc = subprocess.run(
                 build_cmd,
                 cwd=frontend_dir,

@@ -4,32 +4,30 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node node_modules/vite/bin/vite.js",
-    "build": "node node_modules/vite/bin/vite.js build && node scripts/start-preview.cjs",
+    "dev": "vite",
+    "build": "vite build && node scripts/start-preview.cjs",
     "lint": "oxlint",
-    "preview": "node node_modules/vite/bin/vite.js preview",
+    "preview": "vite preview",
     "start-preview": "node scripts/start-preview.cjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "@react-three/postprocessing": "^3.2.2",
-    "gsap": "^3.15.1",
-    "lenis": "^1.3.27",
-    "lucide-react": "^1.68.0",
-    "postprocessing": "^6.39.6",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "three": "^0.187.0"
-  },
-  "devDependencies": {
     "@tailwindcss/vite": "^4.3.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "gsap": "^3.15.1",
+    "lenis": "^1.3.27",
+    "lucide-react": "^1.68.0",
     "oxlint": "^1.89.0",
+    "postprocessing": "^6.39.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "tailwindcss": "^4.3.4",
+    "three": "^0.187.0",
     "vite": "^8.3.5"
   }
 }

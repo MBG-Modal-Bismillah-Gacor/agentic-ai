@@ -8,7 +8,7 @@ const isWin = process.platform === 'win32';
 const frontendDir = path.resolve(__dirname, '..');
 const distDir = path.resolve(frontendDir, 'dist');
 const logFile = path.resolve(frontendDir, '..', 'frontend.log');
-const viteJs = path.resolve(frontendDir, 'node_modules', 'vite', 'bin', 'vite.js');
+const localVite = path.resolve(frontendDir, 'node_modules', '.bin', isWin ? 'vite.cmd' : 'vite');
 
 // Pastikan dist sudah ada sebelum preview dijalankan
 if (!fs.existsSync(distDir)) {
@@ -39,20 +39,18 @@ try {
   // fallback
 }
 
-// Jalankan vite preview di port 3000 menggunakan Node langsung
-const subprocess = fs.existsSync(viteJs)
-  ? spawn(process.execPath, [viteJs, 'preview', '--host', '0.0.0.0', '--port', '3000'], {
-      cwd: frontendDir,
-      detached: true,
-      stdio: ['ignore', outFd, errFd],
-      env: process.env
-    })
-  : spawn(isWin ? 'npx.cmd' : 'npx', ['vite', 'preview', '--host', '0.0.0.0', '--port', '3000'], {
-      cwd: frontendDir,
-      detached: true,
-      stdio: ['ignore', outFd, errFd],
-      env: process.env
-    });
+// Jalankan vite preview di port 3000
+const cmd = fs.existsSync(localVite) ? localVite : (isWin ? 'npx.cmd' : 'npx');
+const args = fs.existsSync(localVite)
+  ? ['preview', '--host', '0.0.0.0', '--port', '3000']
+  : ['vite', 'preview', '--host', '0.0.0.0', '--port', '3000'];
+
+const subprocess = spawn(cmd, args, {
+  cwd: frontendDir,
+  detached: true,
+  stdio: ['ignore', outFd, errFd],
+  env: process.env
+});
 
 subprocess.unref();
 
