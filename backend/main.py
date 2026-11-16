@@ -1425,17 +1425,20 @@ def approve_outreach(req: ApprovalRequest):
 
 @app.get("/api/v1/documents/{filename}")
 def download_document(filename: str):
-    if filename != os.path.basename(filename) or not filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=404, detail="Berkas SPK tidak ditemukan.")
+    allowed_exts = (".pdf", ".md", ".json")
+    if filename != os.path.basename(filename) or not any(filename.lower().endswith(ext) for ext in allowed_exts):
+        raise HTTPException(status_code=404, detail="Berkas dokumen tidak ditemukan.")
     candidate_dirs = [
         OUTPUT_DIR,
         os.path.join(BASE_DIR, "output"),
-        os.path.join(BASE_DIR, "output_dokumen")
+        os.path.join(BASE_DIR, "output_dokumen"),
+        BASE_DIR
     ]
     for c_dir in candidate_dirs:
         file_path = os.path.join(c_dir, filename)
         if os.path.isfile(file_path):
-            return FileResponse(file_path, media_type="application/pdf", filename=filename)
+            media = "application/pdf" if filename.lower().endswith(".pdf") else ("text/markdown" if filename.lower().endswith(".md") else "application/json")
+            return FileResponse(file_path, media_type=media, filename=filename)
     raise HTTPException(status_code=404, detail="Berkas SPK / dokumen tidak ditemukan.")
 
 @app.get("/api/v1/sales/download-spk/{filename}")
