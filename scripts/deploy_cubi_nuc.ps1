@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     CI/CD Automated Deployment Pipeline ke MSI Cubi NUC AI+ B206 (PWA & Backend)
     Agentic Sales Hub — PSAJ 2026 Showcase
@@ -9,7 +9,7 @@
 #>
 
 param(
-    [string]$CubiIP = "192.168.18.119",
+    [string]$CubiIP = "174.17.0.227",
     [string]$BackendPort = "8000",
     [string]$FrontendPort = "3000",
     [string]$DeployToken = "stelagent-b206",

@@ -2,6 +2,8 @@ import asyncio
 import csv
 import json
 import os
+import socket
+import subprocess
 import tempfile
 import threading
 import time
@@ -1780,6 +1782,25 @@ def get_telegram_dispatch_proofs():
 # CI/CD & AUTOMATED APPLIANCE DEPLOYMENT (PWA & BACKEND)
 # ==============================================================================
 
+def get_appliance_ip() -> str:
+    """Deteksi IP LAN lokal mesin appliance secara dinamis."""
+    env_ip = os.getenv("APPLIANCE_IP")
+    if env_ip:
+        return env_ip
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(1.0)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        pass
+    try:
+        return socket.gethostbyname(socket.gethostname())
+    except Exception:
+        return "127.0.0.1"
+
 class CICDDeployRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
     secret_token: Optional[str] = "stelagent-b206"
@@ -1791,10 +1812,9 @@ class CICDDeployRequest(BaseModel):
 def trigger_cicd_deploy(req: CICDDeployRequest):
     """
     Endpoint CI/CD otonom untuk MSI Cubi NUC AI+ B206.
-    Menerima trigger deploy via LAN, melakukan git pull, dan membangun ulang bundle PWA.
+    Menerima trigger deploy via LAN, melakukan git pull, membangun ulang bundle PWA,
+    dan memastikan preview HTTPS server aktif di port 3000.
     """
-    import subprocess
-    
     expected_token = os.getenv("DEPLOY_TOKEN", "stelagent-b206")
     if req.secret_token and req.secret_token != expected_token:
         raise HTTPException(status_code=403, detail="Invalid deploy token.")
@@ -1835,39 +1855,112 @@ def trigger_cicd_deploy(req: CICDDeployRequest):
         current_sha = "unknown"
 
     # 2. Build PWA Frontend jika diminta
+    frontend_dir = os.path.join(repo_dir, "frontend")
+    dist_dir = os.path.join(frontend_dir, "dist")
     if req.build_pwa:
-        frontend_dir = os.path.join(repo_dir, "frontend")
         try:
-            build_cmd = "npm run build"
+            build_cmd = "npm install --prefer-offline --no-audit --no-fund && npm run build"
             build_proc = subprocess.run(
                 build_cmd,
                 cwd=frontend_dir,
                 shell=True,
                 capture_output=True,
                 text=True,
-                timeout=180
+                timeout=300
             )
+            combined_log = f"{build_proc.stdout or ''}\n{build_proc.stderr or ''}".strip()
             results["pwa_build"] = {
                 "exit_code": build_proc.returncode,
                 "status": "success" if build_proc.returncode == 0 else "failed",
-                "output_sample": build_proc.stdout[-300:].strip() if build_proc.stdout else build_proc.stderr[-300:].strip()
+                "output_sample": combined_log[-800:].strip() if combined_log else "no output"
             }
         except Exception as e:
             results["pwa_build"] = {"error": str(e)}
 
+    # 3. Pastikan Frontend HTTPS Preview Server (Port 3000) berjalan
+    if os.path.exists(dist_dir):
+        try:
+            if os.name != "nt":
+                subprocess.run("command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite preview' || true", shell=True)
+                start_cmd = "nohup npx vite preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &"
+                subprocess.Popen(start_cmd, cwd=frontend_dir, shell=True, preexec_fn=getattr(os, "setpgrp", None))
+            else:
+                subprocess.Popen("node scripts/start-preview.cjs", cwd=frontend_dir, shell=True)
+            results["frontend_service"] = {
+                "port": 3000,
+                "protocol": "https",
+                "status": "launched"
+            }
+        except Exception as fe_err:
+            results["frontend_service"] = {"error": str(fe_err)}
+
+    detected_ip = get_appliance_ip()
     add_log(
         "Cubi DevOps",
         f"CI/CD PWA Deployment ke Cubi NUC ({current_sha})",
-        f"Branch: {req.branch} | PWA Build: {results.get('pwa_build', {}).get('status', 'skipped')}"
+        f"Branch: {req.branch} | IP: {detected_ip} | PWA Build: {results.get('pwa_build', {}).get('status', 'skipped')}"
     )
 
     return {
         "status": "deployed",
         "appliance": "MSI Cubi NUC AI+ B206",
-        "ip_appliance": "192.168.18.119",
+        "ip_appliance": detected_ip,
         "commit_sha": current_sha,
         "branch": req.branch,
-        "pwa_ready": results.get("pwa_build", {}).get("status") == "success",
+        "pwa_ready": results.get("pwa_build", {}).get("status") == "success" or os.path.exists(dist_dir),
+        "urls": {
+            "pwa_local": "https://localhost:3000/office",
+            "pwa_lan": f"https://{detected_ip}:3000/office",
+            "dashboard_lan": f"https://{detected_ip}:3000/dashboard",
+            "landing_lan": f"https://{detected_ip}:3000/",
+            "api_docs": f"http://{detected_ip}:8000/docs"
+        },
         "details": results,
         "timestamp": datetime.now().isoformat()
     }
+
+@app.get("/api/v1/system/frontend-status")
+def get_frontend_status():
+    detected_ip = get_appliance_ip()
+    repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dist_dir = os.path.join(repo_dir, "frontend", "dist")
+    
+    port_open = False
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1.0)
+            port_open = (s.connect_ex(("127.0.0.1", 3000)) == 0)
+    except Exception:
+        pass
+        
+    return {
+        "dist_built": os.path.exists(dist_dir),
+        "port_3000_open": port_open,
+        "protocol": "https",
+        "appliance_ip": detected_ip,
+        "urls": {
+            "pwa_local": "https://localhost:3000/office",
+            "pwa_lan": f"https://{detected_ip}:3000/office",
+            "dashboard_lan": f"https://{detected_ip}:3000/dashboard",
+            "landing_lan": f"https://{detected_ip}:3000/"
+        }
+    }
+
+@app.post("/api/v1/system/restart-frontend")
+def restart_frontend():
+    repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    frontend_dir = os.path.join(repo_dir, "frontend")
+    dist_dir = os.path.join(frontend_dir, "dist")
+    
+    if not os.path.exists(dist_dir):
+        subprocess.run("npm install --prefer-offline --no-audit --no-fund && npm run build", cwd=frontend_dir, shell=True, timeout=300)
+        
+    try:
+        if os.name != "nt":
+            subprocess.run("command -v fuser >/dev/null 2>&1 && fuser -k 3000/tcp >/dev/null 2>&1 || pkill -f 'vite preview' || true", shell=True)
+            subprocess.Popen("nohup npx vite preview --host 0.0.0.0 --port 3000 > ../frontend.log 2>&1 &", cwd=frontend_dir, shell=True, preexec_fn=getattr(os, "setpgrp", None))
+        else:
+            subprocess.Popen("node scripts/start-preview.cjs", cwd=frontend_dir, shell=True)
+        return {"status": "success", "message": "Frontend HTTPS preview server started on port 3000"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

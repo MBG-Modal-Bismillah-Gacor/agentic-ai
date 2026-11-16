@@ -85,8 +85,9 @@ while true; do
                 pip3 install -r "$PROJECT_ROOT/backend/requirements.txt" --quiet 2>/dev/null || pip install -r "$PROJECT_ROOT/backend/requirements.txt" --quiet
             fi
 
-            echo "[AUTO-UPDATER] 3/4 Membangun ulang frontend Vite (npm run build)..."
+            echo "[AUTO-UPDATER] 3/4 Membangun ulang frontend Vite (npm install & build)..."
             cd "$PROJECT_ROOT/frontend" || exit 1
+            npm install --prefer-offline --no-audit --no-fund
             npm run build
             cd "$PROJECT_ROOT" || exit 1
 

@@ -10,7 +10,7 @@ set -e
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$BASE_DIR"
 
-CUBI_IP="${1:-192.168.18.119}"
+CUBI_IP="${1:-174.17.0.227}"
 BACKEND_PORT="${2:-8000}"
 FRONTEND_PORT="${3:-3000}"
 DEPLOY_TOKEN="${4:-stelagent-b206}"
@@ -38,12 +38,11 @@ if [ "$IS_LOCAL_CUBI" = true ]; then
     git pull origin main || git pull origin main --rebase || true
 
     echo ""
-    echo "[2/4] 🔨 Membangun PWA Frontend Production (npm run build)..."
+    echo "[2/4] 🔨 Membangun PWA Frontend Production (npm install & build)..."
     cd "$BASE_DIR/frontend"
-    if [ ! -d "node_modules" ]; then
-        echo "       Menginstall dependensi frontend..."
-        npm install
-    fi
+    echo "       Memperbarui dependensi frontend (npm install)..."
+    npm install --prefer-offline --no-audit --no-fund
+    echo "       Membangun bundle PWA (npm run build)..."
     npm run build
     cd "$BASE_DIR"
 
