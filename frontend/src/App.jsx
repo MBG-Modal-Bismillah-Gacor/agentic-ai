@@ -1369,6 +1369,17 @@ export default function App() {
     }
   }
 
+  const handleResetLeads = async () => {
+    try {
+      const res = await safeApiFetch('/api/v1/leads/reset', { method: 'POST' })
+      if (res.ok) {
+        await fetchData()
+      }
+    } catch (e) {
+      console.error('Reset leads error:', e)
+    }
+  }
+
   // Koreografi Eksekusi & Gerakan Berjalan Robot Sesuai Logika BE
   const handleSelectLead = async (lead) => {
     setActiveLead(lead)
@@ -1698,6 +1709,7 @@ export default function App() {
               onSelectLead={handleSelectLead}
               onApprovePitch={handleApprovePitch}
               onRefresh={fetchData}
+              onResetLeads={handleResetLeads}
               onOpenTeamSetup={() => setIsTeamSetupOpen(true)}
               onOpenCreateLead={() => setIsCreateLeadOpen(true)}
               onRunAutoPipeline={handleRunAutoPipeline}

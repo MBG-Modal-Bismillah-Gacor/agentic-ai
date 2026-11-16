@@ -1004,8 +1004,11 @@ ATURAN KETAT ANTI-HALUSINASI (ZERO-HALLUCINATION):
 - Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
 """
 
+    active_model = os.getenv("LOCAL_LLM_MODEL", "qwen2.5:7b").strip()
+    ollama_timeout = 25.0 if ("7b" in active_model or "8b" in active_model) else 8.0
+
     payload = {
-        "model": "qwen2.5:3b",
+        "model": active_model,
         "prompt": prompt,
         "stream": False,
         "temperature": 0.3
@@ -1013,7 +1016,7 @@ ATURAN KETAT ANTI-HALUSINASI (ZERO-HALLUCINATION):
     
     pitch_text = ""
     try:
-        res = requests.post("http://127.0.0.1:11434/api/generate", json=payload, timeout=0.8)
+        res = requests.post("http://127.0.0.1:11434/api/generate", json=payload, timeout=ollama_timeout)
         if res.status_code == 200:
             pitch_text = res.json().get("response", "").strip()
     except Exception:
@@ -1418,6 +1421,21 @@ def approve_outreach(req: ApprovalRequest):
         "dispatch": dispatch_result,
         "dispatched_to_gateway": dispatch_status == "terkirim_live_wa",
     }
+
+@app.post("/api/v1/leads/reset")
+def reset_all_leads():
+    """Mereset seluruh status lead di leads_mentah.csv kembali menjadi 'pending'."""
+    with lead_approval_lock:
+        rows, fieldnames = read_lead_rows()
+        for r in rows:
+            r["status_kontak"] = "pending"
+        write_lead_rows(rows, fieldnames)
+        add_log("System", "Reset Status Lead", f"{len(rows)} lead berhasil dikembalikan ke status 'pending'.")
+        return {
+            "status": "success",
+            "message": f"Berhasil mereset {len(rows)} lead ke status pending.",
+            "total_reset": len(rows),
+        }
 
 # ==============================================================================
 # DOCUMENT DOWNLOAD ENDPOINTS

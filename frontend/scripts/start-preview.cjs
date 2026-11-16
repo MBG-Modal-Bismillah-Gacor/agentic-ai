@@ -47,7 +47,8 @@ const args = fs.existsSync(localVite)
 
 const subprocess = spawn(cmd, args, {
   cwd: frontendDir,
-  detached: true,
+  detached: !isWin,
+  shell: isWin,
   stdio: ['ignore', outFd, errFd],
   env: process.env
 });

@@ -61,6 +61,7 @@ export function DashboardView({
   onSelectLead,
   onApprovePitch,
   onRefresh,
+  onResetLeads,
   onOpenTeamSetup,
   onOpenCreateLead,
   onRunAutoPipeline,
@@ -1024,6 +1025,19 @@ export function DashboardView({
                       <ChevronDown className="w-3.5 h-3.5" />
                     </div>
                   </div>
+
+                  {/* Tombol Reset Antrean Prospek */}
+                  {onResetLeads && (
+                    <button
+                      type="button"
+                      onClick={onResetLeads}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-[#192A56] hover:text-[#0c1836] bg-slate-100 hover:bg-slate-200 border border-slate-300/80 rounded-xl transition-all cursor-pointer shadow-2xs"
+                      title="Reset semua prospek yang telah terkirim kembali ke antrean Menunggu (Pending)"
+                    >
+                      <RefreshCw className="w-3 h-3 text-[#192A56]" />
+                      <span className="hidden sm:inline">Reset Prospek</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
