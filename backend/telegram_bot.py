@@ -119,7 +119,7 @@ def resolve_telegram_chat_id(target_user: str = "iiibays") -> Optional[str]:
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip() or TELEGRAM_BOT_TOKEN
     if token:
         try:
-            resp = requests.get(f"https://api.telegram.org/bot{token}/getUpdates", timeout=5)
+            resp = requests.get(f"https://api.telegram.org/bot{token}/getUpdates", timeout=15)
             if resp.status_code == 200:
                 data = resp.json()
                 updates = data.get("result", [])
