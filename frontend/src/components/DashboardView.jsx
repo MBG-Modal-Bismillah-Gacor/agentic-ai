@@ -602,17 +602,17 @@ export function DashboardView({
                   </span>
                 </div>
                 <p className="text-[11px] text-[#576574] font-medium font-mono">
-                  Sovereign Local Model: <strong>Qwen 2.5 3B (Int8)</strong> // Engine: <strong>Ollama Local Bus</strong> // Hardware: <strong>MSI Cubi NUC 48 TOPS NPU</strong>
+                  AI Supercomputer: <strong className="text-[#192A56]">{systemInfo?.ai_supercomputer || 'MSI EdgeXpert MS-C931 (NVIDIA Blackwell 1,000 TOPS)'}</strong> // Model: <strong>{systemInfo?.local_llm || 'Qwen 2.5 7B'}</strong> // Web Hub: <strong>MSI Cubi NUC AI+</strong>
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-xs font-mono">
               <span className="text-[11px] px-2.5 py-1 bg-white border border-[#192A56]/20 text-[#192A56] font-bold shadow-xs rounded-lg">
-                Unified VRAM: 3.2 / 16.0 GB
+                Unified Memory: 128 GB LPDDR5x (NVLink-C2C)
               </span>
               <span className="text-[11px] px-2.5 py-1 bg-[#192A56] text-white font-bold shadow-xs rounded-lg">
-                Bandwidth: 28.4 GB/s
+                Compute: 1,000 AI TOPS
               </span>
             </div>
           </div>

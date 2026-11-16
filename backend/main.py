@@ -26,6 +26,7 @@ try:
     )
     from backend import agentic_swarm
     from backend import telegram_bot
+    from backend.llm_client import call_unified_llm
 except ImportError:
     from dispatcher import SafeOutreachDispatcher
     from engine_pdf import (
@@ -36,6 +37,7 @@ except ImportError:
     )
     import agentic_swarm
     import telegram_bot
+    from llm_client import call_unified_llm
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -551,17 +553,57 @@ def health_check():
                 if row.get("status_kontak") in ["dispatched", "approved"]:
                     dispatched_leads += 1
 
+    active_model = os.getenv("LOCAL_LLM_MODEL", os.getenv("LLM_MODEL", "qwen2.5:7b")).strip()
+    llm_api_url = os.getenv("LLM_API_URL", "http://localhost:0001/v1/chat/completions").strip()
+
     return {
         "status": "online",
-        "appliance": "MSI Cubi NUC AI+ B206 Ready",
-        "local_llm": "qwen2.5:3b",
-        "mode": "Local-First Hybrid",
+        "appliance": "MSI Cubi NUC AI+ B206 (Web & Orchestrator Hub)",
+        "ai_supercomputer": "MSI EdgeXpert MS-C931 (NVIDIA DGX™ Spark / Blackwell 1,000 TOPS)",
+        "local_llm": active_model,
+        "llm_api_url": llm_api_url,
+        "mode": "Distributed Edge-AI (Cubi Web Hub + EdgeXpert AI Core)",
         "katalog_count": len(katalog),
         "total_leads": total_leads,
         "dispatched_leads": dispatched_leads,
         "outreach_mode": "live" if outreach_dispatcher.live_enabled else "simulation",
         "timestamp": datetime.now().isoformat()
     }
+
+@app.get("/api/v1/system/llm-status")
+def check_llm_status():
+    """
+    Memeriksa konektivitas real-time ke AI Supercomputer MSI EdgeXpert MS-C931.
+    """
+    llm_api_url = os.getenv("LLM_API_URL", "http://localhost:0001/v1/chat/completions").strip()
+    active_model = os.getenv("LOCAL_LLM_MODEL", os.getenv("LLM_MODEL", "qwen2.5:7b")).strip()
+
+    status_result = {
+        "primary_engine": "MSI EdgeXpert MS-C931 (NVIDIA DGX™ Spark, Grace Blackwell, 1000 AI TOPS)",
+        "endpoint_url": llm_api_url,
+        "model": active_model,
+        "is_reachable": False,
+        "latency_ms": None,
+        "error": None
+    }
+
+    start = time.time()
+    try:
+        test_text = call_unified_llm(
+            prompt="Tes koneksi. Balas hanya 1 kata: 'READY'.",
+            system_prompt="Anda adalah healthcheck probe."
+        )
+        latency = round((time.time() - start) * 1000, 2)
+        if test_text:
+            status_result["is_reachable"] = True
+            status_result["latency_ms"] = latency
+            status_result["sample_response"] = test_text
+        else:
+            status_result["error"] = "Endpoint belum merespons (menggunakan fallback Zero-Hallucination)."
+    except Exception as e:
+        status_result["error"] = str(e)
+
+    return status_result
 
 @app.get("/api/v1/team/config")
 def get_team_config_endpoint():
@@ -1004,23 +1046,13 @@ ATURAN KETAT ANTI-HALUSINASI (ZERO-HALLUCINATION):
 - Berikan hanya isi pesan, tanpa pengantar atau tanda petik.
 """
 
-    active_model = os.getenv("LOCAL_LLM_MODEL", "qwen2.5:7b").strip()
-    ollama_timeout = 25.0 if ("7b" in active_model or "8b" in active_model) else 8.0
-
-    payload = {
-        "model": active_model,
-        "prompt": prompt,
-        "stream": False,
-        "temperature": 0.3
-    }
-    
-    pitch_text = ""
-    try:
-        res = requests.post("http://127.0.0.1:11434/api/generate", json=payload, timeout=ollama_timeout)
-        if res.status_code == 200:
-            pitch_text = res.json().get("response", "").strip()
-    except Exception:
-        pass
+    system_instruction = (
+        f"Anda adalah {persona_title} di dealer resmi Astra Motor. "
+        f"Filosofi & Vibe: '{persona_vibe}'. "
+        f"Terapkan aturan ketat Zero-Hallucination: sebutkan unit {target_unit} dan bundling {bundling_text}. "
+        f"Berikan hanya teks pesan penawaran resmi tanpa pengantar atau tanda petik."
+    )
+    pitch_text = call_unified_llm(prompt=prompt, system_prompt=system_instruction)
 
     if not pitch_text:
         if is_out_of_stock:

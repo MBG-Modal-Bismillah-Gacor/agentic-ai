@@ -18,6 +18,11 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 import requests
 
+try:
+    from backend.llm_client import call_unified_llm
+except ImportError:
+    from llm_client import call_unified_llm
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE = os.path.join(BASE_DIR, "workspace")
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
@@ -178,16 +183,10 @@ Berikan jawaban profesional formal (maksimal 2 kalimat):
 2. Informasikan promo bundling komplementer yang berlaku saat ini (misal: Apparel Jaket Touring & Voucher Extended Garansi Servis).
 Format: Jawaban langsung tanpa basa-basi."""
 
-    try:
-        res = requests.post(
-            "http://localhost:11434/api/generate",
-            json={"model": "qwen2.5:3b", "prompt": prompt_pemasok, "stream": False, "temperature": 0.3},
-            timeout=1.8
-        )
-        if res.status_code == 200:
-            jawaban_supplier = res.json().get("response", "").strip()
-    except Exception:
-        pass
+    jawaban_supplier = call_unified_llm(
+        prompt=f"Mitra cabang ({branch}) menanyakan: '{pertanyaan_cubi}'. Berikan konfirmasi alokasi {request_qty} unit {product_name} DISETUJUI Surat Jalan DO-ASTRA-{branch[:3].upper()}-{abs(hash(timestamp))%1000:03d} dan sebutkan paket promo.",
+        system_prompt="Anda adalah Sistem Distribusi Utama Astra Motor (Main Supplier Hub). Berikan jawaban formal maksimal 2 kalimat tanpa pengantar."
+    )
 
     # Fallback jawaban deterministik cerdas jika LLM offline
     if not jawaban_supplier:
