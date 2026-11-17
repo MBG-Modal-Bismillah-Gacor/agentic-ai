@@ -185,20 +185,31 @@ def dispatch_to_telegram(
         if pdf_path and os.path.isfile(pdf_path):
             try:
                 url_doc = f"https://api.telegram.org/bot{token}/sendDocument"
-                cap = caption or f"📄 Berkas Resmi SPK Penjualan — {clean_target} ({lead_id or 'LD'})"
+                if caption:
+                    cap = caption
+                elif not text_sent and message_text:
+                    # Fail-safe: jika pesan teks mandiri gagal terkirim, sertakan ringkasan penawaran langsung di caption dokumen PDF
+                    clean_pitch_summary = message_text.replace("*", "").replace("_", "").replace("`", "")[:850].strip()
+                    cap = f"📄 SPK Penjualan // {lead_id or 'LD'}\n\n{clean_pitch_summary}"
+                else:
+                    cap = f"📄 Berkas Resmi SPK Penjualan — {clean_target} ({lead_id or 'LD'})"
+
                 with open(pdf_path, "rb") as f_doc:
                     resp_doc = requests.post(
                         url_doc,
                         data={"chat_id": chat_id, "caption": cap},
                         files={"document": f_doc},
-                        timeout=25
+                        timeout=30
                     )
                 if resp_doc.status_code == 200 and resp_doc.json().get("ok"):
                     pdf_sent = True
+                    print(f"[TELEGRAM LIVE] ✅ Berkas SPK PDF berhasil terkirim ke {clean_target} ({chat_id})", flush=True)
                 else:
                     error_msg = f"Telegram doc send HTTP {resp_doc.status_code}: {resp_doc.text}"
+                    print(f"[TELEGRAM LIVE WARNING]: {error_msg}", flush=True)
             except Exception as e:
                 error_msg = f"Telegram doc exception: {e}"
+                print(f"[TELEGRAM LIVE ERROR]: {error_msg}", flush=True)
     else:
         # Mode simulasi bukti riil
         text_sent = True
@@ -275,35 +286,48 @@ def log_tele_event(agent: str, action: str, detail: str = ""):
             pass
 
 def send_telegram_reply(chat_id: str, text: str) -> bool:
-    """Mengirim pesan teks balasan ke customer di Telegram dengan fallback anti-gagal."""
+    """Mengirim pesan teks balasan ke customer di Telegram dengan fallback anti-gagal bertingkat."""
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip() or TELEGRAM_BOT_TOKEN
-    if not token:
+    if not token or not text or not text.strip():
         return False
     url = f"https://api.telegram.org/bot{token}/sendMessage"
+    
+    # Potong jika melebihi batas batas maksimum Telegram (4,096 karakter)
+    safe_text = text[:4000].strip()
+
+    # 1. Coba kirim dengan format Markdown (dengan timeout 20 detik)
     try:
-        # Coba kirim dengan format Markdown
-        resp = requests.post(url, json={
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "Markdown"
-        }, timeout=10)
-        if resp.status_code == 200:
-            return True
-        
-        # Fallback: jika Markdown ditolak Telegram (misal nama mengandung _ atau karakter khusus)
-        clean_text = text.replace("*", "").replace("_", "").replace("`", "")
-        resp2 = requests.post(url, json={
-            "chat_id": chat_id,
-            "text": clean_text
-        }, timeout=10)
-        if resp2.status_code == 200:
+        resp = requests.post(
+            url,
+            json={"chat_id": str(chat_id), "text": safe_text, "parse_mode": "Markdown"},
+            timeout=20
+        )
+        if resp.status_code == 200 and resp.json().get("ok"):
+            print(f"[TELEGRAM LIVE] ✅ Pesan teks (Markdown) berhasil terkirim ke {chat_id}", flush=True)
             return True
         else:
-            print(f"[TELEGRAM SEND FAILED HTTP {resp2.status_code}]: {resp2.text}")
-            return False
+            err_detail = resp.text[:200]
+            print(f"[TELEGRAM LIVE WARNING]: Markdown ditolak ({resp.status_code}): {err_detail}. Mencoba Plain Text fallback...", flush=True)
     except Exception as e:
-        print(f"[TELEGRAM SEND ERROR]: {e}")
-        return False
+        print(f"[TELEGRAM LIVE WARNING]: Percobaan Markdown error/timeout: {e}. Mencoba Plain Text fallback...", flush=True)
+
+    # 2. Fallback Anti-Gagal: Kirim sebagai Plain Text murni (tanpa parse_mode)
+    try:
+        clean_text = safe_text.replace("*", "").replace("_", "").replace("`", "").replace("~", "").replace(">", "").strip()
+        resp2 = requests.post(
+            url,
+            json={"chat_id": str(chat_id), "text": clean_text},
+            timeout=25
+        )
+        if resp2.status_code == 200 and resp2.json().get("ok"):
+            print(f"[TELEGRAM LIVE] ✅ Pesan teks fallback (Plain Text) berhasil terkirim ke {chat_id}", flush=True)
+            return True
+        else:
+            print(f"[TELEGRAM LIVE FAILED]: HTTP {resp2.status_code} - {resp2.text}", flush=True)
+    except Exception as e2:
+        print(f"[TELEGRAM LIVE FALLBACK ERROR]: {e2}", flush=True)
+
+    return False
 
 def get_katalog_data():
     katalog = {}
