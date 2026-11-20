@@ -27,6 +27,11 @@ def call_unified_llm(
     # 1. Coba Primary Endpoint (MSI EdgeXpert MS-C931 / OpenAI Chat Completions)
     if llm_api_url:
         try:
+            # Connect timeout 2.5s jika remote server agar tidak macet/freeze saat EdgeExpert mati
+            is_local = "127.0.0.1" in llm_api_url or "localhost" in llm_api_url
+            conn_timeout = timeout if is_local else 2.5
+            req_timeout = (conn_timeout, timeout)
+
             if "/chat/completions" in llm_api_url or "/v1/" in llm_api_url:
                 payload: Dict[str, Any] = {
                     "model": active_model,
@@ -48,7 +53,7 @@ def call_unified_llm(
                     "temperature": temperature
                 }
 
-            res = requests.post(llm_api_url, json=payload, headers=headers, timeout=timeout)
+            res = requests.post(llm_api_url, json=payload, headers=headers, timeout=req_timeout)
             if res.status_code == 200:
                 data = res.json()
                 if "choices" in data and len(data["choices"]) > 0:
@@ -71,7 +76,7 @@ def call_unified_llm(
                 "stream": False,
                 "temperature": temperature
             }
-            res = requests.post("http://127.0.0.1:11434/api/generate", json=payload, timeout=8.0)
+            res = requests.post("http://127.0.0.1:11434/api/generate", json=payload, timeout=45.0)
             if res.status_code == 200:
                 text = res.json().get("response", "").strip()
                 if text:

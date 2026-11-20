@@ -175,24 +175,31 @@ def _call_agent_llm(persona_key: str, prompt: str, context: str = "") -> str:
     if context:
         full_prompt = f"[Konteks rapat sebelumnya]:\n{context}\n\n[Tugasmu sekarang]:\n{prompt}"
 
-    # Routing model: Commander pakai model berbeda (deepseek-r1)
-    # Implementasi: set env var sementara agar call_unified_llm pakai model yang benar
+    # Routing model: jika Commander diset beda model
     original_model = os.environ.get("LOCAL_LLM_MODEL", "qwen2.5:7b")
+    target_model = original_model
     if model_env_key == "COMMANDER_LLM_MODEL":
-        commander_model = os.environ.get("COMMANDER_LLM_MODEL", "deepseek-r1:14b")
-        os.environ["LOCAL_LLM_MODEL"] = commander_model
+        target_model = os.environ.get("COMMANDER_LLM_MODEL", original_model)
+        os.environ["LOCAL_LLM_MODEL"] = target_model
     
+    # Batasi max_tokens ringkas (80-120 token) agar respon super cepat (10-15 detik total)
+    max_tok = 120 if persona_key == "Commander" else 80
+
     try:
         result = call_unified_llm(
             prompt=full_prompt,
             system_prompt=system_prompt,
             temperature=temperature,
-            max_tokens=300
+            max_tokens=max_tok
         )
     finally:
-        # Restore model semula setelah Commander selesai
         if model_env_key == "COMMANDER_LLM_MODEL":
             os.environ["LOCAL_LLM_MODEL"] = original_model
+
+    # Bersihkan tag <think> jika model DeepSeek-R1 digunakan
+    if result and "<think>" in result:
+        import re
+        result = re.sub(r"<think>.*?</think>", "", result, flags=re.DOTALL).strip()
 
     return result.strip() if result else ""
 
